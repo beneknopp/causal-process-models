@@ -104,6 +104,11 @@ class CausalProcessModel:
     def get_activities(self):
         return self.__CS.get_activities()
 
+    def get_activity_names(self):
+        activities = self.get_activities()
+        activity_names = [act.get_name() for act in activities]
+        return activity_names
+
     def get_attribute_activities(self):
         return self.__CS.get_attribute_activities()
 

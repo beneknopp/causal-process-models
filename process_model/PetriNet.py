@@ -1,10 +1,12 @@
 from utils.validators import validate_condition
 
 
-class Node:
+class SimplePetriNetNode:
 
-    def __init__(self, node_id: str):
+    def __init__(self, node_id: str, x: float, y: float):
         self.__node_id = node_id
+        self.x = x
+        self.y = y
 
     def get_id(self):
         return self.__node_id
@@ -13,28 +15,29 @@ class Node:
         return self.__node_id
 
 
-class Place(Node):
+class SimplePetriNetPlace(SimplePetriNetNode):
 
-    def __init__(self, node_id: str):
-        super().__init__(node_id)
-
-
-class Transition(Node):
-
-    def __init__(self, node_id: str):
-        super().__init__(node_id)
+    def __init__(self, node_id: str, x: float, y: float, is_initial:bool = False):
+        self.is_initial = is_initial
+        super().__init__(node_id, x ,y)
 
 
-class Arc:
+class SimplePetriNetTransition(SimplePetriNetNode):
+
+    def __init__(self, node_id: str, x: float, y: float):
+        super().__init__(node_id, x, y)
+
+
+class SimplePetriNetArc:
 
     def __validate(self):
         validate_condition(
-            (isinstance(self.__source, Place) and isinstance(self.__target, Transition))
+            (isinstance(self.__source, SimplePetriNetPlace) and isinstance(self.__target, SimplePetriNetTransition))
             or
-            (isinstance(self.__source, Transition) and isinstance(self.__target, Place))
+            (isinstance(self.__source, SimplePetriNetTransition) and isinstance(self.__target, SimplePetriNetPlace))
         )
 
-    def __init__(self, source: Node, target: Node):
+    def __init__(self, source: SimplePetriNetNode, target: SimplePetriNetNode):
         self.__source = source
         self.__target = target
 
@@ -42,6 +45,21 @@ class Arc:
         return ("({0}, {1})".format(
             self.__source.to_string(), self.__target.to_string()
         ))
+
+    def get_place(self):
+        if isinstance(self.__source, SimplePetriNetPlace):
+            return self.__source
+        return self.__target
+
+    def get_transition(self):
+        if isinstance(self.__source, SimplePetriNetTransition):
+            return self.__source
+        return self.__target
+
+    def get_direction(self):
+        if isinstance(self.__source, SimplePetriNetPlace):
+            return "PtoT"
+        return "TtoP"
 
 
 class LabelingFunction:
@@ -63,19 +81,19 @@ class PetriNet:
 
     def __validate(self):
         validate_condition(
-            all(isinstance(p, Place) for p in self.__places))
+            all(isinstance(p, SimplePetriNetPlace) for p in self.__places))
         validate_condition(
-            all(isinstance(p, Transition) for p in self.__transitions))
+            all(isinstance(p, SimplePetriNetTransition) for p in self.__transitions))
         validate_condition(
-            all(isinstance(p, Arc) for p in self.__arcs))
+            all(isinstance(p, SimplePetriNetArc) for p in self.__arcs))
         transition_ids = map(lambda t: t.get_id(), self.__transitions)
         validate_condition(
             all(t in transition_ids for t in self.__labels.get_keys()))
 
     def __init__(self,
-                 places: list[Place],
-                 transitions: list[Transition],
-                 arcs: list[Arc],
+                 places: list[SimplePetriNetPlace],
+                 transitions: list[SimplePetriNetTransition],
+                 arcs: list[SimplePetriNetArc],
                  labels: LabelingFunction):
         self.__places = places
         self.__transitions = transitions
@@ -85,6 +103,18 @@ class PetriNet:
 
     def get_activities(self):
         return list(self.__labels.get_labels())
+
+    def get_places(self):
+        return self.__places
+
+    def get_transitions(self):
+        return self.__transitions
+
+    def get_arcs(self):
+        return self.__arcs
+
+    def get_labels(self):
+        return self.__labels
 
     def to_string(self):
         s = ""

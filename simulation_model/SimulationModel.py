@@ -18,7 +18,7 @@ class SimulationModel:
         s += "\ncausal model: \n"
         s += self.__causalModel.to_string()
         petri_net_activities = self.__petriNet.get_activities()
-        causal_model_activities = self.__causalModel.get_activities()
+        causal_model_activities = self.__causalModel.get_activity_names()
         s += "Petri net has {0} activities, ".format(str(len(petri_net_activities)))
         s += "Causal Model has {0} activities, ".format(str(len(causal_model_activities)))
         s += "{0} of them are shared.".format(str(len([
@@ -28,5 +28,8 @@ class SimulationModel:
 
     def to_CPN(self):
         # create colorsets
-        converter = CPM_CPN_Converter(petriNet=self.__petriNet, causalModel=self.__causalModel)
+        cpn_template_path = "resources/empty.cpn"
+        cpn_output_path = "output/simulation_model.cpn"
+        converter = CPM_CPN_Converter(cpn_template_path, petriNet=self.__petriNet, causalModel=self.__causalModel)
         converter.convert()
+        converter.export(cpn_output_path)

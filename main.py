@@ -2,15 +2,16 @@ from causal_model.CausalProcessModel import CausalProcessModel, AggregationSelec
     AttributeValuation
 from causal_model.CausalProcessStructure import CausalProcessStructure, AttributeActivities, Attribute, Activity, \
     AttributeRelation
-from process_model.PetriNet import PetriNet, LabelingFunction, Place, Transition, Arc
+from process_model.PetriNet import PetriNet, LabelingFunction, \
+    SimplePetriNetPlace as Place, SimplePetriNetTransition as Transition, SimplePetriNetArc as Arc
 from simulation_model.SimulationModel import SimulationModel
 
 if __name__ == "__main__":
-    p_source = Place("source")
-    p1 = Place("p1")
-    p_sink = Place("sink")
-    t_register = Transition("t_register")
-    t_treat = Transition("t_treat")
+    p_source = Place("source", 0, 0)
+    t_register = Transition("t_register", 100, 0)
+    p1 = Place("p1", 200, 0)
+    t_treat = Transition("t_treat", 300, 0)
+    p_sink = Place("sink", 400, 0)
     petri_net = PetriNet(
         places=[
             p_source, p1, p_sink
