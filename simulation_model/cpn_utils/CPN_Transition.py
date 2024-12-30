@@ -28,6 +28,7 @@ class Binding(DOM_Element):
 class Guard(CPN_Node):
     __x_offset_default = -39
     __y_offset_default = 31
+    conjuncts = []
 
     def __init__(self, ref_x: str, ref_y: str, cpn_id_manager: CPN_ID_Manager, condition: str = None):
         tag = "cond"
@@ -45,6 +46,21 @@ class Guard(CPN_Node):
     def set_text_content(self, text):
         text_element: Text = list(filter(lambda c: isinstance(c, Text), self.child_elements))[0]
         text_element.set_text(text)
+
+    def add_conjunct(self, conjunct: str):
+        """
+        Add to the conjuncts, the condition to be connected with AND to form the guard
+        :param conjunct: a string representation of the conjunct
+        """
+        self.conjuncts.append(conjunct)
+        self.convert_conjuncts_to_guard()
+
+    def convert_conjuncts_to_guard(self):
+        """
+        Make a conjunction over all conjuncts and override the guard condition with it.
+        """
+        guard_text = "and".join(["({0})".format(c) for c in self.conjuncts])
+        self.set_text_content(guard_text)
 
 
 class Time(CPN_Node):
@@ -161,33 +177,6 @@ class SubpageInfo(CPN_Node):
         CPN_Node.__init__(self, tag, cpn_id_manager, attributes, child_elements)
 
 
-class RoutingGuard:
-    name: str
-    x: str
-    y: str
-    awaited_activities: dict
-    awaited_objects: dict
-    df_activities: set
-
-    def __init__(self, name: str, x: str, y: str):
-        self.name = name
-        self.x = x
-        self.y = y
-        self.awaited_activities = dict()
-        self.awaited_objects = dict()
-        self.df_activities = set()
-
-    def add_awaited_activities(self, activity_leading_types, awaited_activities):
-        for activity in awaited_activities:
-            leading_type = activity_leading_types[activity]
-            if not leading_type in self.awaited_activities:
-                self.awaited_activities[leading_type] = set()
-                self.awaited_objects[leading_type] = 0
-            if not activity in self.awaited_activities[leading_type]:
-                self.awaited_activities[leading_type].add(activity)
-                self.awaited_objects[leading_type] = self.awaited_objects[leading_type] + 1
-
-
 class CPN_Transition(SemanticNetNode):
     __explicit_default = "false"
     name: str
@@ -195,16 +184,16 @@ class CPN_Transition(SemanticNetNode):
     __leading_object_type: str
     x: str
     y: str
-    guard: str
+    guard_str: str
+    guard: Guard
     delay: str
     code: str
     priority: str
-    routing_guard: RoutingGuard
     is_subpage_transition: bool
     ports: []
 
     def __init__(self, transition_type: TransitionType, name, x, y, cpn_id_manager: CPN_ID_Manager,
-                 guard: str = None, delay: str = None, code: str = None, priority: str = None,
+                 guard_str: str = None, delay: str = None, code: str = None, priority: str = None,
                  portsock_info: str = None, subpage=None, coordinate_scaling_factor=1.0):
         tag = "trans"
         self.cpn_id_manager = cpn_id_manager
@@ -212,11 +201,10 @@ class CPN_Transition(SemanticNetNode):
         self.transition_type = transition_type
         self.x = str(coordinate_scaling_factor * float(x))
         self.y = str(coordinate_scaling_factor * float(y))
-        self.guard = guard
+        self.guard_str = guard_str
         self.delay = delay
         self.code = code
         self.priority = priority
-        self.routing_guard = None
         self.subpage = subpage
         self.portsock_info = portsock_info
         self.ports = []
@@ -225,6 +213,8 @@ class CPN_Transition(SemanticNetNode):
         text_colour = "White" if transition_type is TransitionType.SILENT else "Black"
         attributes = dict()
         attributes["explicit"] = self.__explicit_default
+        guard = Guard(x, y, cpn_id_manager, guard_str)
+        self.guard = guard
         child_elements = []
         child_elements.append(Posattr(x, y))
         child_elements.append(Fillattr("", colour=fill_colour))
@@ -233,7 +223,7 @@ class CPN_Transition(SemanticNetNode):
         child_elements.append(Text(name))
         child_elements.append(Box(name))
         child_elements.append(Binding())
-        child_elements.append(Guard(x, y, cpn_id_manager, guard))
+        child_elements.append(guard)
         child_elements.append(Time(x, y, cpn_id_manager, delay))
         child_elements.append(Code(x, y, cpn_id_manager, code))
         child_elements.append(Priority(x, y, cpn_id_manager, priority))
@@ -274,6 +264,13 @@ class CPN_Transition(SemanticNetNode):
 
     def has_port(self, port_id):
         return len(list(filter(lambda port: port.get_id() == port_id, self.ports))) > 0
+
+    def add_conjunct(self, conjunct: str):
+        """
+        Add to the conjuncts, the condition to be connected with AND to form the guard
+        :param conjunct: a string representation of the conjunct
+        """
+        self.guard.add_conjunct(conjunct)
 
     def set_guard(self, guard_text: str):
         guard_element: Guard = list(filter(lambda c: isinstance(c, Guard), self.child_elements))[0]
@@ -333,12 +330,6 @@ class CPN_Transition(SemanticNetNode):
                 guard += joined_many_vars
             guard += ")]"
             self.set_guard(guard)
-
-    def add_routing_guard(self):
-        self.routing_guard = RoutingGuard(self.name + "_routing_guard", self.x, str(float(self.y) + 50.0))
-
-    def has_routing_guard(self):
-        return self.routing_guard is not None
 
     def clean_annotations_because_of_subpage_transformation(self):
         self.set_guard("")

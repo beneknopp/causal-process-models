@@ -180,7 +180,7 @@ class ColsetManager:
         """
         Add an unambiguous colset to describe a token just with a case identifier
         """
-        self.__add_alias_colset(Standard_Colsets.STRING.value, self.CASEID_COLSET_NAME)
+        self.__add_alias_colset(Standard_Colsets.STRING.value, self.CASEID_COLSET_NAME, timed=True)
 
     def get_case_id_colset(self) -> Colset:
         """
@@ -208,8 +208,8 @@ class ColsetManager:
             self.add_attribute_domain_colset(attr_id, "BOOL")
         for act_id in activity_ids:
             act_attribute_ids = [
-                x.get_id() for x in
-                attribute_activities.get_attributes_for_activity_id(act_id)]
+                attr_id for attr_id in
+                attribute_activities.get_attribute_ids_for_activity_id(act_id)]
             self.add_activity_colset(act_id, act_attribute_ids)
         for attr_id in attributes_with_last_observations:
             self.add_attribute_last_observation_colset(attr_id)
@@ -275,7 +275,7 @@ class ColsetManager:
         attribute_list_colset_name = attribute_colset_prefix + "_LIST"
         return attribute_list_colset_name
 
-    def get_attribute_last_observation_colset_name(self, attr_id):
+    def get_attribute_last_observation_colset_name(self, attr_id) -> str:
         """
         Canonic naming scheme for colsets that describes the last values
         of an attribute observed in the process.
@@ -397,7 +397,7 @@ class ColsetManager:
         """
         self.colset_map.add(colset)
 
-    def __add_alias_colset(self, colset_old_name, alias):
+    def __add_alias_colset(self, colset_old_name, alias, timed=False):
         """
         Create a colset that is an alias of a different colset.
 
@@ -407,7 +407,7 @@ class ColsetManager:
         """
         colset_id = self.cpn_id_manager.give_ID()
         colset_old: Colset = self.colset_map.colsets_by_name[colset_old_name]
-        colset_new = Colset(colset_id, alias, colset_old.colset_type, [colset_old])
+        colset_new = Colset(colset_id, alias, colset_old.colset_type, [colset_old], timed=timed)
         self.__add_colset(colset_new)
         return colset_new
 
@@ -447,7 +447,7 @@ class ColsetManager:
         self.colset_vars_map[colset_name].add(var_name)
         self.var_name_roots = list(set(self.var_name_roots + [lower_name]))
 
-    def get_one_var(self, colset_name) -> str:
+    def get_one_var(self, colset_name: str) -> str:
         """
         Get one variable for a colset.
 

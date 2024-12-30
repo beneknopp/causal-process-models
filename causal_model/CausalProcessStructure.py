@@ -1,23 +1,51 @@
-from typing import Any
-
+from collections import Counter
+from enum import Enum
 from utils.validators import validate_condition
 
 
-class Attribute:
+class CPM_Attribute_Domain(Enum):
+    """
+    An attribute domain is the data type. Currently supported are:
+    CATEGORICAL.
+    """
+    CATEGORICAL = "CATEGORICAL"
 
-    def __init__(self, attr_id, name=None):
-        self.attr_id = attr_id
-        if name is None:
-            self.name = attr_id
+
+class CPM_Attribute:
+
+    def __validate(self):
+        validate_condition(" " not in self.__attr_id,
+                           "Attribute ID must not contain whitespaces.")
+
+    def __init__(self, attr_domain: CPM_Attribute_Domain, attr_name, attr_id=None):
+        self.__attr_domain = attr_domain
+        self.__attr_name = attr_name
+        if attr_id is None:
+            attr_id = "_".join(attr_name.split(" "))
+        self.__attr_id = attr_id
+        self.__validate()
 
     def print(self):
-        return self.name
+        return self.__attr_name
 
     def get_id(self):
-        return self.attr_id
+        return self.__attr_id
+
+    def get_domain(self):
+        return self.__attr_domain
 
 
-class Activity:
+class CPM_Categorical_Attribute(CPM_Attribute):
+
+    def __init__(self, attr_id, labels: list):
+        self.__labels = labels
+        super().__init__(CPM_Attribute_Domain.CATEGORICAL, attr_id)
+
+    def get_labels(self):
+        return self.__labels
+
+
+class CPM_Activity:
 
     def __init__(self, attr_id, name=None):
         self.attr_id = attr_id
@@ -37,11 +65,11 @@ class Activity:
 class AttributeActivities:
 
     def __validate(self):
-        validate_condition(all(attr in self.__amap for attr in self.__attributes))
-        validate_condition(all(key in self.__attributes for key in self.__amap))
+        validate_condition(all(attr in self.__amap for attr in self.__attribute_ids))
+        validate_condition(all(key in self.__attribute_ids for key in self.__amap))
 
     def __init__(self, amap: dict):
-        self.__attributes = list(amap.keys())
+        self.__attribute_ids = list(amap.keys())
         self.__activities = list(amap.values())
         self.__amap = amap
         self.__validate()
@@ -52,21 +80,24 @@ class AttributeActivities:
     def get_attributes_for_activity(self, activity):
         return [attr for attr, act in self.__amap.items() if act == activity]
 
-    def get_attributes_for_activity_id(self, activity_id: str):
+    def get_attribute_ids_for_activity_id(self, activity_id: str):
         return [attr for attr, act in self.__amap.items() if act.get_id() == activity_id]
 
-    def get_attributes(self):
-        return self.__attributes
+    def get_attribute_ids(self):
+        return self.__attribute_ids
 
     def get_activities(self):
         return self.__activities
+
+    def get_activity_ids(self):
+        return [act.get_id() for act in self.__activities]
 
 
 class AttributeRelation:
 
     def __init__(self, inattr, outattr, is_aggregated):
-        self.__inattr: Attribute = inattr
-        self.__outattr: Attribute = outattr
+        self.__inattr: CPM_Attribute = inattr
+        self.__outattr: CPM_Attribute = outattr
         self.__is_aggregated: bool = is_aggregated
 
     def get_in(self):
@@ -89,23 +120,40 @@ class CausalProcessStructure:
 
     def __validate_attributes(self):
         validate_condition(
-            all(isinstance(attr, Attribute) for attr in self.__attributes))
+            all(isinstance(attr, CPM_Attribute) for attr in self.__attributes))
+        # All categorical attributes should have unique (non-intersecting) labels
+        attr: CPM_Attribute
+        cat_attr: CPM_Categorical_Attribute
+        all_labels = [
+            cat_attr.get_labels()
+            for cat_attr in
+            filter(lambda attr: attr.get_domain() == CPM_Attribute_Domain.CATEGORICAL,
+                   self.__attributes)
+        ]
+        all_labels = [element for sublist in all_labels for element in sublist]
+        intersecting_labels = [item for item, count in Counter(all_labels).items() if count > 1]
+        validate_condition(
+            len(intersecting_labels) == 0,
+            "There are duplicate labels ({0}) across different categorical attributes.".format(
+                intersecting_labels
+            )
+        )
 
     def __validate_activities(self):
         validate_condition(
-            all(isinstance(act, Activity) for act in  self.__activities))
+            all(isinstance(act, CPM_Activity) for act in self.__activities))
 
     def __validate_attribute_activities(self):
         validate_condition(
-            all(attr in self.__attributes
-                for attr in self.__attributeActivites.get_attributes()))
+            all(attr_id in [a.get_id() for a in self.__attributes]
+                for attr_id in self.__attributeActivities.get_attribute_ids()))
         validate_condition(
-            all(attr in self.__attributeActivites.get_attributes()
-                for attr in self.__attributes)
+            all(attr_id in self.__attributeActivities.get_attribute_ids()
+                for attr_id in [a.get_id() for a in self.__attributes])
         )
         validate_condition(
             all(act in self.__activities
-                for act in self.__attributeActivites.get_activities()))
+                for act in self.__attributeActivities.get_activities()))
 
     def __validate_relations(self):
         validate_condition(
@@ -120,9 +168,10 @@ class CausalProcessStructure:
         # no non-aggregated causality between attributes at the same events
         validate_condition(
             all(not (
-                    self.__attributeActivites.get_activity_for_attribute(r.get_in()) ==
-                    self.__attributeActivites.get_activity_for_attribute(r.get_out())
-            ) for r in non_aggregated_relations))
+                    self.__attributeActivities.get_activity_for_attribute(r.get_in()) ==
+                    self.__attributeActivities.get_activity_for_attribute(r.get_out())
+            ) for r in non_aggregated_relations),
+            "There are non-aggregated causality between attributes at the same events.")
 
     def __validate(self):
         self.__validate_attributes()
@@ -130,14 +179,14 @@ class CausalProcessStructure:
         self.__validate_attribute_activities()
 
     def __init__(self,
-                 attributes: list[Attribute],
-                 activities: list[Activity],
-                 attributeActivites: AttributeActivities,
+                 attributes: list[CPM_Attribute],
+                 activities: list[CPM_Activity],
+                 attributeActivities: AttributeActivities,
                  relations: list[AttributeRelation],
                  ):
         self.__attributes = attributes
         self.__activities = activities
-        self.__attributeActivites = attributeActivites
+        self.__attributeActivities = attributeActivities
         self.__relations = relations
         self.__validate()
 
@@ -176,19 +225,16 @@ class CausalProcessStructure:
         return self.__activities
 
     def get_attribute_activities(self):
-        return self.__attributeActivites
+        return self.__attributeActivities
 
     def add_activity(self, activity_name, activity_id):
         if activity_id in [act.get_id() for act in self.__activities]:
             raise ValueError("activity with id {0} already exists".format(activity_id))
         if activity_name in [act.get_name() for act in self.__activities]:
             raise ValueError("activity with name {0} already exists".format(activity_name))
-        act = Activity(activity_name, activity_id)
+        act = CPM_Activity(activity_name, activity_id)
         self.__activities.append(act)
         return act
-
-    def get_attributes_by_activity(self, act_id):
-        return self.__attributeActivites.get_attributes_for_activity_id(act_id)
 
     def print(self):
         s = ""
@@ -202,3 +248,8 @@ class CausalProcessStructure:
             map(lambda x: x.print(), self.get_aggregated_relations()))))
         return s
 
+    def get_attribute_ids_by_activity_id(self, activity_id):
+        return self.__attributeActivities.get_attribute_ids_for_activity_id(activity_id)
+
+    def get_attribute_ids(self):
+        return [attr.get_id() for attr in self.__attributes]

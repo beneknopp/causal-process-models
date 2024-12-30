@@ -4,7 +4,7 @@ from simulation_model.cpn_utils.xml_utils.CPN_ID_Manager import CPN_ID_Manager
 from simulation_model.cpn_utils.xml_utils.CPN_Node import CPN_Node
 from simulation_model.cpn_utils.xml_utils.DOM_Element import DOM_Element
 from simulation_model.cpn_utils.xml_utils.Layout import Text, Ellipse
-from simulation_model.cpn_utils.xml_utils.Semantics import Token, Marking, Type, Initmark
+from simulation_model.cpn_utils.xml_utils.Semantics import Token, Marking, Type, Initmark, PlaceType
 
 
 class Port(CPN_Node):
@@ -69,8 +69,8 @@ class CPN_Place(SemanticNetNode):
         child_elements.append(Ellipse())
         child_elements.append(Token())
         child_elements.append(Marking())
-        child_elements.append(Type(cpn_id_manager, pos))
-        child_elements.append(Initmark(cpn_id_manager, pos))
+        child_elements.append(PlaceType(cpn_id_manager, pos, colset_name))
+        child_elements.append(Initmark(cpn_id_manager, pos, initmark))
         SemanticNetNode.__init__(self, tag, cpn_id_manager, attributes, child_elements)
 
     def set_name(self, name: str):

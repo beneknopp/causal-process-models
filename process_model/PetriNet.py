@@ -17,9 +17,9 @@ class SimplePetriNetNode:
 
 class SimplePetriNetPlace(SimplePetriNetNode):
 
-    def __init__(self, node_id: str, x: float, y: float, is_initial:bool = False):
+    def __init__(self, node_id: str, x: float, y: float, is_initial: bool = False):
         self.is_initial = is_initial
-        super().__init__(node_id, x ,y)
+        super().__init__(node_id, x, y)
 
 
 class SimplePetriNetTransition(SimplePetriNetNode):
@@ -40,6 +40,7 @@ class SimplePetriNetArc:
     def __init__(self, source: SimplePetriNetNode, target: SimplePetriNetNode):
         self.__source = source
         self.__target = target
+        self.__id = str(id(self))[:]
 
     def to_string(self):
         return ("({0}, {1})".format(
@@ -56,10 +57,19 @@ class SimplePetriNetArc:
             return self.__source
         return self.__target
 
+    def get_source(self):
+        return self.__source
+
+    def get_target(self):
+        return self.__target
+
     def get_direction(self):
         if isinstance(self.__source, SimplePetriNetPlace):
             return "PtoT"
         return "TtoP"
+
+    def get_id(self):
+        return self.__id
 
 
 class LabelingFunction:
@@ -131,3 +141,15 @@ class PetriNet:
                 map(lambda x: x.to_string(), self.__arcs)))
         )
         return s
+
+    def get_transitions_with_label(self, label):
+        t: SimplePetriNetTransition
+        transitions_with_label = list(filter(
+            lambda t: label == self.__labels.get_label(transition_id=t.get_id()),
+            self.__transitions))
+        return transitions_with_label
+
+    def get_incoming_arcs(self, node_id):
+        a: SimplePetriNetArc
+        incoming_arcs = [a for a in self.__arcs if a.get_target().get_id() == node_id]
+        return incoming_arcs

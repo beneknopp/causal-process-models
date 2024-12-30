@@ -1,4 +1,5 @@
-from causal_model.CausalProcessStructure import CausalProcessStructure, AttributeRelation, Attribute
+from causal_model.CausalProcessStructure import CausalProcessStructure, AttributeRelation, CPM_Attribute
+from causal_model.Valuation import AttributeValuation
 from utils.validators import validate_condition
 
 
@@ -11,7 +12,7 @@ class StandardMLCode:
         return self.__smltext
 
 
-class AggregationSelection:
+class AggregationSelections:
 
     def __validate(self):
         validate_condition(
@@ -28,7 +29,7 @@ class AggregationSelection:
         return self.__relations
 
 
-class AggregationFunction:
+class AggregationFunctions:
 
     def __validate(self):
         validate_condition(
@@ -45,33 +46,51 @@ class AggregationFunction:
         return self.__relations
 
 
-class AttributeValuation:
+class AttributeValuations:
 
     def __validate(self):
         validate_condition(
-            all(isinstance(r, Attribute) for r in self.__attributes))
+            all(isinstance(r, str) for r in self.__attribute_ids))
         validate_condition(
-            all(isinstance(r, StandardMLCode) for r in self.__valuations))
+            all(isinstance(v, AttributeValuation) for v in self.__attributeIdToValuation.values()))
 
-    def __init__(self, attributeToValuation: dict):
-        self.__attributes = list(attributeToValuation.keys())
-        self.__valuations = list(attributeToValuation.values())
-        self.attributeToValuation = attributeToValuation
+    def __init__(self, attributeIdToValuation: dict[str, AttributeValuation]):
+        """
+        This class prescribes a valuation for each attribute in a causal model.
+        :param attributeIdToValuation: a map from attribute id to an AttributeValuation
+        """
+        self.__attribute_ids = list(attributeIdToValuation.keys())
+        self.__valuations = list(attributeIdToValuation.values())
+        self.__attributeIdToValuation = attributeIdToValuation
+        self.__validate()
 
-    def get_attributes(self):
-        return self.__attributes
+    def get_attribute_ids(self):
+        return self.__attribute_ids
+
+    def get_attribute_valuation_list(self):
+        return list(self.__attributeIdToValuation.values())
 
 
 class CausalProcessModel:
 
     def __validate(self):
-        cs_attributes = self.__CS.get_attributes()
+        cs_attributes = self.__CS.get_attribute_ids()
         cs_aggregated_relations = self.__CS.get_aggregated_relations()
-        v_attributes = self.__V.get_attributes()
+        v_attribute_ids = self.__V.get_attribute_ids()
         sagg_relations = self.__Sagg.get_relations()
         fagg_relations = self.__Fagg.get_relations()
+        valuated_attributes_not_in_model = [
+            attr_id for attr_id in v_attribute_ids if attr_id not in cs_attributes]
         validate_condition(
-            all(attr in cs_attributes for attr in v_attributes))
+            not valuated_attributes_not_in_model,
+            "There are valuated attributes ({0}) not specified in the causal structure.".format(
+                valuated_attributes_not_in_model))
+        attributes_without_valuation = [
+            attr_id for attr_id in cs_attributes if attr_id not in v_attribute_ids]
+        validate_condition(
+            not attributes_without_valuation,
+            "There are attributes ({0}) without valuation.".format(
+                attributes_without_valuation))
         validate_condition(
             all(r in cs_aggregated_relations for r in sagg_relations))
         validate_condition(
@@ -83,14 +102,23 @@ class CausalProcessModel:
 
     def __init__(self,
                  CS: CausalProcessStructure,
-                 Sagg: AggregationSelection,
-                 Fagg: AggregationFunction,
-                 V: AttributeValuation
+                 Sagg: AggregationSelections,
+                 Fagg: AggregationFunctions,
+                 V: AttributeValuations
                  ):
+        """
+        Define a causal model over a causal structure.
+
+        :param CS: The CausalProcessStructure.
+        :param Sagg: An AggregationSelection for each aggregated dependency in CS.
+        :param Fagg: An AggregationFunction for each aggregated dependency in CS.
+        :param V: An AttributeValuation for each attribute in CS.
+        """
         self.__CS = CS
         self.__Sagg = Sagg
         self.__Fagg = Fagg
         self.__V = V
+        self.__validate()
 
     def get_aggregation_selection(self):
         return self.__Sagg
@@ -103,11 +131,6 @@ class CausalProcessModel:
 
     def get_activities(self):
         return self.__CS.get_activities()
-
-    def get_activity_names(self):
-        activities = self.get_activities()
-        activity_names = [act.get_name() for act in activities]
-        return activity_names
 
     def get_attribute_activities(self):
         return self.__CS.get_attribute_activities()
@@ -134,10 +157,10 @@ class CausalProcessModel:
     def add_activity(self, activity_name, activity_id):
         return self.__CS.add_activity(activity_name, activity_id)
 
-    def get_attributes_by_activity_id(self, activity_id):
-        self.__CS.get_attributes_by_activity(activity_id)
-
     def to_string(self):
         s = ""
         s += self.__CS.print()
         return s
+
+    def get_attribute_ids_by_activity_id(self, activity_id):
+        return self.__CS.get_attribute_ids_by_activity_id(activity_id)

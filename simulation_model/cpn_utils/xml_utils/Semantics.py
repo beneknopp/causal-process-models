@@ -22,6 +22,28 @@ class Marking(DOM_Element):
         DOM_Element.__init__(self, tag, attributes, children)
 
 
+class PlaceType(CPN_Node):
+
+    __x_offset_default = 40.0
+    __y_offset_default = -20.0
+
+    def __init__(self, cpn_id_manager: CPN_ID_Manager, refpos: Posattr, colset_name: str,
+                 colour_layout: str = "Black"):
+        tag = "type"
+        attributes = dict()
+        child_elements = []
+        ref_x = refpos.get_x()
+        ref_y = refpos.get_y()
+        x = str(float(ref_x) + self.__x_offset_default)
+        y = str(float(ref_y) + self.__y_offset_default)
+        child_elements.append(Posattr(x, y))
+        child_elements.append(Fillattr("Solid"))
+        child_elements.append(Lineattr("0", colour_layout))
+        child_elements.append(Textattr(colour_layout))
+        child_elements.append(Text(colset_name))
+        CPN_Node.__init__(self, tag, cpn_id_manager, attributes, child_elements)
+
+
 class Token(DOM_Element):
 
     __x_default = "-44.000000"
@@ -49,6 +71,7 @@ class Type(DOM_Element):
         children.append(Fillattr("Solid"))
         children.append(Lineattr("0"))
         children.append(Textattr())
+        child_elements.append(Text(colset_name))
         DOM_Element.__init__(self, tag, attributes, children)
 
 
@@ -57,7 +80,7 @@ class Initmark(CPN_Node):
     __x_offset_default = 50
     __y_offset_default = 30
 
-    def __init__(self, cpn_id_manager: CPN_ID_Manager, ref_position: Posattr):
+    def __init__(self, cpn_id_manager: CPN_ID_Manager, ref_position: Posattr, initmark: str):
         tag = "initmark"
         attributes = dict()
         child_elements = []
@@ -67,6 +90,5 @@ class Initmark(CPN_Node):
         child_elements.append(Fillattr("Solid"))
         child_elements.append(Lineattr("0"))
         child_elements.append(Textattr())
-        child_elements.append(Text())
-        element_id = cpn_id_manager.give_ID()
+        child_elements.append(Text(initmark))
         CPN_Node.__init__(self, tag, cpn_id_manager, attributes, child_elements)

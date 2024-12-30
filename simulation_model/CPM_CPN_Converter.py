@@ -15,7 +15,8 @@ class CPM_CPN_Converter:
     def __init__(self,
                  cpn_template_path: str,
                  petriNet: PetriNet,
-                 causalModel: CausalProcessModel
+                 causalModel: CausalProcessModel,
+                 initial_marking_case_ids: list[str]
                  ):
         self.tree = ET.parse(cpn_template_path)
         self.root = self.tree.getroot()
@@ -26,7 +27,7 @@ class CPM_CPN_Converter:
         self.cpn_id_manager = cpn_id_manager
         self.colset_manager = ColsetManager(cpn_id_manager)
         self.controlflow_manager = ControlFlowManager(
-            cpn_id_manager, petriNet, causalModel, self.colset_manager
+            cpn_id_manager, petriNet, causalModel, self.colset_manager, initial_marking_case_ids
         )
         self.initial_places = {}
         self.new_colsets = []

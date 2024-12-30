@@ -58,6 +58,8 @@ class CPN_Arc(CPN_Node):
                                  + "Transitions to Places")
         source.add_outgoing_arc(self)
         target.add_incoming_arc(self)
+        self.source = source
+        self.target = target
         self.annotation_text = annotation_text
         self.annotation = Annotation(cpn_id_manager, source, target, annotation_text)
         self.orientation = orientation
@@ -95,6 +97,12 @@ class CPN_Arc(CPN_Node):
     def set_annotation(self, annotation_text: str):
         self.annotation_text = annotation_text
         self.annotation.set_text(annotation_text)
+
+    def update_target(self, new_target: SemanticNetNode):
+        arc: CPN_Arc
+        self.target.incoming_arcs = list(filter(lambda arc: arc.get_id() != self.get_id(), self.target.incoming_arcs))
+        new_target.add_incoming_arc(self)
+        self.target = new_target
 
 
 class Transend(DOM_Element):
