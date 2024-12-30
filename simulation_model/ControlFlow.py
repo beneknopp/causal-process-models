@@ -13,6 +13,7 @@ class ControlFlowMap:
     cpn_transitions: list[CPN_Transition] = list()
     cpn_nodes_by_id: dict = dict()
     cpn_places_by_id: dict = dict()
+    cpn_places_by_name: dict[str, CPN_Place] = dict()
     cpn_places_by_simple_pn_place_id: dict = dict()
     cpn_transitions_by_simple_pn_transition_id: dict = dict()
     cpn_transitions_by_id: dict = dict()
@@ -25,10 +26,12 @@ class ControlFlowMap:
 
     def add_place(self, place: CPN_Place, simple_place_id: str = None):
         place_id = place.get_id()
-        if place_id in self.cpn_places_by_id:
+        place_name = place.get_name()
+        if place_id in self.cpn_places_by_id or place_name in self.cpn_places_by_name:
             raise ValueError("Place already added")
         self.cpn_places_by_id[place_id] = place
         self.cpn_nodes_by_id[place_id] = place
+        self.cpn_places_by_name[place_name] = place
         self.cpn_places.append(place)
         if simple_place_id is not None:
             self.cpn_places_by_simple_pn_place_id[simple_place_id] = place
@@ -61,20 +64,56 @@ class ControlFlowMap:
         for t in self.cpn_transitions:
             t.incoming_arcs = list(filter(lambda a: (a.get_id() != arc_id), t.incoming_arcs))
             t.outgoing_arcs = list(filter(lambda a: (a.get_id() != arc_id), t.outgoing_arcs))
-        self.cpn_arcs = list(filter(lambda a: not(a.get_id() == arc_id), self.cpn_arcs))
+        self.cpn_arcs = list(filter(lambda a: not (a.get_id() == arc_id), self.cpn_arcs))
         self.cpn_arcs_by_id = {key: value for key, value in self.cpn_arcs_by_id.items() if key != arc_id}
         self.cpn_arcs_by_simple_pn_arc_id = {
             key: value for key, value in self.cpn_arcs_by_simple_pn_arc_id.items() if value.get_id() != arc_id}
 
-def get_attribute_place_name(attribute_id, suffix):
+
+def get_attribute_place_name(attribute_id: str, suffix):
     return "p_" + "_".join(attribute_id.split(" ")) + "_" + suffix
+
+
+def get_transition_attribute_place_name(transition_id: str, attribute_id: str, suffix):
+    return "p_" + "_".join(transition_id.split(" ")) + "_" + "_".join(attribute_id.split(" ")) + "_" + suffix
+
+
+def get_attribute_global_last_observation_place_name(attribute_id):
+    """
+    Canonical name of the unique place in the net where the last observation of some event
+    attribute is being monitored.
+
+    :param attribute_id: the attribute being monitored
+    :return: the canonical name
+    """
+    return get_attribute_place_name(attribute_id, "LAST")
+
+
+def get_preset_attribute_last_observation_place_name(transition_id, attribute_id):
+    """
+    Canonical name for places that hold the value of an attribute in the preset of
+    the valuated attribute
+    :param transition_id: the currently transformed transition of some activity
+    :param attribute_id: the preset attribute of some attribute that is being valuated for the activity
+    :return: the canonical name/identifier
+    """
+    return get_transition_attribute_place_name(transition_id, attribute_id, "LAST")
+
+
+def get_attribute_valuation_main_in_place_name(transition_id, attribute_id):
+    return get_transition_attribute_place_name(transition_id, attribute_id, "IN_MAIN")
+
+
+def get_attribute_valuation_main_out_place_name(transition_id, attribute_id):
+    return get_transition_attribute_place_name(transition_id, attribute_id, "OUT_MAIN")
 
 
 def get_start_transition_id(t: SimplePetriNetTransition):
     return "t_start_" + t.get_id()
 
-def get_attr_valuation_transition_name(attr_id: str):
-    return "t_V_" + attr_id
+
+def get_attribute_valuation_transition_name(transition_id: str, attr_id: str):
+    return "t_V_" + transition_id + "_" + attr_id
 
 
 def get_control_place_id(t: SimplePetriNetTransition):
@@ -142,9 +181,9 @@ class ControlFlowManager:
         colset_name = self.__colsetManager.get_case_id_colset().colset_name
         is_initial = simple_pn_place.is_initial
         # TODO: make generic this is just for testing timed behaviours
-        initial_marking_case_ids_with_time = ['"{0}@{1}"'.format(cid, i * 1000) for i, cid in
+        initial_marking_case_ids_with_time = ['"{0}"@{1}'.format(cid, i * 1000) for i, cid in
                                               enumerate(self.initial_marking_case_ids)]
-        initmark = "[" + ",".join(initial_marking_case_ids_with_time) + "]"
+        initmark = "[" + ",".join(initial_marking_case_ids_with_time) + "]" if is_initial else None
         cpn_place = CPN_Place(name=simple_pn_place_id,
                               x=simple_pn_place.x,
                               y=simple_pn_place.y,
@@ -164,7 +203,8 @@ class ControlFlowManager:
         is_labeled = simple_pn_transition_id in labeled_transition_ids
         transition_type = TransitionType.ACTIVITY if is_labeled else TransitionType.SILENT
         label = None if not is_labeled else labeling_function.get_label(simple_pn_transition_id)
-        cpn_transition = CPN_Transition(transition_type, label, simple_pn_transition.x, simple_pn_transition.y,
+        cpn_transition = CPN_Transition(transition_type, label,
+                                        simple_pn_transition.x, simple_pn_transition.y,
                                         self.cpn_id_manager)
         self.__controlFlowMap.add_transition(cpn_transition, simple_pn_transition_id)
         return cpn_transition
@@ -181,7 +221,7 @@ class ControlFlowManager:
     def merge_causal_model(self):
         self.__make_causal_places()
         # place to make activity executions atomic (a critical section)
-        x, y = self.__get_node_coordinates()
+        x, y = self.__get_node_coordinates(location=2)
         semaphore_place = CPN_Place(
             "global_sem", x, y, self.cpn_id_manager,
         )
@@ -201,11 +241,18 @@ class ControlFlowManager:
         # TODO: aggregation logic
 
     def __make_last_observation_place(self, attribute: CPM_Attribute):
-        lobs_place_name = get_attribute_place_name(attribute.get_id(), "LAST")
+        """
+        Make the unique place in the net where the last observation of some event
+        attribute is being monitored.
+
+        :param attribute: the attribute being monitored
+        """
+        lobs_place_name = get_attribute_global_last_observation_place_name(attribute.get_id())
         lobs_colset_name = self.__colsetManager.get_attribute_last_observation_colset_name(
             attribute.get_id()
         )
         x, y = self.__get_node_coordinates()
+        # Initial marking should be an empty list (i.e., no observation) for all cases to be simulated
         initmark = "[" + ",".join(['("{0}",[])'.format(cid) for cid in self.initial_marking_case_ids]) + "]"
         lobs_place = CPN_Place(lobs_place_name, x, y, self.cpn_id_manager, lobs_colset_name, False, initmark)
         self.__controlFlowMap.add_place(lobs_place)
@@ -247,9 +294,9 @@ class ControlFlowManager:
         self.__controlFlowMap.add_place(control_p)
         return control_p
 
-    def __get_node_coordinates(self):
+    def __get_node_coordinates(self, location=1):
         x = self.running_x
-        y = self.running_y
+        y = self.running_y * location
         self.running_x = self.running_x + 50
         return x, y
 
@@ -260,12 +307,172 @@ class ControlFlowManager:
         # add connections w.r.t non-aggregated dependencies
         # TODO: add connections w.r.t aggregated dependencies
         attribute_ids = self.__causalModel.get_attribute_ids_by_activity_id(activity.get_id())
+        transition_id = simple_labeled_t.get_id()
+        # for each preset attribute, that is, each attribute on which some event attribute at the current
+        # activity depends, we check whether a last observation exists (to guard the start transition of the
+        # activity), and if it does exist, we query the last observation to be used during valuation.
+        self.__current_transformed_transition_dependent_attributes = set()
         for i, attribute_id in enumerate(attribute_ids):
-            x = simple_labeled_t.x + 50
-            y = simple_labeled_t.y + 50*(i+1)
-            self.__make_attribute_transition(attribute_id, x, y)
+            self.__collect_preset_attributes(attribute_id)
+        self.__control_transition_for_last_observations(cpn_start_t)
+        # As we now iterate the event attributes to build control structures, we get the last observations
+        # from the start transition guard.
+        attribute_domain_vars = []
+        for i, attribute_id in enumerate(attribute_ids):
+            x = simple_labeled_t.x + 50.0
+            y = simple_labeled_t.y + 50.0 * (i + 1)
+            valuated_attribute_place = self.__make_attribute_valuation_structure(
+                transition_id, cpn_start_t, attribute_id, x, y)
+            # get two variables: the first for the old last observation, the second for the new one
+            attribute_list_var = self.__colsetManager.get_one_var(
+                self.__colsetManager.get_attribute_list_colset_name(attribute_id)
+            )
+            attribute_domain_var = self.__colsetManager.get_one_var(
+                self.__colsetManager.get_attribute_domain_colset_name(attribute_id)
+            )
+            attribute_domain_vars.append((attribute_list_var, attribute_domain_var))
+            attribute_to_event = CPN_Arc(self.cpn_id_manager, valuated_attribute_place, cpn_labeled_t,
+                                         attribute_domain_var)
+            self.__controlFlowMap.add_arc(attribute_to_event)
+        eaval_var = self.__colsetManager.get_one_var(
+            self.__colsetManager.get_activity_eaval_colset_name(activity.get_id())
+        )
+        case_id_var = self.__colsetManager.get_one_var(
+            self.__colsetManager.get_case_id_colset().colset_name
+        )
+        new_observation_vars = [pair[1] for pair in attribute_domain_vars]
+        act_guard = "{0}=({1},{2})".format(
+            eaval_var,
+            case_id_var,
+            ",".join(new_observation_vars)
+        )
+        cpn_labeled_t.add_conjunct(act_guard)
+        # distribute new last observations to global monitoring places
+        for i, attribute_id in enumerate(attribute_ids):
+            attribute_list_var_old, attribute_domain_var_new = attribute_domain_vars[i]
+            global_lobs_place_name = get_attribute_global_last_observation_place_name(attribute_id)
+            if global_lobs_place_name not in self.__controlFlowMap.cpn_places_by_name:
+                # attribute is not observed (no post-dependencies)
+                continue
+            global_lobs_place = self.__controlFlowMap.cpn_places_by_name[
+                global_lobs_place_name
+            ]
+            old_last_observation = "({0},{1})".format(
+                case_id_var,
+                attribute_list_var_old
+            )
+            new_last_observation = "({0},[{1}])".format(
+                case_id_var,
+                attribute_domain_var_new
+            )
+            lobs_old_arc = CPN_Arc(self.cpn_id_manager, global_lobs_place, cpn_labeled_t, old_last_observation)
+            lobs_new_arc = CPN_Arc(self.cpn_id_manager, cpn_labeled_t, global_lobs_place, new_last_observation)
+            self.__controlFlowMap.add_arc(lobs_old_arc)
+            self.__controlFlowMap.add_arc(lobs_new_arc)
 
-    def __make_attribute_transition(self, attribute_id: str, x, y):
-        attr_t_name = get_attr_valuation_transition_name(attribute_id)
-        attr_t = CPN_Transition(TransitionType.SILENT, attr_t_name, x, y, self.cpn_id_manager,
-                                self.__causalModel.get_attribute_valuation())
+    def __make_attribute_valuation_structure(self, transition_id: str,
+                                             start_transition: CPN_Transition, attribute_id: str, x=0.0, y=0.0) \
+            -> CPN_Place:
+        """
+        For the activity of this transition, valuate one event attribute
+        w.r.t the dependencies specified in the causal model.
+
+        :param transition_id: Some identifier of this section (transition)
+        :param start_transition: The start transition of the activity section
+        :param attribute_id: The ID of the attribute
+        :param x: x-coordinate of transition in visual net
+        :param y: y-coordinate of transition in visual net
+        :returns The CPN_Place that will carry the valuation result
+        """
+        # make valuation transition and its guard
+        preset = self.__causalModel.get_preset(attribute_id)
+        preset_attr_ids = [in_relation.get_in().get_id() for in_relation in preset]
+        preset_domain_colset_names = [
+            self.__colsetManager.get_attribute_domain_colset_name(preset_attr_id)
+            for preset_attr_id in preset_attr_ids]
+        preset_domain_variables = [
+            self.__colsetManager.get_one_var(preset_colset_name)
+            for preset_colset_name in preset_domain_colset_names
+        ]
+        attr_colset_name = self.__colsetManager.get_attribute_domain_colset_name(attribute_id)
+        attr_variable = self.__colsetManager.get_one_var(attr_colset_name)
+        valuation_transition_name = get_attribute_valuation_transition_name(transition_id, attribute_id)
+        valuation_call = self.__causalModel.get_attribute_valuations(). \
+            get_attribute_valuation(attribute_id).get_call()
+        valuation_guard = "[" + attr_variable + "=" + valuation_call(preset_domain_variables) + "]"
+        valuation_transition = CPN_Transition(TransitionType.SILENT, valuation_transition_name, x, y,
+                                              self.cpn_id_manager,
+                                              valuation_guard)
+        self.__controlFlowMap.add_transition(valuation_transition)
+        # Add control place to preset (colset: UNIT) so that valuation happens only once
+        main_control_place = CPN_Place(
+            get_attribute_valuation_main_in_place_name(transition_id, attribute_id), x - 50, y, self.cpn_id_manager)
+        main_control_arc1 = CPN_Arc(self.cpn_id_manager, start_transition, main_control_place)
+        main_control_arc2 = CPN_Arc(self.cpn_id_manager, main_control_place, valuation_transition)
+        self.__controlFlowMap.add_place(main_control_place)
+        self.__controlFlowMap.add_arc(main_control_arc1)
+        self.__controlFlowMap.add_arc(main_control_arc2)
+        # connect dependencies: for each attribute, the last-observation-place with the start transition
+        # add conjunct to the start transition guard (last observation need to be well-defined)
+        # note that this can be redundant with other attributes at this transition
+        # add place of preset attribute domain and connect it with valuation transition.
+        for i, in_relation in enumerate(preset):
+            if in_relation.is_aggregated():
+                raise NotImplementedError()
+            # else:
+            in_attr_id = in_relation.get_in().get_id()
+            in_attr_colset_name = self.__colsetManager.get_attribute_domain_colset_name(in_attr_id)
+            in_attr_place_name = get_preset_attribute_last_observation_place_name(transition_id, in_attr_id)
+            in_attr_variable = self.__colsetManager.get_one_var(in_attr_colset_name)
+            lobs_colset_name = self.__colsetManager.get_attribute_last_observation_colset_name(in_attr_id)
+            lobs_place = CPN_Place(in_attr_place_name, x + 50, y - 50 * i, self.cpn_id_manager,
+                                   in_attr_colset_name)
+            self.__controlFlowMap.add_place(lobs_place)
+            lobs_variable = self.__colsetManager.get_one_var(lobs_colset_name)
+            # the expression to get the last observation: the head (hd) of the second element (#2)
+            # the last_observation colset is a product colset and the second element is a list
+            # carrying either the last observation or nothing
+            lobs_expression = "hd(#2 {0})".format(lobs_variable)
+            start_to_lobs = CPN_Arc(self.cpn_id_manager, start_transition, lobs_place, lobs_expression)
+            lobs_to_vt = CPN_Arc(self.cpn_id_manager, lobs_place, valuation_transition, in_attr_variable)
+            self.__controlFlowMap.add_arc(start_to_lobs)
+            self.__controlFlowMap.add_arc(lobs_to_vt)
+        attr_domain_colset_name = self.__colsetManager.get_attribute_domain_colset_name(attribute_id)
+        main_out_place = CPN_Place(
+            get_attribute_valuation_main_out_place_name(transition_id, attribute_id), x + 50, y, self.cpn_id_manager,
+            colset_name=attr_domain_colset_name)
+        attr_domain_var = self.__colsetManager.get_one_var(attr_domain_colset_name)
+        vt_to_mop = CPN_Arc(self.cpn_id_manager, valuation_transition, main_out_place, attr_domain_var)
+        self.__controlFlowMap.add_place(main_out_place)
+        self.__controlFlowMap.add_arc(vt_to_mop)
+        return main_out_place
+
+    def __collect_preset_attributes(self, attribute_id: str):
+        preset = self.__causalModel.get_preset(attribute_id)
+        preset_attr_ids = [in_relation.get_in().get_id() for in_relation in preset]
+        for preset_attr_id in preset_attr_ids:
+            self.__current_transformed_transition_dependent_attributes.add(preset_attr_id)
+
+    def __control_transition_for_last_observations(self, start_transition: CPN_Transition):
+        all_preset_attr_ids = list(self.__current_transformed_transition_dependent_attributes)
+        all_preset_colset_names = [
+            self.__colsetManager.get_attribute_last_observation_colset_name(preset_attr_id)
+            for preset_attr_id in all_preset_attr_ids]
+        all_preset_lobs_variables = [
+            self.__colsetManager.get_one_var(preset_colset_name)
+            for preset_colset_name in all_preset_colset_names
+        ]
+        # for each preset attribute of some event attribute, ...
+        for i in range(len(all_preset_attr_ids)):
+            preset_attr_id = all_preset_attr_ids[i]
+            preset_lobs_variable = all_preset_lobs_variables[i]
+            # ...make back and forth arcs of the last observation place with the start transition
+            global_lobs_place_name = get_attribute_global_last_observation_place_name(preset_attr_id)
+            global_lobs_place = self.__controlFlowMap.cpn_places_by_name[global_lobs_place_name]
+            p_to_t = CPN_Arc(self.cpn_id_manager, global_lobs_place, start_transition, preset_lobs_variable)
+            t_to_p = CPN_Arc(self.cpn_id_manager, start_transition, global_lobs_place, preset_lobs_variable)
+            self.__controlFlowMap.add_arc(p_to_t)
+            self.__controlFlowMap.add_arc(t_to_p)
+            # ... make sure the activity can only be executed if there is a well-defined last observation
+            # of the preset attribute.
+            start_transition.add_conjunct("length(#2 {0})>0".format(preset_lobs_variable))

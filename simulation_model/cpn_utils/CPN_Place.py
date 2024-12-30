@@ -102,3 +102,6 @@ class CPN_Place(SemanticNetNode):
         type_child: Type = list(filter(lambda c: isinstance(c, Type), self.child_elements))[0]
         type_child.set_text(colset_name)
         self.colset_name = colset_name
+
+    def get_name(self):
+        return self.name

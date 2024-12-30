@@ -37,9 +37,14 @@ class CPM_Attribute:
 
 class CPM_Categorical_Attribute(CPM_Attribute):
 
+    def __validate(self):
+        validate_condition(all(" " not in l for l in self.__labels),
+                           "Labels must not contain whitespaces.")
+
     def __init__(self, attr_id, labels: list):
         self.__labels = labels
         super().__init__(CPM_Attribute_Domain.CATEGORICAL, attr_id)
+        self.__validate()
 
     def get_labels(self):
         return self.__labels
@@ -253,3 +258,9 @@ class CausalProcessStructure:
 
     def get_attribute_ids(self):
         return [attr.get_id() for attr in self.__attributes]
+
+    def get_preset(self, attribute_id):
+        relations = self.get_non_aggregated_relations()
+        r: AttributeRelation
+        preset = filter(lambda r: r.get_out().get_id() == attribute_id, relations)
+        return list(preset)

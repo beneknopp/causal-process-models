@@ -45,6 +45,12 @@ class AttributeValuation:
     def get_function_name(self):
         return "valuate_" + "_".join(self.outcome_attribute.get_id().split(" "))
 
+    def to_SML(self):
+        raise NotImplementedError()
+
+    def get_call(self):
+        raise NotImplementedError()
+
 
 def define_uniform_probability_mapping(valuation_parameters: ValuationParameters,
                                        outcome: CPM_Categorical_Attribute) \
@@ -126,6 +132,13 @@ class BayesianValuation(AttributeValuation):
         function_body = self.__get_function_body()
         return "fun {0}({1}) = {2}".format(function_name, parameter_string, function_body)
 
+    def get_call(self):
+        function_name = self.__get_function_name()
+        return lambda parameters: "{0}({1})".format(
+            function_name,
+            ",".join(parameters)
+        )
+
     def __get_parameter_string(self):
         return ",".join(["x{0}".format(str(i)) for i in range(len(
             self.valuation_parameters.get_valuation_parameters_list()))])
@@ -145,16 +158,12 @@ class BayesianValuation(AttributeValuation):
         for key, dist in self.__probability_mappings.items():
             case_sub_body = self.__get_case_sub_body(key, dist)
             case_sub_bodies.append(case_sub_body)
-        if len(case_sub_bodies) == 1:
-            return case_sub_bodies[0]
         function_body = "else ".join(case_sub_bodies)
-            #["if ({0}) else ".format(sub_body) for sub_body in case_sub_bodies]
-        #)
         # unreachable code, just for valid syntax
-        function_body += 'else "' + self.outcome_attribute.get_labels()[0] + '"'
+        function_body += 'else ' + self.outcome_attribute.get_labels()[0]
         return function_body
 
-    def __get_case_sub_body(self, key_tuple, dist):
+    def __get_case_sub_body(self, key_tuple: tuple, dist: dict) -> str:
         """
         Example:
         if  x1=A andalso x2=B then  (let val x=uniform(0.0,1.0) in
@@ -163,7 +172,7 @@ class BayesianValuation(AttributeValuation):
         if not len(key_tuple):
             key_body = "true"
         else:
-            key_body = " andalso ".join(['x{0}="{1}"'.format(
+            key_body = " andalso ".join(['x{0}={1}'.format(
                 str(i),
                 k
             ) for i, k in enumerate(list(key_tuple))])
@@ -175,12 +184,12 @@ class BayesianValuation(AttributeValuation):
             cum_dist_body = ""
             cum_dist_items = list(cum_dist.items())
             for v, p  in cum_dist_items[:-1]:
-                cum_dist_body += 'if p < {0} then "{1}" else '.format(
+                cum_dist_body += 'if p < {0} then {1} else '.format(
                     str(p), v
                 )
             lastv, _  = cum_dist_items[-1]
-            cum_dist_body += '"' + lastv + '"'
-            dist_body = "(let val p=uniform(0.0,1.0) in ({0}) end;)".format(
+            cum_dist_body += lastv
+            dist_body = "(let val p=uniform(0.0,1.0) in ({0}) end)".format(
                 cum_dist_body
             )
         return "if {0} then {1} ".format(key_body, dist_body)

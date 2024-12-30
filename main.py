@@ -34,13 +34,13 @@ def run_example_1():
     )
     attr_doctor             = CPM_Categorical_Attribute(
         "doctor",
-        ["Doc Aalst", "Doktor Bibber"])
+        ["Doc_Aalst", "Doktor_Bibber"])
     attr_weekday             = CPM_Categorical_Attribute(
         "weekday",
         ["Monday", "Tuesday", "Wednesday"])
     attr_treatment_delayed  = CPM_Categorical_Attribute(
         "treatment_delayed",
-        ["No Delay", "Slight Delay", "High Delay"])
+        ["No_Delay", "Slight_Delay", "High_Delay"])
     act_register       = CPM_Activity("register patient")
     act_treat          = CPM_Activity("treat patient")
     treatment_delayed_valuation = BayesianValuation(
@@ -50,8 +50,6 @@ def run_example_1():
         ]),
         attr_treatment_delayed
     )
-    s = treatment_delayed_valuation.to_SML()
-    print(s)
     causal_structure = CausalProcessStructure(
         attributes=[
             attr_doctor,
@@ -68,7 +66,8 @@ def run_example_1():
             attr_weekday.get_id(): act_register
         }),
         relations=[
-            AttributeRelation(attr_doctor, attr_treatment_delayed, is_aggregated=False)
+            AttributeRelation(attr_doctor,  attr_treatment_delayed, is_aggregated=False),
+            AttributeRelation(attr_weekday, attr_treatment_delayed, is_aggregated=False)
         ]
     )
     causal_model = CausalProcessModel(

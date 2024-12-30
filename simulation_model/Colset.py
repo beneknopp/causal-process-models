@@ -1,7 +1,8 @@
 from enum import Enum
 from xml.etree.ElementTree import Element
 
-from causal_model.CausalProcessStructure import AttributeActivities
+from causal_model.CausalProcessStructure import AttributeActivities, CPM_Attribute, CPM_Attribute_Domain, \
+    CPM_Categorical_Attribute
 from simulation_model.cpn_utils.CPN import CPN
 from simulation_model.cpn_utils.xml_utils.CPN_ID_Manager import CPN_ID_Manager
 
@@ -77,7 +78,8 @@ class Colset(object):
         """
         definition = ""
         if self.colset_type == Colset_Type.WITH:
-            definition += self.subcols[0].colset_name + " with " + str(self.rangemin) + ".." + str(self.rangemax)
+            self: WithColset
+            definition += "with " + " | ".join(self.labels)
         if self.colset_type == Colset_Type.PRODUCT:
             definition += str(self.colset_type.value) + " "
             for subcol in self.subcols:
@@ -91,6 +93,13 @@ class Colset(object):
             definition += " timed"
         definition += ";"
         return definition
+
+
+class WithColset(Colset):
+
+    def __init__(self, colset_id, colset_name, labels, timed=False):
+        super().__init__(colset_id, colset_name, Colset_Type.WITH, subcols=[], timed=timed)
+        self.labels = labels
 
 
 class Colset_Map:
@@ -191,7 +200,7 @@ class ColsetManager:
 
     def add_activity_and_attribute_colsets(self,
                                            activity_ids: list[str],
-                                           attribute_ids: list[str],
+                                           attributes: list[CPM_Attribute],
                                            attributes_with_last_observations: list[str],
                                            attributes_with_system_aggregations: list[str],
                                            attribute_activities: AttributeActivities
@@ -204,8 +213,8 @@ class ColsetManager:
         that last value observations of a case are needed
         :param attributes_with_system_aggregations:   attributes for which aggregated dependencies exist
         """
-        for attr_id in attribute_ids:
-            self.add_attribute_domain_colset(attr_id, "BOOL")
+        for attr in attributes:
+            self.add_attribute_domain_colset(attr)
         for act_id in activity_ids:
             act_attribute_ids = [
                 attr_id for attr_id in
@@ -261,7 +270,7 @@ class ColsetManager:
         :return: the canonic name
         """
         attribute_colset_prefix = self.get_named_entity_colset_prefix(attr_id)
-        attribute_domain_colset_name = attribute_colset_prefix + "_DOMAIN"
+        attribute_domain_colset_name = attribute_colset_prefix + "_DOM"
         return attribute_domain_colset_name
 
     def get_attribute_list_colset_name(self, attr_id):
@@ -325,7 +334,7 @@ class ColsetManager:
         attribute_last_observation_colset_name = self.get_attribute_last_observation_colset_name(attribute_id)
         colset = self.__add_product_colset(attribute_last_observation_colset_name, [
             caseid_colset, attribute_list_colset
-        ])
+        ])#, timed=True)
         return colset
 
     def add_attribute_system_aggregation_colset(self, attribute_id: str, activity_id: str):
@@ -351,7 +360,7 @@ class ColsetManager:
             attribute_system_aggregation_colset_name_list, system_aggregation_colset_single)
         return colset
 
-    def add_attribute_domain_colset(self, attribute_id: str, domain_colset_name: str):
+    def add_attribute_domain_colset(self, attribute: CPM_Attribute):
         """
         Create the colset to describe the domain (admissible values) of an attribute.
 
@@ -359,8 +368,14 @@ class ColsetManager:
         :param domain_colset_name: the domain for which this colset is an alias (e.g., string, int)
         :return: the colset
         """
-        alias = self.get_attribute_domain_colset_name(attribute_id)
-        colset = self.__add_alias_colset(domain_colset_name, alias)
+        attr_id = attribute.get_id()
+        colset_name = self.get_attribute_domain_colset_name(attr_id)
+        if attribute.get_domain() == CPM_Attribute_Domain.CATEGORICAL:
+            attribute: CPM_Categorical_Attribute
+            labels = attribute.get_labels()
+            colset = self.__add_with_colset(colset_name, labels)
+        else:
+            raise NotImplementedError()
         return colset
 
     def __add_list_colset(self, colset_name, subcol):
@@ -376,7 +391,7 @@ class ColsetManager:
         self.__add_colset(colset)
         return colset
 
-    def __add_product_colset(self, colset_name, subcols):
+    def __add_product_colset(self, colset_name, subcols, timed=False):
         """
         Create a product colset for multiple colsets.
 
@@ -385,7 +400,7 @@ class ColsetManager:
         :return: the product colset
         """
         colset_id = self.cpn_id_manager.give_ID()
-        colset = Colset(colset_id, colset_name, Colset_Type.PRODUCT, subcols)
+        colset = Colset(colset_id, colset_name, Colset_Type.PRODUCT, subcols, timed=timed)
         self.__add_colset(colset)
         return colset
 
@@ -410,6 +425,13 @@ class ColsetManager:
         colset_new = Colset(colset_id, alias, colset_old.colset_type, [colset_old], timed=timed)
         self.__add_colset(colset_new)
         return colset_new
+
+    def __add_with_colset(self, colset_name, labels, timed=False):
+        colset_id = self.cpn_id_manager.give_ID()
+        colset = WithColset(colset_id, colset_name, labels, timed)
+        self.__add_colset(colset)
+        return colset
+
 
     def get_ordered_colsets(self):
         """
@@ -441,10 +463,12 @@ class ColsetManager:
         if var_name.startswith("c_"):
             var_name = var_name[2:]
         if colset_name not in self.colset_vars_map:
-            self.colset_vars_map[colset_name] = set()
+            self.colset_vars_map[colset_name] = list()
         vars_count = len(self.colset_vars_map[colset_name]) + 1
-        var_name = "v_" + var_name + "_" + str(vars_count)
-        self.colset_vars_map[colset_name].add(var_name)
+        var_name = "v_" + var_name
+        if vars_count > 1:
+            var_name = var_name + "_" + str(vars_count)
+        self.colset_vars_map[colset_name].append(var_name)
         self.var_name_roots = list(set(self.var_name_roots + [lower_name]))
 
     def get_one_var(self, colset_name: str) -> str:
@@ -454,7 +478,10 @@ class ColsetManager:
         :param colset_name: the name of the colset
         :return: a variable
         """
-        colset_vars = list(set(self.colset_vars_map[colset_name]))
+        if colset_name not in self.colset_vars_map:
+            self.colset_vars_map[colset_name] = []
+            self.__make_variable_for_colset(colset_name)
+        colset_vars = self.colset_vars_map[colset_name]
         colset_vars.sort()
         return colset_vars[0]
 
@@ -468,7 +495,7 @@ class ColsetManager:
         """
         colset_vars = self.colset_vars_map[colset_name][:]
         n = len(colset_vars)
-        if n < number:
+        if n <= number:
             for i in range(number - n):
                 self.__make_variable_for_colset(colset_name)
         colset_vars = self.colset_vars_map[colset_name]

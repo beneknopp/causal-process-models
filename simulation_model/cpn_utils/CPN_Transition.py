@@ -52,14 +52,15 @@ class Guard(CPN_Node):
         Add to the conjuncts, the condition to be connected with AND to form the guard
         :param conjunct: a string representation of the conjunct
         """
-        self.conjuncts.append(conjunct)
+        self.conjuncts = self.conjuncts + [conjunct]
         self.convert_conjuncts_to_guard()
 
     def convert_conjuncts_to_guard(self):
         """
         Make a conjunction over all conjuncts and override the guard condition with it.
         """
-        guard_text = "and".join(["({0})".format(c) for c in self.conjuncts])
+        guard_text = "andalso".join(["({0})".format(c) for c in self.conjuncts])
+        guard_text = "[" + guard_text + "]"
         self.set_text_content(guard_text)
 
 

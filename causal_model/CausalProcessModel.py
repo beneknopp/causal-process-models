@@ -70,6 +70,9 @@ class AttributeValuations:
     def get_attribute_valuation_list(self):
         return list(self.__attributeIdToValuation.values())
 
+    def get_attribute_valuation(self, attribute_id) -> AttributeValuation:
+        return self.__attributeIdToValuation.get(attribute_id)
+
 
 class CausalProcessModel:
 
@@ -126,7 +129,7 @@ class CausalProcessModel:
     def get_aggregation_function(self):
         return self.__Fagg
 
-    def get_attribute_valuation(self):
+    def get_attribute_valuations(self):
         return self.__V
 
     def get_activities(self):
@@ -164,3 +167,11 @@ class CausalProcessModel:
 
     def get_attribute_ids_by_activity_id(self, activity_id):
         return self.__CS.get_attribute_ids_by_activity_id(activity_id)
+
+    def get_valuation_functions_sml(self):
+        av: AttributeValuation
+        return [av.to_SML() for av in self.__V.get_attribute_valuation_list()]
+
+    def get_preset(self, attribute_id) -> list[AttributeRelation]:
+        return self.__CS.get_preset(attribute_id)
+

@@ -4,7 +4,7 @@ from xml.etree.ElementTree import Element
 from causal_model.CausalProcessModel import CausalProcessModel
 from process_model.PetriNet import PetriNet
 from simulation_model.cpn_utils.CPN import CPN
-from simulation_model.Colset import ColsetManager, Colset_Type, Colset
+from simulation_model.Colset import ColsetManager, Colset_Type, Colset, WithColset
 from simulation_model.ControlFlow import ControlFlowManager
 from simulation_model.cpn_utils.xml_utils.CPN_ID_Manager import CPN_ID_Manager
 from simulation_model.cpn_utils.xml_utils.Page import Page
@@ -102,7 +102,7 @@ class CPM_CPN_Converter:
         self.colset_manager.add_case_id_colset()
         self.colset_manager.add_activity_and_attribute_colsets(
             activity_ids=activity_ids,
-            attribute_ids=attribute_ids,
+            attributes=self.__attributes,
             attribute_activities=self.__attributeActivities,
             attributes_with_last_observations=attributes_with_last_observations,
             attributes_with_system_aggregations=attributes_with_system_aggregations
@@ -118,6 +118,7 @@ class CPM_CPN_Converter:
         self.__build_colsets()
         self.__build_variables()
         self.__build_petri_net()
+        self.__build_functions()
 
     def __build_colsets(self):
         for colset in self.colset_manager.get_ordered_colsets():
@@ -167,12 +168,11 @@ class CPM_CPN_Converter:
             list_id_element = ET.SubElement(list_element, "id")
             list_id_element.text = colset.subcols[0].colset_name
         elif colset.colset_type == Colset_Type.WITH:
-            coltype_element = ET.SubElement(colset_element, colset.subcols[0].colset_name)
-            with_element = ET.SubElement(coltype_element, "with")
-            ml_element_1 = ET.SubElement(with_element, "ml")
-            ml_element_2 = ET.SubElement(with_element, "ml")
-            ml_element_1.text = str(colset.rangemin)
-            ml_element_2.text = str(colset.rangemax)
+            colset: WithColset
+            enum_element = ET.SubElement(colset_element, "enum")
+            for label in colset.labels:
+                id_element = ET.SubElement(enum_element, "id")
+                id_element.text = label
         elif len(colset.subcols) == 1:
             alias_element = ET.SubElement(colset_element, "alias")
             alias_id_element = ET.SubElement(alias_element, "id")
@@ -195,3 +195,17 @@ class CPM_CPN_Converter:
         layout = layout[:-2] + ": " + colset_name + ";"
         layout_element = ET.SubElement(var_element, "layout")
         layout_element.text = layout
+
+    def __build_functions(self):
+        globbox = self.root.find("cpnet").find("globbox")
+        fun_block = ET.SubElement(globbox, "block")
+        fun_block_id = self.cpn_id_manager.give_ID()
+        fun_block.set("id", fun_block_id)
+        id_child = ET.SubElement(fun_block, "id")
+        id_child.text = "Functions"
+        for fun_string in list(self.causalModel.get_valuation_functions_sml()):
+            fun_element = ET.SubElement(fun_block, "ml")
+            fun_element.text = fun_string
+            layout_element = ET.SubElement(fun_element, "layout")
+            layout_element.text = fun_string
+            fun_element.set("id", self.cpn_id_manager.give_ID())
