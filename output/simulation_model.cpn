@@ -466,6 +466,10 @@ val x3 = #3 v_eaval
     end;        
     </layout>
 				</ml>
+				<ml id="ID249">fun reg_delay()=ModelTime.fromInt(600)<layout>fun reg_delay()=ModelTime.fromInt(600)</layout>
+				</ml>
+				<ml id="ID250">fun treat_delay()=ModelTime.fromInt(7200)<layout>fun treat_delay()=ModelTime.fromInt(7200)</layout>
+				</ml>
 			</block>
 		</globbox>
 		<page id="ID0">
@@ -1274,7 +1278,7 @@ val x3 = #3 v_eaval
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_cid</text>
+					<text tool="CPN Tools" version="4.0.1">v_cid@++reg_delay()</text>
 				</annot>
 			</arc>
 			<arc orientation="TtoP" order="1" id="ID42">
@@ -1290,7 +1294,7 @@ val x3 = #3 v_eaval
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_cid</text>
+					<text tool="CPN Tools" version="4.0.1">v_cid@++treat_delay()</text>
 				</annot>
 			</arc>
 			<arc orientation="PtoT" order="1" id="ID58">
