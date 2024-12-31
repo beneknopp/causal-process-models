@@ -1,11 +1,11 @@
-from simulation_model.cpn_utils.CPN_Place import CPN_Place
-from simulation_model.cpn_utils.CPN_Transition import CPN_Transition
-from simulation_model.cpn_utils.SemanticNetNode import SemanticNetNode
-from simulation_model.cpn_utils.xml_utils.Attributes import Textattr, Lineattr, Fillattr, Posattr, Arrowattr
-from simulation_model.cpn_utils.xml_utils.CPN_ID_Manager import CPN_ID_Manager
-from simulation_model.cpn_utils.xml_utils.CPN_Node import CPN_Node
-from simulation_model.cpn_utils.xml_utils.DOM_Element import DOM_Element
-from simulation_model.cpn_utils.xml_utils.Layout import Text
+from simulation_model.cpn_utils.cpn_place import CPN_Place
+from simulation_model.cpn_utils.cpn_transition import CPN_Transition
+from simulation_model.cpn_utils.semantic_net_node import SemanticNetNode
+from simulation_model.cpn_utils.xml_utils.attributes import Textattr, Lineattr, Fillattr, Posattr, Arrowattr
+from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
+from simulation_model.cpn_utils.xml_utils.cpn_node import CPN_Node
+from simulation_model.cpn_utils.xml_utils.dom_element import DOM_Element
+from simulation_model.cpn_utils.xml_utils.layout import Text
 
 
 class Annotation(CPN_Node):

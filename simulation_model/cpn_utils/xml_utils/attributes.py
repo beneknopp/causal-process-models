@@ -1,4 +1,4 @@
-from simulation_model.cpn_utils.xml_utils.DOM_Element import DOM_Element
+from simulation_model.cpn_utils.xml_utils.dom_element import DOM_Element
 
 
 class Posattr(DOM_Element):

@@ -1,10 +1,10 @@
 from enum import Enum
 from xml.etree.ElementTree import Element
 
-from causal_model.CausalProcessStructure import AttributeActivities, CPM_Attribute, CPM_Attribute_Domain, \
+from causal_model.causal_process_structure import AttributeActivities, CPM_Attribute, CPM_Attribute_Domain, \
     CPM_Categorical_Attribute
-from simulation_model.cpn_utils.CPN import CPN
-from simulation_model.cpn_utils.xml_utils.CPN_ID_Manager import CPN_ID_Manager
+from simulation_model.cpn_utils.cpn import CPN
+from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
 
 
 class Colset_Type(Enum):
@@ -156,6 +156,7 @@ class ColsetManager:
 
     COLSET_PREFIX = "C_"
     CASEID_COLSET_NAME = COLSET_PREFIX + "cid"
+    EVENTID_COLSET_NAME = COLSET_PREFIX + "eid"
 
     def __init__(self, cpn_id_manager: CPN_ID_Manager):
         """
@@ -191,12 +192,25 @@ class ColsetManager:
         """
         self.__add_alias_colset(Standard_Colsets.STRING.value, self.CASEID_COLSET_NAME, timed=True)
 
+    def add_event_id_colset(self):
+        """
+        Add an unambiguous colset to describe a token just with a case identifier
+        """
+        self.__add_alias_colset(Standard_Colsets.STRING.value, self.EVENTID_COLSET_NAME, timed=False)
+
     def get_case_id_colset(self) -> Colset:
         """
         Get the unique case_id colset to describe a token just with a case identifier
         :return: the case_id colset
         """
         return self.colset_map.colsets_by_name[self.CASEID_COLSET_NAME]
+
+    def get_event_id_colset(self) -> Colset:
+        """
+        Get the unique case_id colset to describe a token just with a case identifier
+        :return: the case_id colset
+        """
+        return self.colset_map.colsets_by_name[self.EVENTID_COLSET_NAME]
 
     def add_activity_and_attribute_colsets(self,
                                            activity_ids: list[str],

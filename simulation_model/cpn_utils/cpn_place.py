@@ -1,10 +1,10 @@
-from simulation_model.cpn_utils.SemanticNetNode import SemanticNetNode
-from simulation_model.cpn_utils.xml_utils.Attributes import Posattr, Fillattr, Lineattr, Textattr
-from simulation_model.cpn_utils.xml_utils.CPN_ID_Manager import CPN_ID_Manager
-from simulation_model.cpn_utils.xml_utils.CPN_Node import CPN_Node
-from simulation_model.cpn_utils.xml_utils.DOM_Element import DOM_Element
-from simulation_model.cpn_utils.xml_utils.Layout import Text, Ellipse
-from simulation_model.cpn_utils.xml_utils.Semantics import Token, Marking, Type, Initmark, PlaceType
+from simulation_model.cpn_utils.semantic_net_node import SemanticNetNode
+from simulation_model.cpn_utils.xml_utils.attributes import Posattr, Fillattr, Lineattr, Textattr
+from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
+from simulation_model.cpn_utils.xml_utils.cpn_node import CPN_Node
+from simulation_model.cpn_utils.xml_utils.dom_element import DOM_Element
+from simulation_model.cpn_utils.xml_utils.layout import Text, Ellipse
+from simulation_model.cpn_utils.xml_utils.semantics import Token, Marking, Type, Initmark, PlaceType
 
 
 class Port(CPN_Node):

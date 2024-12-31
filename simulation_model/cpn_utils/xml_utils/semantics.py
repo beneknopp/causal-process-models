@@ -1,8 +1,8 @@
-from .CPN_ID_Manager import CPN_ID_Manager
-from .CPN_Node import CPN_Node
-from .DOM_Element import DOM_Element
-from .Layout import Snap, Text
-from .Attributes import Posattr, Fillattr, Lineattr, Textattr
+from .cpn_id_managment import CPN_ID_Manager
+from .cpn_node import CPN_Node
+from .dom_element import DOM_Element
+from .layout import Snap, Text
+from .attributes import Posattr, Fillattr, Lineattr, Textattr
 
 
 class Marking(DOM_Element):

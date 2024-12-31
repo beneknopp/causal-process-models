@@ -1,11 +1,11 @@
 from enum import Enum
 
-from simulation_model.cpn_utils.SemanticNetNode import SemanticNetNode
-from simulation_model.cpn_utils.xml_utils.Attributes import Posattr, Lineattr, Textattr, Fillattr
-from simulation_model.cpn_utils.xml_utils.CPN_ID_Manager import CPN_ID_Manager
-from simulation_model.cpn_utils.xml_utils.CPN_Node import CPN_Node
-from simulation_model.cpn_utils.xml_utils.DOM_Element import DOM_Element
-from simulation_model.cpn_utils.xml_utils.Layout import Text, Box
+from simulation_model.cpn_utils.semantic_net_node import SemanticNetNode
+from simulation_model.cpn_utils.xml_utils.attributes import Posattr, Lineattr, Textattr, Fillattr
+from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
+from simulation_model.cpn_utils.xml_utils.cpn_node import CPN_Node
+from simulation_model.cpn_utils.xml_utils.dom_element import DOM_Element
+from simulation_model.cpn_utils.xml_utils.layout import Text, Box
 
 
 class TransitionType(Enum):
@@ -339,3 +339,9 @@ class CPN_Transition(SemanticNetNode):
 
     def is_subpage_transition(self):
         return self.is_subpage_transition
+
+    def make_code(self, input:str, output:str, action:str):
+        code_text  = "input({0});".format(input)
+        code_text += "output({0});".format(output)
+        code_text += "action({0});".format(action)
+        self.set_code(code_text)

@@ -1,22 +1,29 @@
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
 
-from causal_model.CausalProcessModel import CausalProcessModel
-from process_model.PetriNet import PetriNet
-from simulation_model.cpn_utils.CPN import CPN
-from simulation_model.Colset import ColsetManager, Colset_Type, Colset, WithColset
-from simulation_model.ControlFlow import ControlFlowManager
-from simulation_model.cpn_utils.xml_utils.CPN_ID_Manager import CPN_ID_Manager
-from simulation_model.cpn_utils.xml_utils.Page import Page
+from causal_model.causal_process_model import CausalProcessModel
+from causal_model.causal_process_structure import CPM_Categorical_Attribute
+from process_model.petri_net import SimplePetriNet
+from simulation_model.cpn_utils.cpn_transition import CPN_Transition
+from simulation_model.io_action import get_all_standard_functions_ordered_sml, get_event_writer_sml, \
+    get_activity_event_writer_name, get_eaval2list_converter_sml, get_eaval2list_converter_name, \
+    get_label_to_string_converter_sml, get_label_to_string_converter_name, get_activity_event_table_initializer_name, \
+    get_activity_event_table_initializer_sml
+from simulation_model.timing import ActivityTimingManager
+from simulation_model.cpn_utils.cpn import CPN
+from simulation_model.colset import ColsetManager, Colset_Type, Colset, WithColset
+from simulation_model.control_flow import ControlFlowManager
+from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
+from simulation_model.cpn_utils.xml_utils.page import Page
 
 
 class CPM_CPN_Converter:
 
     def __init__(self,
                  cpn_template_path: str,
-                 petriNet: PetriNet,
+                 petriNet: SimplePetriNet,
                  causalModel: CausalProcessModel,
-                 initial_marking_case_ids: list[str]
+                 initial_marking_case_ids: list[tuple[str, int]]
                  ):
         self.tree = ET.parse(cpn_template_path)
         self.root = self.tree.getroot()
@@ -45,6 +52,7 @@ class CPM_CPN_Converter:
         self.__make_colsets()
         self.__make_colset_variables()
         self.__merge_nets()
+        self.__add_actions()
         self.__build_dom()
 
     def export(self, outpath):
@@ -100,6 +108,7 @@ class CPM_CPN_Converter:
         standard_declarations_element = self.__get_dom_block_element("Standard declarations")
         self.colset_manager.parse_standard_colsets(standard_declarations_element)
         self.colset_manager.add_case_id_colset()
+        self.colset_manager.add_event_id_colset()
         self.colset_manager.add_activity_and_attribute_colsets(
             activity_ids=activity_ids,
             attributes=self.__attributes,
@@ -203,9 +212,40 @@ class CPM_CPN_Converter:
         fun_block.set("id", fun_block_id)
         id_child = ET.SubElement(fun_block, "id")
         id_child.text = "Functions"
-        for fun_string in list(self.causalModel.get_valuation_functions_sml()):
+        all_functions = \
+            get_all_standard_functions_ordered_sml() + \
+            self.causalModel.get_valuation_functions_sml()
+        for attribute in self.__attributes:
+            if not isinstance(attribute, CPM_Categorical_Attribute):
+                continue
+            attribute: CPM_Categorical_Attribute
+            domain_colset_name = self.colset_manager.get_attribute_domain_colset_name(attribute.get_id())
+            l2s_name = get_label_to_string_converter_name(attribute)
+            l2s_sml = get_label_to_string_converter_sml(attribute, domain_colset_name)
+            all_functions.append((l2s_name, l2s_sml))
+        for activity in self.__activities:
+            act_id = activity.get_id()
+            act_name = activity.get_name()
+            eaval_colset_name = self.colset_manager.get_activity_eaval_colset_name(act_id)
+            eaval_to_list_converter_name = get_eaval2list_converter_name(act_id)
+            attributes = self.causalModel.get_attributes_for_activity_id(act_id)
+            attribute_names = [attr.get_name() for attr in attributes]
+            eaval_to_list_converter_sml = get_eaval2list_converter_sml(
+                act_id, eaval_colset_name, attributes)
+            event_writer_name = get_activity_event_writer_name(act_id)
+            event_writer_sml = get_event_writer_sml(act_id, act_name, eaval_colset_name)
+            event_initializer_name = get_activity_event_table_initializer_name(act_id)
+            event_initializer_sml  = get_activity_event_table_initializer_sml(act_id, attribute_names)
+            all_functions.append((event_initializer_name, event_initializer_sml))
+            all_functions.append((eaval_to_list_converter_name, eaval_to_list_converter_sml))
+            all_functions.append((event_writer_name, event_writer_sml))
+        for fun_name, fun_string in all_functions:
             fun_element = ET.SubElement(fun_block, "ml")
             fun_element.text = fun_string
             layout_element = ET.SubElement(fun_element, "layout")
             layout_element.text = fun_string
             fun_element.set("id", self.cpn_id_manager.give_ID())
+
+    def __add_actions(self):
+        self.controlflow_manager.add_iostream()
+        self.controlflow_manager.add_table_initializing()

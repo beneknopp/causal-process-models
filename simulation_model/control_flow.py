@@ -1,11 +1,12 @@
-from causal_model.CausalProcessModel import CausalProcessModel
-from causal_model.CausalProcessStructure import CPM_Attribute, CPM_Activity
-from process_model.PetriNet import PetriNet, SimplePetriNetPlace, SimplePetriNetTransition, SimplePetriNetArc
-from simulation_model.Colset import ColsetManager
-from simulation_model.cpn_utils.CPN_Arc import CPN_Arc
-from simulation_model.cpn_utils.CPN_Place import CPN_Place
-from simulation_model.cpn_utils.CPN_Transition import CPN_Transition, TransitionType
-from simulation_model.cpn_utils.xml_utils.CPN_ID_Manager import CPN_ID_Manager
+from causal_model.causal_process_model import CausalProcessModel
+from causal_model.causal_process_structure import CPM_Attribute, CPM_Activity
+from process_model.petri_net import SimplePetriNet, SimplePetriNetPlace, SimplePetriNetTransition, SimplePetriNetArc
+from simulation_model.colset import ColsetManager
+from simulation_model.cpn_utils.cpn_arc import CPN_Arc
+from simulation_model.cpn_utils.cpn_place import CPN_Place
+from simulation_model.cpn_utils.cpn_transition import CPN_Transition, TransitionType
+from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
+from simulation_model.io_action import get_activity_event_writer_name, get_activity_event_table_initializer_name
 
 
 class ControlFlowMap:
@@ -15,7 +16,7 @@ class ControlFlowMap:
     cpn_places_by_id: dict = dict()
     cpn_places_by_name: dict[str, CPN_Place] = dict()
     cpn_places_by_simple_pn_place_id: dict = dict()
-    cpn_transitions_by_simple_pn_transition_id: dict = dict()
+    cpn_transitions_by_simple_pn_transition_id: dict[str, CPN_Transition] = dict()
     cpn_transitions_by_id: dict = dict()
     cpn_arcs: list[CPN_Arc] = list()
     cpn_arcs_by_id: dict = dict()
@@ -116,8 +117,16 @@ def get_attribute_valuation_transition_name(transition_id: str, attr_id: str):
     return "t_V_" + transition_id + "_" + attr_id
 
 
-def get_control_place_id(t: SimplePetriNetTransition):
-    return "p_control_" + t.get_id()
+def get_control_place_id_case(t: SimplePetriNetTransition):
+    return "p_control_case_" + t.get_id()
+
+
+def get_control_place_id_event(t: SimplePetriNetTransition):
+    return "p_control_event_" + t.get_id()
+
+
+def get_global_semaphore_place_name():
+    return "p_global_semaphore"
 
 
 class ControlFlowManager:
@@ -128,7 +137,7 @@ class ControlFlowManager:
 
     def __init__(self,
                  cpn_id_manager: CPN_ID_Manager,
-                 petriNet: PetriNet,
+                 petriNet: SimplePetriNet,
                  causalModel: CausalProcessModel,
                  colsetManager: ColsetManager,
                  initial_marking_case_ids: list[str]
@@ -139,6 +148,8 @@ class ControlFlowManager:
         self.__colsetManager = colsetManager
         self.__controlFlowMap = ControlFlowMap()
         self.initial_marking_case_ids = initial_marking_case_ids
+        # remember the variable names in the event attribute value maps
+        self.__eaval_parameter_tuples = {}
 
     def merge_models(self):
         self.cast_petri_net()
@@ -180,10 +191,9 @@ class ControlFlowManager:
             return self.__controlFlowMap.cpn_places_by_simple_pn_place_id[simple_pn_place_id]
         colset_name = self.__colsetManager.get_case_id_colset().colset_name
         is_initial = simple_pn_place.is_initial
-        # TODO: make generic this is just for testing timed behaviours
-        initial_marking_case_ids_with_time = ['"{0}"@{1}'.format(cid, i * 1000) for i, cid in
-                                              enumerate(self.initial_marking_case_ids)]
-        initmark = "[" + ",".join(initial_marking_case_ids_with_time) + "]" if is_initial else None
+        timed_initial_marking = ['"{0}"@{1}'.format(t[0], t[1])
+                                 for t in self.initial_marking_case_ids]
+        initmark = "[" + ",".join(timed_initial_marking) + "]" if is_initial else None
         cpn_place = CPN_Place(name=simple_pn_place_id,
                               x=simple_pn_place.x,
                               y=simple_pn_place.y,
@@ -223,7 +233,9 @@ class ControlFlowManager:
         # place to make activity executions atomic (a critical section)
         x, y = self.__get_node_coordinates(location=2)
         semaphore_place = CPN_Place(
-            "global_sem", x, y, self.cpn_id_manager,
+            get_global_semaphore_place_name(), x, y, self.cpn_id_manager,
+            colset_name= "INT",
+            initmark="1"
         )
         self.__controlFlowMap.add_place(semaphore_place)
         cm_activities = self.__causalModel.get_activities()
@@ -253,20 +265,32 @@ class ControlFlowManager:
         )
         x, y = self.__get_node_coordinates()
         # Initial marking should be an empty list (i.e., no observation) for all cases to be simulated
-        initmark = "[" + ",".join(['("{0}",[])'.format(cid) for cid in self.initial_marking_case_ids]) + "]"
+        initial_case_ids = [case_id for case_id, time in self.initial_marking_case_ids]
+        initmark = "[" + ",".join(['("{0}",[])'.format(cid) for cid in initial_case_ids]) + "]"
         lobs_place = CPN_Place(lobs_place_name, x, y, self.cpn_id_manager, lobs_colset_name, False, initmark)
         self.__controlFlowMap.add_place(lobs_place)
 
     def __convert_transition(self, t: SimplePetriNetTransition, activity: CPM_Activity):
         start_t = self.__make_start_transition(t)
-        control_p = self.__make_control_place(t)
+        control_p_case, control_p_event = self.__make_control_places(t)
         cpn_t = self.__controlFlowMap.cpn_transitions_by_simple_pn_transition_id[t.get_id()]
         caseid_var = self.__colsetManager.get_one_var(self.__colsetManager.get_case_id_colset().colset_name)
-        control_a1 = CPN_Arc(self.cpn_id_manager, start_t, control_p, caseid_var)
-        control_a2 = CPN_Arc(self.cpn_id_manager, control_p, cpn_t, caseid_var)
+        int_var = self.__colsetManager.get_one_var("INT")
+        control_a1 = CPN_Arc(self.cpn_id_manager, start_t, control_p_case, caseid_var)
+        control_a2 = CPN_Arc(self.cpn_id_manager, control_p_case, cpn_t, caseid_var)
         self.__controlFlowMap.add_arc(control_a1)
         self.__controlFlowMap.add_arc(control_a2)
+        control_b1 = CPN_Arc(self.cpn_id_manager, start_t, control_p_event, int_var)
+        control_b2 = CPN_Arc(self.cpn_id_manager, control_p_event, cpn_t, int_var)
+        self.__controlFlowMap.add_arc(control_b1)
+        self.__controlFlowMap.add_arc(control_b2)
         self.__add_attribute_logic(t, start_t, cpn_t, activity)
+        # Semaphore also carries a running event id
+        sem = self.__controlFlowMap.cpn_places_by_name[get_global_semaphore_place_name()]
+        sem_in  = CPN_Arc(self.cpn_id_manager, sem, start_t, str(int_var))
+        sem_out = CPN_Arc(self.cpn_id_manager, cpn_t, sem, str(int_var) + " + 1")
+        self.__controlFlowMap.add_arc(sem_in)
+        self.__controlFlowMap.add_arc(sem_out)
 
     def __make_start_transition(self, t: SimplePetriNetTransition) -> CPN_Transition:
         start_t_name = get_start_transition_id(t)
@@ -285,14 +309,17 @@ class ControlFlowManager:
             self.__controlFlowMap.add_arc(new_arc)
         return start_t
 
-    def __make_control_place(self, t: SimplePetriNetTransition) -> CPN_Place:
-        control_p_name = get_control_place_id(t)
+    def __make_control_places(self, t: SimplePetriNetTransition) -> [CPN_Place, CPN_Place]:
+        control_p_name_case = get_control_place_id_case(t)
+        control_p_name_event = get_control_place_id_event(t)
         x = t.x + 50
         y = t.y
-        control_p = CPN_Place(control_p_name, x, y, self.cpn_id_manager,
+        control_p_case = CPN_Place(control_p_name_case, x, y, self.cpn_id_manager,
                               self.__colsetManager.get_case_id_colset().colset_name)
-        self.__controlFlowMap.add_place(control_p)
-        return control_p
+        control_p_event = CPN_Place(control_p_name_event, x, y, self.cpn_id_manager, "INT")
+        self.__controlFlowMap.add_place(control_p_case)
+        self.__controlFlowMap.add_place(control_p_event)
+        return control_p_case, control_p_event
 
     def __get_node_coordinates(self, location=1):
         x = self.running_x
@@ -318,19 +345,24 @@ class ControlFlowManager:
         # As we now iterate the event attributes to build control structures, we get the last observations
         # from the start transition guard.
         attribute_domain_vars = []
+        attribute_list_vars = []
         for i, attribute_id in enumerate(attribute_ids):
             x = simple_labeled_t.x + 50.0
             y = simple_labeled_t.y + 50.0 * (i + 1)
             valuated_attribute_place = self.__make_attribute_valuation_structure(
                 transition_id, cpn_start_t, attribute_id, x, y)
-            # get two variables: the first for the old last observation, the second for the new one
-            attribute_list_var = self.__colsetManager.get_one_var(
-                self.__colsetManager.get_attribute_list_colset_name(attribute_id)
-            )
             attribute_domain_var = self.__colsetManager.get_one_var(
                 self.__colsetManager.get_attribute_domain_colset_name(attribute_id)
             )
-            attribute_domain_vars.append((attribute_list_var, attribute_domain_var))
+            attribute_domain_vars.append(attribute_domain_var)
+            global_lobs_place_name = get_attribute_global_last_observation_place_name(attribute_id)
+            if global_lobs_place_name in self.__controlFlowMap.cpn_places_by_name:
+                # attribute is observed (there are post-dependencies)
+                # get two variables: the another variable for the old last observation
+                attribute_list_var = self.__colsetManager.get_one_var(
+                    self.__colsetManager.get_attribute_list_colset_name(attribute_id)
+                )
+                attribute_list_vars.append(attribute_list_var)
             attribute_to_event = CPN_Arc(self.cpn_id_manager, valuated_attribute_place, cpn_labeled_t,
                                          attribute_domain_var)
             self.__controlFlowMap.add_arc(attribute_to_event)
@@ -340,20 +372,21 @@ class ControlFlowManager:
         case_id_var = self.__colsetManager.get_one_var(
             self.__colsetManager.get_case_id_colset().colset_name
         )
-        new_observation_vars = [pair[1] for pair in attribute_domain_vars]
+        self.__eaval_parameter_tuples[activity.get_name()] = [case_id_var] + attribute_domain_vars
         act_guard = "{0}=({1},{2})".format(
             eaval_var,
             case_id_var,
-            ",".join(new_observation_vars)
+            ",".join(attribute_domain_vars)
         )
         cpn_labeled_t.add_conjunct(act_guard)
         # distribute new last observations to global monitoring places
         for i, attribute_id in enumerate(attribute_ids):
-            attribute_list_var_old, attribute_domain_var_new = attribute_domain_vars[i]
             global_lobs_place_name = get_attribute_global_last_observation_place_name(attribute_id)
             if global_lobs_place_name not in self.__controlFlowMap.cpn_places_by_name:
                 # attribute is not observed (no post-dependencies)
                 continue
+            attribute_list_var_old   = attribute_list_vars[i]
+            attribute_domain_var_new = attribute_domain_vars[i]
             global_lobs_place = self.__controlFlowMap.cpn_places_by_name[
                 global_lobs_place_name
             ]
@@ -476,3 +509,78 @@ class ControlFlowManager:
             # ... make sure the activity can only be executed if there is a well-defined last observation
             # of the preset attribute.
             start_transition.add_conjunct("length(#2 {0})>0".format(preset_lobs_variable))
+
+    def add_iostream(self):
+        '''
+        input (order);
+        output ();
+        action
+        (write_place_order(order));
+        '''
+        cm_activities = self.__causalModel.get_activities()
+        for act in cm_activities:
+            act_name = act.get_name()
+            act_id = act.get_id()
+            act_transitions = self.__petriNet.get_transitions_with_label(act_name)
+            t: SimplePetriNetTransition
+            for t in act_transitions:
+                # Example code layout:
+                '''
+                input(v_eid, v_register_patient_eaval);
+                output();
+                action(write_event_register_patient(v_eid, v_register_patient_eaval));
+                '''
+                cpn_t = self.__controlFlowMap.cpn_transitions_by_simple_pn_transition_id[t.get_id()]
+                int_var = self.__colsetManager.get_one_var("INT")
+                eaval_var = self.__colsetManager.get_one_var(
+                    self.__colsetManager.get_activity_eaval_colset_name(act.get_id())
+                )
+                action_input  = int_var + "," + eaval_var
+                action_output = ""
+                action_parameters = '{0},"{1}",{2}'.format(
+                    int_var,
+                    act_name,
+                    eaval_var
+                )
+                action = "{0}({1})".format(
+                    get_activity_event_writer_name(act_id),
+                    action_parameters
+                )
+                cpn_t.make_code(action_input, action_output, action)
+
+    def get_kickstart_transition_name(self):
+        return "t_kickstart"
+
+    def get_kickstart_place_name(self):
+        return "p_kickstart"
+
+    def add_table_initializing(self):
+        kickstart_transition = CPN_Transition(
+            transition_type=TransitionType.SILENT,
+            name=self.get_kickstart_transition_name(),
+            x = -150,
+            y = 0,
+            cpn_id_manager=self.cpn_id_manager,
+            priority="P_HIGH"
+        )
+        code_text = "input();output();action("
+        act: CPM_Activity
+        for act in self.__causalModel.get_activities():
+            code_text += get_activity_event_table_initializer_name(act.get_id())
+            code_text += "();"
+        code_text = code_text[:-1] + ")"
+        kickstart_transition.set_code(code_text)
+        kickstart_place = CPN_Place(
+            name=self.get_kickstart_place_name(),
+            x = -200,
+            y=0,
+            cpn_id_manager=self.cpn_id_manager,
+            initmark="()"
+        )
+        kickstart_arc = CPN_Arc(cpn_id_manager=self.cpn_id_manager,
+                                source=kickstart_place,
+                                target=kickstart_transition)
+        self.__controlFlowMap.add_transition(kickstart_transition)
+        self.__controlFlowMap.add_place(kickstart_place)
+        self.__controlFlowMap.add_arc(kickstart_arc)
+

@@ -1,6 +1,6 @@
 from itertools import product
 
-from causal_model.CausalProcessStructure import CPM_Attribute, CPM_Attribute_Domain, CPM_Categorical_Attribute
+from causal_model.causal_process_structure import CPM_Attribute, CPM_Attribute_Domain, CPM_Categorical_Attribute
 from utils.math import cumulative_distribution
 from utils.validators import validate_condition
 

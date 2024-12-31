@@ -34,6 +34,9 @@ class CPM_Attribute:
     def get_domain(self):
         return self.__attr_domain
 
+    def get_name(self):
+        return self.__attr_name
+
 
 class CPM_Categorical_Attribute(CPM_Attribute):
 
@@ -52,19 +55,18 @@ class CPM_Categorical_Attribute(CPM_Attribute):
 
 class CPM_Activity:
 
-    def __init__(self, attr_id, name=None):
-        self.attr_id = attr_id
-        if name is None:
-            self.name = attr_id
+    def __init__(self, act_name):
+        self.act_name = act_name
+        self.act_id = "_".join(act_name.lower().split(" "))
 
     def print(self):
-        return self.name
+        return self.act_name
 
     def get_id(self):
-        return self.attr_id
+        return self.act_id
 
     def get_name(self):
-        return self.name
+        return self.act_name
 
 
 class AttributeActivities:
@@ -264,3 +266,8 @@ class CausalProcessStructure:
         r: AttributeRelation
         preset = filter(lambda r: r.get_out().get_id() == attribute_id, relations)
         return list(preset)
+
+    def get_attributes_for_activity_id(self, act_id):
+        attr_ids =  self.__attributeActivities.get_attribute_ids_for_activity_id(act_id)
+        attributes = [attr for attr in self.__attributes if attr.get_id() in attr_ids]
+        return attributes

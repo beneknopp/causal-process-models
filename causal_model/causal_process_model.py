@@ -1,5 +1,5 @@
-from causal_model.CausalProcessStructure import CausalProcessStructure, AttributeRelation, CPM_Attribute
-from causal_model.Valuation import AttributeValuation
+from causal_model.causal_process_structure import CausalProcessStructure, AttributeRelation, CPM_Attribute
+from causal_model.valuation import AttributeValuation
 from utils.validators import validate_condition
 
 
@@ -170,8 +170,11 @@ class CausalProcessModel:
 
     def get_valuation_functions_sml(self):
         av: AttributeValuation
-        return [av.to_SML() for av in self.__V.get_attribute_valuation_list()]
+        return [(av.get_function_name(), av.to_SML()) for av in self.__V.get_attribute_valuation_list()]
 
     def get_preset(self, attribute_id) -> list[AttributeRelation]:
         return self.__CS.get_preset(attribute_id)
+
+    def get_attributes_for_activity_id(self, act_id):
+        return self.__CS.get_attributes_for_activity_id(act_id)
 

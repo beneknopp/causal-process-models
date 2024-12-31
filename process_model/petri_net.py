@@ -87,7 +87,7 @@ class LabelingFunction:
         return list(self.__lmap.values())
 
 
-class PetriNet:
+class SimplePetriNet:
 
     def __validate(self):
         validate_condition(

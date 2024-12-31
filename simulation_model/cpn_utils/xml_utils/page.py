@@ -1,6 +1,6 @@
-from simulation_model.cpn_utils.xml_utils.CPN_ID_Manager import CPN_ID_Manager
-from simulation_model.cpn_utils.xml_utils.CPN_Node import CPN_Node
-from simulation_model.cpn_utils.xml_utils.DOM_Element import DOM_Element
+from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
+from simulation_model.cpn_utils.xml_utils.cpn_node import CPN_Node
+from simulation_model.cpn_utils.xml_utils.dom_element import DOM_Element
 
 
 class Constraints(DOM_Element):

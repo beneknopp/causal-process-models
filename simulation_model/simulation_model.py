@@ -1,6 +1,8 @@
-from causal_model import CausalProcessModel
-from process_model.PetriNet import PetriNet
-from simulation_model.CPM_CPN_Converter import CPM_CPN_Converter
+from causal_model import causal_process_model
+from causal_model.causal_process_model import CausalProcessModel
+from process_model.petri_net import SimplePetriNet
+from simulation_model.cpm_cpn_converter import CPM_CPN_Converter
+from simulation_model.simulation_parameters import SimulationParameters
 from utils.validators import validate_condition
 
 
@@ -12,16 +14,25 @@ class SimulationModel:
         validate_condition(all(
             act in petri_net_activities
             for act in causal_model_activities))
+        activities_with_simulation_parameters = self.__simulationParameters.get_activity_names()
+        activities_without_simulation_parameters = [
+            activity_name for activity_name in petri_net_activities
+            if activity_name not in activities_with_simulation_parameters
+        ]
+        validate_condition(
+            not len(activities_without_simulation_parameters),
+            "There are activities {0} with unspecified simulation parameters.".format(
+                activities_without_simulation_parameters
+            ))
 
     def __init__(self,
-                 petriNet: PetriNet,
+                 petriNet: SimplePetriNet,
                  causalModel: CausalProcessModel,
-                 initial_marking_case_ids):
+                 simulation_parameters: SimulationParameters):
         self.__petriNet = petriNet
         self.__causalModel = causalModel
-        self.initial_marking_case_ids = initial_marking_case_ids
+        self.__simulationParameters = simulation_parameters
         self.__validate()
-
 
     def to_string(self):
         s = ""
@@ -39,10 +50,13 @@ class SimulationModel:
         return s
 
     def to_CPN(self):
-        # create colorsets
+        # create colsets
         cpn_template_path = "resources/empty.cpn"
         cpn_output_path = "output/simulation_model.cpn"
-        converter = CPM_CPN_Converter(cpn_template_path, petriNet=self.__petriNet, causalModel=self.__causalModel,
-                                      initial_marking_case_ids=self.initial_marking_case_ids)
+        initial_marking = self.__simulationParameters.get_initial_marking()
+        converter = CPM_CPN_Converter(cpn_template_path,
+                                      petriNet=self.__petriNet,
+                                      causalModel=self.__causalModel,
+                                      initial_marking_case_ids=initial_marking)
         converter.convert()
         converter.export(cpn_output_path)
