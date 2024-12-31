@@ -57,6 +57,7 @@ class SimulationModel:
         converter = CPM_CPN_Converter(cpn_template_path,
                                       petriNet=self.__petriNet,
                                       causalModel=self.__causalModel,
+                                      simulationParameters= self.__simulationParameters,
                                       initial_marking_case_ids=initial_marking)
         converter.convert()
         converter.export(cpn_output_path)

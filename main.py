@@ -107,9 +107,11 @@ def run_example_1():
         # how long executions of specific activities take
         activity_timings=[
             ActivityTiming(activity_name="register patient",
-                           execution_delay=FixedTimingFunction(TimeInterval(minutes=10))),
+                           execution_delay=FixedTimingFunction(TimeInterval(minutes=10),
+                                                               function_name="reg_delay")),
             ActivityTiming(activity_name="treat patient",
-                           execution_delay=FixedTimingFunction(TimeInterval(hours=2))),
+                           execution_delay=FixedTimingFunction(TimeInterval(hours=2),
+                                                               function_name="treat_delay")),
         ]
 
     )

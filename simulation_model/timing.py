@@ -41,6 +41,9 @@ class TimingFunction:
     def get_all_SML(self):
         raise NotImplementedError()
 
+    def get_function_name_SML(self):
+        return self.function_name
+
     def sample(self):
         raise NotImplementedError()
 
@@ -54,7 +57,7 @@ class FixedTimingFunction(TimingFunction):
     def get_all_SML(self):
         call_sml = self.get_call_SML()
         body_sml = self.__get_body_SML()
-        all_sml = "{0}={1}".format(
+        all_sml = "fun {0}={1}".format(
             call_sml,
             body_sml
         )

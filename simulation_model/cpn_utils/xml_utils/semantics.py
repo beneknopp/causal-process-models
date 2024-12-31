@@ -71,7 +71,7 @@ class Type(DOM_Element):
         children.append(Fillattr("Solid"))
         children.append(Lineattr("0"))
         children.append(Textattr())
-        child_elements.append(Text(colset_name))
+        children.append(Text(colset_name))
         DOM_Element.__init__(self, tag, attributes, children)
 
 

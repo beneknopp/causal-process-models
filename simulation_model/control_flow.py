@@ -7,6 +7,8 @@ from simulation_model.cpn_utils.cpn_place import CPN_Place
 from simulation_model.cpn_utils.cpn_transition import CPN_Transition, TransitionType
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
 from simulation_model.io_action import get_activity_event_writer_name, get_activity_event_table_initializer_name
+from simulation_model.simulation_parameters import SimulationParameters
+from simulation_model.timing import ActivityTimingManager
 
 
 class ControlFlowMap:
@@ -139,12 +141,14 @@ class ControlFlowManager:
                  cpn_id_manager: CPN_ID_Manager,
                  petriNet: SimplePetriNet,
                  causalModel: CausalProcessModel,
+                 simulationParameters: SimulationParameters,
                  colsetManager: ColsetManager,
                  initial_marking_case_ids: list[str]
                  ):
         self.cpn_id_manager = cpn_id_manager
         self.__petriNet = petriNet
         self.__causalModel = causalModel
+        self.__simulationParameters = simulationParameters
         self.__colsetManager = colsetManager
         self.__controlFlowMap = ControlFlowMap()
         self.initial_marking_case_ids = initial_marking_case_ids
@@ -584,3 +588,20 @@ class ControlFlowManager:
         self.__controlFlowMap.add_place(kickstart_place)
         self.__controlFlowMap.add_arc(kickstart_arc)
 
+    def add_timing(self):
+        for act_name in self.__petriNet.get_activities():
+            timing = self.__simulationParameters.activity_timing_manager.get_activity_timing(act_name)
+            call_sml = timing.execution_delay.get_call_SML()
+            act_transitions = self.__petriNet.get_transitions_with_label(act_name)
+            t: SimplePetriNetTransition
+            for t in act_transitions:
+                cpn_t = self.__controlFlowMap.cpn_transitions_by_simple_pn_transition_id[t.get_id()]
+                arc: CPN_Arc
+                case_id_colset = self.__colsetManager.get_case_id_colset()
+                control_postset = [
+                    arc for arc in self.__controlFlowMap.cpn_arcs
+                    if arc.source == cpn_t and arc.target.colset_name == case_id_colset.colset_name
+                ]
+                for arc in control_postset:
+                    annotation_text = arc.annotation_text + "@++" + call_sml
+                    arc.set_annotation(annotation_text)

@@ -9,6 +9,7 @@ from simulation_model.io_action import get_all_standard_functions_ordered_sml, g
     get_activity_event_writer_name, get_eaval2list_converter_sml, get_eaval2list_converter_name, \
     get_label_to_string_converter_sml, get_label_to_string_converter_name, get_activity_event_table_initializer_name, \
     get_activity_event_table_initializer_sml
+from simulation_model.simulation_parameters import SimulationParameters
 from simulation_model.timing import ActivityTimingManager
 from simulation_model.cpn_utils.cpn import CPN
 from simulation_model.colset import ColsetManager, Colset_Type, Colset, WithColset
@@ -23,6 +24,7 @@ class CPM_CPN_Converter:
                  cpn_template_path: str,
                  petriNet: SimplePetriNet,
                  causalModel: CausalProcessModel,
+                 simulationParameters: SimulationParameters,
                  initial_marking_case_ids: list[tuple[str, int]]
                  ):
         self.tree = ET.parse(cpn_template_path)
@@ -34,7 +36,8 @@ class CPM_CPN_Converter:
         self.cpn_id_manager = cpn_id_manager
         self.colset_manager = ColsetManager(cpn_id_manager)
         self.controlflow_manager = ControlFlowManager(
-            cpn_id_manager, petriNet, causalModel, self.colset_manager, initial_marking_case_ids
+            cpn_id_manager, petriNet, causalModel, simulationParameters,
+            self.colset_manager, initial_marking_case_ids
         )
         self.initial_places = {}
         self.new_colsets = []
@@ -46,12 +49,14 @@ class CPM_CPN_Converter:
         self.uses = []
         self.petriNet = petriNet
         self.causalModel = causalModel
+        self.simulationParameters = simulationParameters
 
     def convert(self):
         self.__initialize_activities_and_attributes()
         self.__make_colsets()
         self.__make_colset_variables()
         self.__merge_nets()
+        self.__add_timing()
         self.__add_actions()
         self.__build_dom()
 
@@ -239,12 +244,23 @@ class CPM_CPN_Converter:
             all_functions.append((event_initializer_name, event_initializer_sml))
             all_functions.append((eaval_to_list_converter_name, eaval_to_list_converter_sml))
             all_functions.append((event_writer_name, event_writer_sml))
+        for act in self.__activities:
+            act_name = act.get_name()
+            timing = self.simulationParameters.activity_timing_manager.\
+                get_activity_timing(act_name)
+            execution_delay = timing.execution_delay
+            exdelay_name = execution_delay.get_function_name_SML()
+            exdelay_string = execution_delay.get_all_SML()
+            all_functions.append((exdelay_name, exdelay_string))
         for fun_name, fun_string in all_functions:
             fun_element = ET.SubElement(fun_block, "ml")
             fun_element.text = fun_string
             layout_element = ET.SubElement(fun_element, "layout")
             layout_element.text = fun_string
             fun_element.set("id", self.cpn_id_manager.give_ID())
+
+    def __add_timing(self):
+        self.controlflow_manager.add_timing()
 
     def __add_actions(self):
         self.controlflow_manager.add_iostream()
