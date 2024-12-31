@@ -1167,7 +1167,7 @@ val x3 = #3 v_eaval
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">[(length(#2 v_doctor_last)&gt;0)andalso(length(#2 v_illness_last)&gt;0)]</text>
+					<text tool="CPN Tools" version="4.0.1">[(length(#2 v_illness_last)&gt;0)andalso(length(#2 v_doctor_last)&gt;0)]</text>
 				</cond>
 				<time id="ID124">
 					<posattr x="574.5" y="24.5" />
@@ -1688,13 +1688,13 @@ val x3 = #3 v_eaval
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
 				<transend idref="ID127" />
-				<placeend idref="ID45" />
+				<placeend idref="ID48" />
 				<annot id="ID144">
-					<posattr x="275.0" y="-50.0" />
+					<posattr x="300.0" y="-50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_doctor_last</text>
+					<text tool="CPN Tools" version="4.0.1">v_illness_last</text>
 				</annot>
 			</arc>
 			<arc orientation="TtoP" order="1" id="ID147">
@@ -1704,13 +1704,13 @@ val x3 = #3 v_eaval
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
 				<transend idref="ID127" />
-				<placeend idref="ID45" />
+				<placeend idref="ID48" />
 				<annot id="ID146">
-					<posattr x="275.0" y="-50.0" />
+					<posattr x="300.0" y="-50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_doctor_last</text>
+					<text tool="CPN Tools" version="4.0.1">v_illness_last</text>
 				</annot>
 			</arc>
 			<arc orientation="PtoT" order="1" id="ID149">
@@ -1720,13 +1720,13 @@ val x3 = #3 v_eaval
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
 				<transend idref="ID127" />
-				<placeend idref="ID48" />
+				<placeend idref="ID45" />
 				<annot id="ID148">
-					<posattr x="300.0" y="-50.0" />
+					<posattr x="275.0" y="-50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_illness_last</text>
+					<text tool="CPN Tools" version="4.0.1">v_doctor_last</text>
 				</annot>
 			</arc>
 			<arc orientation="TtoP" order="1" id="ID151">
@@ -1736,13 +1736,13 @@ val x3 = #3 v_eaval
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
 				<transend idref="ID127" />
-				<placeend idref="ID48" />
+				<placeend idref="ID45" />
 				<annot id="ID150">
-					<posattr x="300.0" y="-50.0" />
+					<posattr x="275.0" y="-50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_illness_last</text>
+					<text tool="CPN Tools" version="4.0.1">v_doctor_last</text>
 				</annot>
 			</arc>
 			<arc orientation="TtoP" order="1" id="ID161">
