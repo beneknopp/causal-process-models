@@ -53,11 +53,9 @@ class SimulationModel:
         # create colsets
         cpn_template_path = "resources/empty.cpn"
         cpn_output_path = "output/simulation_model.cpn"
-        initial_marking = self.__simulationParameters.get_initial_marking()
         converter = CPM_CPN_Converter(cpn_template_path,
                                       petriNet=self.__petriNet,
                                       causalModel=self.__causalModel,
-                                      simulationParameters= self.__simulationParameters,
-                                      initial_marking_case_ids=initial_marking)
+                                      simulationParameters= self.__simulationParameters)
         converter.convert()
         converter.export(cpn_output_path)

@@ -8,7 +8,8 @@ from process_model.petri_net import SimplePetriNet, LabelingFunction, \
     SimplePetriNetPlace as Place, SimplePetriNetTransition as Transition, SimplePetriNetArc as Arc
 from simulation_model.simulation_model import SimulationModel
 from simulation_model.simulation_parameters import SimulationParameters
-from simulation_model.timing import FixedTimingFunction, TimeInterval, TimeDensity, ActivityTiming, TimeDensityFunction
+from simulation_model.timing import FixedTimingFunction, TimeInterval, TimeDensity, ActivityTiming, TimeDensityCalendar, \
+    ExponentialTimingFunction
 
 
 def run_example_1():
@@ -99,19 +100,23 @@ def run_example_1():
         # how many instances should be simulated in total
         number_of_cases=100,
         # how much time between cases starting the process
-        case_arrival_rate=FixedTimingFunction(TimeInterval(hours=1)),
+        case_arrival_rate=ExponentialTimingFunction(average_value=TimeInterval(minutes=15),
+                                                    maximal_value=TimeInterval(minutes=120),
+                                                    function_name="case_arrival"),
         # at what times do cases arrive
-        case_arrival_density=TimeDensityFunction.StandardDensity(),
+        case_arrival_density=TimeDensityCalendar.StandardDensity(),
         # at what times do things happen in the process (i.e., people working)
-        service_time_density=TimeDensityFunction.StandardDensity(),
+        service_time_density=TimeDensityCalendar.StandardDensity(),
         # how long executions of specific activities take
         activity_timings=[
             ActivityTiming(activity_name="register patient",
-                           execution_delay=FixedTimingFunction(TimeInterval(minutes=10),
-                                                               function_name="reg_delay")),
+                           execution_delay=ExponentialTimingFunction(average_value=TimeInterval(minutes=5),
+                                                                     maximal_value=TimeInterval(minutes=20),
+                                                                     function_name="register_patient_delay")),
             ActivityTiming(activity_name="treat patient",
-                           execution_delay=FixedTimingFunction(TimeInterval(hours=2),
-                                                               function_name="treat_delay")),
+                           execution_delay=ExponentialTimingFunction(average_value=TimeInterval(minutes=20),
+                                                                     maximal_value=TimeInterval(minutes=90),
+                                                                     function_name="treat_patient_delay")),
         ]
 
     )

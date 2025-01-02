@@ -211,3 +211,8 @@ class SimplePetriNet:
         a: SimplePetriNetArc
         incoming_arcs = [a for a in self.__arcs if a.get_target().get_id() == node_id]
         return incoming_arcs
+
+    def get_initial_places(self):
+        p: SimplePetriNetPlace
+        initial_places = [p for p in self.__places if p.is_initial]
+        return initial_places

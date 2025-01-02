@@ -8,9 +8,9 @@ from simulation_model.cpn_utils.cpn_transition import CPN_Transition
 from simulation_model.functions import get_all_standard_functions_ordered_sml, get_event_writer_sml, \
     get_activity_event_writer_name, get_eaval2list_converter_sml, get_eaval2list_converter_name, \
     get_label_to_string_converter_sml, get_label_to_string_converter_name, get_activity_event_table_initializer_name, \
-    get_activity_event_table_initializer_sml
+    get_activity_event_table_initializer_sml, get_all_timing_functions_ordered_sml, get_all_event_functions_ordered_sml
 from simulation_model.simulation_parameters import SimulationParameters
-from simulation_model.timing import ActivityTimingManager
+from simulation_model.timing import ActivityTimingManager, ProcessTimeCategory
 from simulation_model.cpn_utils.cpn import CPN
 from simulation_model.colset import ColsetManager, Colset_Type, Colset, WithColset
 from simulation_model.control_flow import ControlFlowManager
@@ -24,8 +24,7 @@ class CPM_CPN_Converter:
                  cpn_template_path: str,
                  petriNet: SimplePetriNet,
                  causalModel: CausalProcessModel,
-                 simulationParameters: SimulationParameters,
-                 initial_marking_case_ids: list[tuple[str, int]]
+                 simulationParameters: SimulationParameters
                  ):
         self.tree = ET.parse(cpn_template_path)
         self.root = self.tree.getroot()
@@ -36,8 +35,7 @@ class CPM_CPN_Converter:
         self.cpn_id_manager = cpn_id_manager
         self.colset_manager = ColsetManager(cpn_id_manager)
         self.controlflow_manager = ControlFlowManager(
-            cpn_id_manager, petriNet, causalModel, simulationParameters,
-            self.colset_manager, initial_marking_case_ids
+            cpn_id_manager, petriNet, causalModel, simulationParameters, self.colset_manager
         )
         self.initial_places = {}
         self.new_colsets = []
@@ -56,6 +54,7 @@ class CPM_CPN_Converter:
         self.__make_colsets()
         self.__make_colset_variables()
         self.__merge_nets()
+        self.__make_case_generator()
         self.__add_timing()
         self.__add_actions()
         self.__build_dom()
@@ -115,6 +114,7 @@ class CPM_CPN_Converter:
         self.colset_manager.parse_standard_colsets(standard_declarations_element)
         self.colset_manager.add_case_id_colset()
         self.colset_manager.add_event_id_colset()
+        self.colset_manager.add_timedint_colset()
         self.colset_manager.add_activity_and_attribute_colsets(
             activity_ids=activity_ids,
             attributes=self.__attributes,
@@ -125,6 +125,9 @@ class CPM_CPN_Converter:
 
     def __make_colset_variables(self):
         self.colset_manager.make_variables()
+
+    def __make_case_generator(self):
+        self.controlflow_manager.make_case_generator()
 
     def __merge_nets(self):
         self.controlflow_manager.merge_models()
@@ -220,6 +223,11 @@ class CPM_CPN_Converter:
         id_child.text = "Functions"
         all_functions = \
             get_all_standard_functions_ordered_sml() + \
+            get_all_timing_functions_ordered_sml({
+                ProcessTimeCategory.SERVICE: self.simulationParameters.service_time_density,
+                ProcessTimeCategory.ARRIVAL: self.simulationParameters.case_arrival_density
+            }) + \
+            get_all_event_functions_ordered_sml() + \
             self.causalModel.get_valuation_functions_sml()
         for attribute in self.__attributes:
             if not isinstance(attribute, CPM_Categorical_Attribute):
@@ -253,6 +261,8 @@ class CPM_CPN_Converter:
             exdelay_name = execution_delay.get_function_name_SML()
             exdelay_string = execution_delay.get_all_SML()
             all_functions.append((exdelay_name, exdelay_string))
+        ca_rate = self.simulationParameters.case_arrival_rate
+        all_functions.append((ca_rate.get_function_name_SML(), ca_rate.get_all_SML()))
         for fun_name, fun_string in all_functions:
             fun_element = ET.SubElement(fun_block, "ml")
             fun_element.text = fun_string

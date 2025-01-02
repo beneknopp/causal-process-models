@@ -157,6 +157,7 @@ class ColsetManager:
     COLSET_PREFIX = "C_"
     CASEID_COLSET_NAME = COLSET_PREFIX + "cid"
     EVENTID_COLSET_NAME = COLSET_PREFIX + "eid"
+    TIMEDINT_COLSET_NAME = COLSET_PREFIX + "timedint"
 
     def __init__(self, cpn_id_manager: CPN_ID_Manager):
         """
@@ -198,6 +199,12 @@ class ColsetManager:
         """
         self.__add_alias_colset(Standard_Colsets.STRING.value, self.EVENTID_COLSET_NAME, timed=False)
 
+    def add_timedint_colset(self):
+        """
+        Add a colset for timed integers
+        """
+        self.__add_alias_colset(Standard_Colsets.INT.value, self.TIMEDINT_COLSET_NAME, timed=True)
+
     def get_case_id_colset(self) -> Colset:
         """
         Get the unique case_id colset to describe a token just with a case identifier
@@ -211,6 +218,13 @@ class ColsetManager:
         :return: the case_id colset
         """
         return self.colset_map.colsets_by_name[self.EVENTID_COLSET_NAME]
+
+    def get_timed_int_colset(self) -> Colset:
+        """
+        Get the unique case_id colset to describe a token just with a case identifier
+        :return: the case_id colset
+        """
+        return self.colset_map.colsets_by_name[self.TIMEDINT_COLSET_NAME]
 
     def add_activity_and_attribute_colsets(self,
                                            activity_ids: list[str],
@@ -514,3 +528,6 @@ class ColsetManager:
                 self.__make_variable_for_colset(colset_name)
         colset_vars = self.colset_vars_map[colset_name]
         return colset_vars[:number]
+
+    def get_timed_int_colset_name(self):
+        return self.TIMEDINT_COLSET_NAME

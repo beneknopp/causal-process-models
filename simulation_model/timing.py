@@ -49,13 +49,19 @@ class TimingFunction:
         self.args = args
         self.timing_type = timing_type
 
+    def get_all_SML(self):
+        call_sml = self.get_call_SML()
+        body_sml = self.get_body_SML()
+        all_sml = "fun {0}={1}".format(
+            call_sml,
+            body_sml
+        )
+        return all_sml
+
     def get_call_SML(self):
         if self.function_name is None:
             raise AttributeError("Anonymous method cannot be called explicitly.")
         return self.function_name + "(" + ",".join(self.args) + ")"
-
-    def get_all_SML(self):
-        raise NotImplementedError()
 
     def get_function_name_SML(self):
         return self.function_name
@@ -70,20 +76,29 @@ class FixedTimingFunction(TimingFunction):
         super().__init__([], TimingType.FIXED, function_name)
         self.fixed_time = fixed_time
 
-    def get_all_SML(self):
-        call_sml = self.get_call_SML()
-        body_sml = self.__get_body_SML()
-        all_sml = "fun {0}={1}".format(
-            call_sml,
-            body_sml
-        )
-        return all_sml
-
-    def __get_body_SML(self):
-        return "ModelTime.fromInt({0})".format(str(self.fixed_time.get_seconds()))
+    def get_body_SML(self):
+        return "({0})".format(str(float(self.fixed_time.get_seconds())))
 
     def sample(self):
         return self.fixed_time.get_seconds()
+
+
+class ExponentialTimingFunction(TimingFunction):
+
+    def __init__(self, average_value: TimeInterval, maximal_value: TimeInterval, function_name=None):
+        super().__init__([], TimingType.EXPONENTIAL, function_name)
+        self.average_value = average_value
+        self.maximal_value = maximal_value
+
+    def get_body_SML(self):
+        return "let val x = exponential(1.0/{1}) in if x > {2} then {0}() else x end:real;".format(
+            self.function_name,
+            str(float(self.average_value.get_seconds())),
+            str(float(self.maximal_value.get_seconds()))
+        )
+
+    def sample(self):
+        raise NotImplementedError()
 
 
 class ActivityTiming:
@@ -140,20 +155,20 @@ class WeekdayDensity(TimeDensity):
 
 class HourDensity(TimeDensity):
 
-    def __init__(self, h0: float, h1: float, h2: float, h3: float, h4: float, h5: float, h6: float, h7: float,
-                 h8: float, h9: float, h10: float, h11: float, h12: float, h13: float, h14: float, h15: float,
+    def __init__(self, h00: float, h01: float, h02: float, h03: float, h04: float, h05: float, h06: float, h07: float,
+                 h08: float, h09: float, h10: float, h11: float, h12: float, h13: float, h14: float, h15: float,
                  h16: float, h17: float, h18: float, h19: float, h20: float, h21: float, h22: float, h23: float):
         super().__init__()
-        self.h0 = h0
-        self.h1 = h1
-        self.h2 = h2
-        self.h3 = h3
-        self.h4 = h4
-        self.h5 = h5
-        self.h6 = h6
-        self.h7 = h7
-        self.h8 = h8
-        self.h9 = h9
+        self.h00 = h00
+        self.h01 = h01
+        self.h02 = h02
+        self.h03 = h03
+        self.h04 = h04
+        self.h05 = h05
+        self.h06 = h06
+        self.h07 = h07
+        self.h08 = h08
+        self.h09 = h09
         self.h10 = h10
         self.h11 = h11
         self.h12 = h12
@@ -170,9 +185,10 @@ class HourDensity(TimeDensity):
         self.h23 = h23
 
     def get_as_dict(self):
+        keys = ["0" + str(i) if i < 10 else str(i) for i in range(24)]
         return {
-            i: getattr(self, f"h{i}", None)
-            for i in range(24)
+            k: getattr(self, f"h{k}", None)
+            for k in keys
         }
 
     @classmethod
@@ -186,7 +202,7 @@ class HourDensity(TimeDensity):
                    0.5, 1, 1, 1, 1, 0.5, 0.5, 0, 0, 0, 0, 0)
 
 
-class TimeDensityFunction:
+class TimeDensityCalendar:
 
     def __init__(self, weekday_density: WeekdayDensity, hour_density: HourDensity):
         self.weekday_density = weekday_density

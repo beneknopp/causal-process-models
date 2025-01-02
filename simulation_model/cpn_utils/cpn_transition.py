@@ -341,7 +341,7 @@ class CPN_Transition(SemanticNetNode):
         return self.is_subpage_transition
 
     def make_code(self, input:str, output:str, action:str):
-        code_text  = "input({0});".format(input)
-        code_text += "output({0});".format(output)
+        code_text  = "input({0});\n".format(input)
+        code_text += "output({0});\n".format(output)
         code_text += "action({0});".format(action)
         self.set_code(code_text)

@@ -6,13 +6,15 @@ from simulation_model.cpn_utils.cpn_arc import CPN_Arc
 from simulation_model.cpn_utils.cpn_place import CPN_Place
 from simulation_model.cpn_utils.cpn_transition import CPN_Transition, TransitionType
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
-from simulation_model.functions import get_activity_event_writer_name, get_activity_event_table_initializer_name
+from simulation_model.functions import get_activity_event_writer_name, get_activity_event_table_initializer_name, \
+    get_normalized_delay_from_now_function_name
 from simulation_model.simulation_parameters import SimulationParameters
-from simulation_model.timing import ActivityTimingManager
+from simulation_model.timing import ProcessTimeCategory
 
 
 class ControlFlowMap:
     cpn_places: list[CPN_Place] = list()
+    cpn_lobs_places: list[CPN_Place] = list()
     cpn_transitions: list[CPN_Transition] = list()
     cpn_nodes_by_id: dict = dict()
     cpn_places_by_id: dict = dict()
@@ -71,6 +73,10 @@ class ControlFlowMap:
         self.cpn_arcs_by_id = {key: value for key, value in self.cpn_arcs_by_id.items() if key != arc_id}
         self.cpn_arcs_by_simple_pn_arc_id = {
             key: value for key, value in self.cpn_arcs_by_simple_pn_arc_id.items() if value.get_id() != arc_id}
+
+    def add_lobs_place(self, lobs_place):
+        self.add_place(lobs_place)
+        self.cpn_lobs_places.append(lobs_place)
 
 
 def get_attribute_place_name(attribute_id: str, suffix):
@@ -142,8 +148,7 @@ class ControlFlowManager:
                  petriNet: SimplePetriNet,
                  causalModel: CausalProcessModel,
                  simulationParameters: SimulationParameters,
-                 colsetManager: ColsetManager,
-                 initial_marking_case_ids: list[str]
+                 colsetManager: ColsetManager
                  ):
         self.cpn_id_manager = cpn_id_manager
         self.__petriNet = petriNet
@@ -151,7 +156,6 @@ class ControlFlowManager:
         self.__simulationParameters = simulationParameters
         self.__colsetManager = colsetManager
         self.__controlFlowMap = ControlFlowMap()
-        self.initial_marking_case_ids = initial_marking_case_ids
         # remember the variable names in the event attribute value maps
         self.__eaval_parameter_tuples = {}
 
@@ -194,16 +198,13 @@ class ControlFlowManager:
         if simple_pn_place_id in self.__controlFlowMap.cpn_places_by_simple_pn_place_id:
             return self.__controlFlowMap.cpn_places_by_simple_pn_place_id[simple_pn_place_id]
         colset_name = self.__colsetManager.get_case_id_colset().colset_name
-        is_initial = simple_pn_place.is_initial
-        timed_initial_marking = ['"{0}"@{1}'.format(t[0], t[1])
-                                 for t in self.initial_marking_case_ids]
-        initmark = "[" + ",".join(timed_initial_marking) + "]" if is_initial else None
+        initmark = None
         cpn_place = CPN_Place(name=simple_pn_place_id,
                               x=simple_pn_place.x,
                               y=simple_pn_place.y,
                               cpn_id_manager=self.cpn_id_manager,
                               colset_name=colset_name,
-                              is_initial=is_initial,
+                              is_initial=False,
                               initmark=initmark)
         self.__controlFlowMap.add_place(cpn_place, simple_pn_place_id)
         return cpn_place
@@ -268,11 +269,8 @@ class ControlFlowManager:
             attribute.get_id()
         )
         x, y = self.__get_node_coordinates()
-        # Initial marking should be an empty list (i.e., no observation) for all cases to be simulated
-        initial_case_ids = [case_id for case_id, time in self.initial_marking_case_ids]
-        initmark = "[" + ",".join(['("{0}",[])'.format(cid) for cid in initial_case_ids]) + "]"
-        lobs_place = CPN_Place(lobs_place_name, x, y, self.cpn_id_manager, lobs_colset_name, False, initmark)
-        self.__controlFlowMap.add_place(lobs_place)
+        lobs_place = CPN_Place(lobs_place_name, x, y, self.cpn_id_manager, lobs_colset_name, False)
+        self.__controlFlowMap.add_lobs_place(lobs_place)
 
     def __convert_transition(self, t: SimplePetriNetTransition, activity: CPM_Activity):
         start_t = self.__make_start_transition(t)
@@ -530,20 +528,22 @@ class ControlFlowManager:
             for t in act_transitions:
                 # Example code layout:
                 '''
-                input(v_eid, v_register_patient_eaval);
+                input(v_int,v_register_patient_eaval);
                 output();
-                action(write_event_register_patient(v_eid, v_register_patient_eaval));
+                action(write_event_register_patient(v_int,"register patient", reg_patient_delay(), v_register_patient_eaval));
                 '''
                 cpn_t = self.__controlFlowMap.cpn_transitions_by_simple_pn_transition_id[t.get_id()]
+                delay_term = self.__simulationParameters.get_activity_delay_call(act_name)
                 int_var = self.__colsetManager.get_one_var("INT")
                 eaval_var = self.__colsetManager.get_one_var(
                     self.__colsetManager.get_activity_eaval_colset_name(act.get_id())
                 )
                 action_input  = int_var + "," + eaval_var
-                action_output = ""
-                action_parameters = '{0},"{1}",{2}'.format(
+                action_output = self.__colsetManager.get_one_var("TIME")
+                action_parameters = '{0},"{1}",{2}, {3}'.format(
                     int_var,
                     act_name,
+                    delay_term,
                     eaval_var
                 )
                 action = "{0}({1})".format(
@@ -590,8 +590,6 @@ class ControlFlowManager:
 
     def add_timing(self):
         for act_name in self.__petriNet.get_activities():
-            timing = self.__simulationParameters.activity_timing_manager.get_activity_timing(act_name)
-            call_sml = timing.execution_delay.get_call_SML()
             act_transitions = self.__petriNet.get_transitions_with_label(act_name)
             t: SimplePetriNetTransition
             for t in act_transitions:
@@ -603,5 +601,48 @@ class ControlFlowManager:
                     if arc.source == cpn_t and arc.target.colset_name == case_id_colset.colset_name
                 ]
                 for arc in control_postset:
-                    annotation_text = arc.annotation_text + "@++" + call_sml
+                    annotation_text = arc.annotation_text + "@++" + self.__colsetManager.get_one_var("TIME")
                     arc.set_annotation(annotation_text)
+
+    def make_case_generator(self):
+        initial_places = self.__petriNet.get_initial_places()
+        lobs_places = self.__controlFlowMap.cpn_lobs_places
+        some_initial_place = initial_places[0]
+        x = some_initial_place.x
+        y = some_initial_place.y
+        timed_int_colset_name = self.__colsetManager.get_timed_int_colset().colset_name
+        case_id_colset_name =   self.__colsetManager.get_case_id_colset().colset_name
+        timedint_v = self.__colsetManager.get_one_var(timed_int_colset_name)
+        #caseid_v = self.__colsetManager.get_one_var(case_id_colset_name)
+        caseid_term = '"CASE" ^ Int.toString({0})'.format(timedint_v)
+        number_of_cases = self.__simulationParameters.number_of_cases
+        case_generator_guard = "{0} <= {1}".format(timedint_v, str(number_of_cases))
+        #case_id_declaration  = '{0} = "CASE" ^ Int.toString({1})'.format(caseid_v, timedint_v)
+        initial_transition = CPN_Transition(TransitionType.SILENT, "init_t_case_generator", x, y+100.0,
+                                            self.cpn_id_manager, case_generator_guard)
+        #initial_transition.add_conjunct(case_id_declaration)
+        initial_transition.add_conjunct(case_generator_guard)
+        case_count_place = CPN_Place("init_p_case_count", x, y+150.0, self.cpn_id_manager,
+                                    colset_name=timed_int_colset_name, initmark="1")
+        self.__controlFlowMap.add_transition(initial_transition)
+        self.__controlFlowMap.add_place(case_count_place)
+        delay_term = "ModelTime.fromInt(round(\n{0}\n(({1}))))".format(
+            get_normalized_delay_from_now_function_name(ProcessTimeCategory.ARRIVAL),
+            self.__simulationParameters.get_case_arrival_delay_call()
+        )
+        cc_to_it = CPN_Arc(self.cpn_id_manager, case_count_place, initial_transition, timedint_v)
+        it_to_cc = CPN_Arc(self.cpn_id_manager, initial_transition, case_count_place, timedint_v + " + 1 @++\n" + delay_term)
+        self.__controlFlowMap.add_arc(cc_to_it)
+        self.__controlFlowMap.add_arc(it_to_cc)
+        init_p: SimplePetriNetPlace
+        for init_p in initial_places:
+            cpn_ip = self.__controlFlowMap.cpn_places_by_simple_pn_place_id[init_p.get_id()]
+            it_to_ip = CPN_Arc(self.cpn_id_manager, initial_transition, cpn_ip, caseid_term)
+            self.__controlFlowMap.add_arc(it_to_ip)
+        lobs_p: CPN_Place
+        #it_to_lobs_annotation = '({0},[])'.format(caseid_v)
+        it_to_lobs_annotation = '({0},[])'.format(caseid_term)
+        for lobs_p in lobs_places:
+            it_to_lobs = CPN_Arc(self.cpn_id_manager, initial_transition, lobs_p, it_to_lobs_annotation)
+            self.__controlFlowMap.add_arc(it_to_lobs)
+
