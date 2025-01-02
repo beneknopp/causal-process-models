@@ -2,6 +2,7 @@ from simulation_model.timing import ActivityTiming, TimingFunction, TimeDensity,
 
 
 class SimulationParameters:
+
     CASE_ID_PREFIX = "CASE"
 
     def __init__(self,
@@ -11,6 +12,16 @@ class SimulationParameters:
                  service_time_density: TimeDensity,
                  activity_timings: list[ActivityTiming],
                  ):
+        """
+        Parameters of the simulation that is passed along with the Petri net and causal model
+        for to make the Colored Petri net executable.
+
+        :param number_of_cases: How many instances should be simulated in total.
+        :param case_arrival_rate: How much time elapses between cases starting the process.
+        :param case_arrival_density: At what times cases do arrive.
+        :param service_time_density: At what times the process execution proceeds (working hours).
+        :param activity_timings: How long executions of specific activities take.
+        """
         self.number_of_cases = number_of_cases
         self.case_arrival_rate = case_arrival_rate
         self.case_arrival_density = case_arrival_density
@@ -32,6 +43,7 @@ class SimulationParameters:
         """
         Get a list of cases and their arrival times,
         to populate initial places in the CPN.
+        This is subject to the number_of_cases, case_arrival_rate and case_arrival_density of this object.
 
         :return: A list of tuples, e.g. [("CASE1", 0), ("CASE2", 33),...]
         """

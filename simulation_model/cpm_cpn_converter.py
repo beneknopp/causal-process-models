@@ -5,7 +5,7 @@ from causal_model.causal_process_model import CausalProcessModel
 from causal_model.causal_process_structure import CPM_Categorical_Attribute
 from process_model.petri_net import SimplePetriNet
 from simulation_model.cpn_utils.cpn_transition import CPN_Transition
-from simulation_model.io_action import get_all_standard_functions_ordered_sml, get_event_writer_sml, \
+from simulation_model.functions import get_all_standard_functions_ordered_sml, get_event_writer_sml, \
     get_activity_event_writer_name, get_eaval2list_converter_sml, get_eaval2list_converter_name, \
     get_label_to_string_converter_sml, get_label_to_string_converter_name, get_activity_event_table_initializer_name, \
     get_activity_event_table_initializer_sml
@@ -81,8 +81,9 @@ class CPM_CPN_Converter:
 
     def __expand_empty_activities(self):
         """
-        there may be labels in the Petri net that are not described in the causal model
-        add an activity without attributes for those
+        There may be labels in the Petri net that are not described in the causal model.
+        Add an activity without attributes for those.
+
         :return: the complete list of activities after expansion
         """
         petri_net = self.petriNet

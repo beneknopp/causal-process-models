@@ -6,7 +6,7 @@ from simulation_model.cpn_utils.cpn_arc import CPN_Arc
 from simulation_model.cpn_utils.cpn_place import CPN_Place
 from simulation_model.cpn_utils.cpn_transition import CPN_Transition, TransitionType
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
-from simulation_model.io_action import get_activity_event_writer_name, get_activity_event_table_initializer_name
+from simulation_model.functions import get_activity_event_writer_name, get_activity_event_table_initializer_name
 from simulation_model.simulation_parameters import SimulationParameters
 from simulation_model.timing import ActivityTimingManager
 

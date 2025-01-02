@@ -6,6 +6,22 @@ class TimingType(Enum):
     EXPONENTIAL = "EXPONENTIAL"
 
 
+class ProcessTimeCategory(Enum):
+    ARRIVAL = "ARRIVAL"
+    SERVICE = "SERVICE"
+
+
+class TimeUnit(Enum):
+    SECOND = "second"
+    MINUTE = "minute"
+    HOUR = "hour"
+    DAY = "day"
+    WEEK = "week"
+    MONTH = "month"
+    YEAR = "year"
+    WEEKDAY = "weekday"
+
+
 class TimeInterval:
 
     def __init__(self, seconds=0, minutes=0, hours=0, days=0, weeks=0):
@@ -79,10 +95,20 @@ class ActivityTiming:
         self.execution_delay = execution_delay
 
 
-class WeekdayDensity:
+class TimeDensity:
 
-    def __init__(self, monday_d: float, tuesday_d: float, wednesday_d: float,
-                 thursday_d: float, friday_d: float, saturday_d: float, sunday_d: float):
+    def __init__(self):
+        pass
+
+    def get_as_dict(self):
+        raise NotImplementedError()
+
+
+class WeekdayDensity(TimeDensity):
+
+    def __init__(self, monday_d: float, tuesday_d: float, wednesday_d: float, thursday_d: float, friday_d: float,
+                 saturday_d: float, sunday_d: float):
+        super().__init__()
         self.monday_d = monday_d
         self.tuesday_d = tuesday_d
         self.wednesday_d = wednesday_d
@@ -90,6 +116,17 @@ class WeekdayDensity:
         self.friday_d = friday_d
         self.saturday_d = saturday_d
         self.sunday_d = sunday_d
+
+    def get_as_dict(self):
+        return {
+            "Mon": self.monday_d,
+            "Tue": self.tuesday_d,
+            "Wed": self.wednesday_d,
+            "Thu": self.thursday_d,
+            "Fri": self.friday_d,
+            "Sat": self.saturday_d,
+            "Sun": self.sunday_d,
+        }
 
     @classmethod
     def StandardDensity(cls):
@@ -101,14 +138,12 @@ class WeekdayDensity:
         return cls(1, 1, 1, 1, 0.8, 0, 0)
 
 
-class HourDensity:
+class HourDensity(TimeDensity):
 
-    def __init__(self,
-                 h0: float, h1: float, h2: float, h3: float, h4: float,
-                 h5: float, h6: float, h7: float, h8: float, h9: float,
-                 h10: float, h11: float, h12: float, h13: float, h14: float,
-                 h15: float, h16: float, h17: float, h18: float, h19: float,
-                 h20: float, h21: float, h22: float, h23: float):
+    def __init__(self, h0: float, h1: float, h2: float, h3: float, h4: float, h5: float, h6: float, h7: float,
+                 h8: float, h9: float, h10: float, h11: float, h12: float, h13: float, h14: float, h15: float,
+                 h16: float, h17: float, h18: float, h19: float, h20: float, h21: float, h22: float, h23: float):
+        super().__init__()
         self.h0 = h0
         self.h1 = h1
         self.h2 = h2
@@ -134,6 +169,12 @@ class HourDensity:
         self.h22 = h22
         self.h23 = h23
 
+    def get_as_dict(self):
+        return {
+            i: getattr(self, f"h{i}", None)
+            for i in range(24)
+        }
+
     @classmethod
     def StandardDensity(cls):
         """
@@ -145,7 +186,7 @@ class HourDensity:
                    0.5, 1, 1, 1, 1, 0.5, 0.5, 0, 0, 0, 0, 0)
 
 
-class TimeDensity:
+class TimeDensityFunction:
 
     def __init__(self, weekday_density: WeekdayDensity, hour_density: HourDensity):
         self.weekday_density = weekday_density

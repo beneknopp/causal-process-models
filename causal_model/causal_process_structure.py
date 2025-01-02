@@ -18,6 +18,13 @@ class CPM_Attribute:
                            "Attribute ID must not contain whitespaces.")
 
     def __init__(self, attr_domain: CPM_Attribute_Domain, attr_name, attr_id=None):
+        """
+        An attribute within a CausalProcessStructure.
+
+        :param attr_domain: The domain (data type) of the attribute
+        :param attr_name: the name of the attribute
+        :param attr_id: the ID of the attribute
+        """
         self.__attr_domain = attr_domain
         self.__attr_name = attr_name
         if attr_id is None:
@@ -44,7 +51,13 @@ class CPM_Categorical_Attribute(CPM_Attribute):
         validate_condition(all(" " not in l for l in self.__labels),
                            "Labels must not contain whitespaces.")
 
-    def __init__(self, attr_id, labels: list):
+    def __init__(self, attr_id, labels: list[str]):
+        """
+        An categorical attribute within a CausalProcessStructure.
+
+        :param attr_id: the ID of the attribute
+        :param labels: the labels (values) that this attribute can have
+        """
         self.__labels = labels
         super().__init__(CPM_Attribute_Domain.CATEGORICAL, attr_id)
         self.__validate()
@@ -56,6 +69,11 @@ class CPM_Categorical_Attribute(CPM_Attribute):
 class CPM_Activity:
 
     def __init__(self, act_name):
+        """
+        An activity within a CausalProcessStructure.
+
+        :param act_name: the name of the activity
+        """
         self.act_name = act_name
         self.act_id = "_".join(act_name.lower().split(" "))
 
@@ -76,6 +94,11 @@ class AttributeActivities:
         validate_condition(all(key in self.__attribute_ids for key in self.__amap))
 
     def __init__(self, amap: dict):
+        """
+        At which activity each attribute within a causal structure is observed.
+
+        :param amap: a dictionary from attribute IDs to Activities
+        """
         self.__attribute_ids = list(amap.keys())
         self.__activities = list(amap.values())
         self.__amap = amap
@@ -102,10 +125,17 @@ class AttributeActivities:
 
 class AttributeRelation:
 
-    def __init__(self, inattr, outattr, is_aggregated):
-        self.__inattr: CPM_Attribute = inattr
-        self.__outattr: CPM_Attribute = outattr
-        self.__is_aggregated: bool = is_aggregated
+    def __init__(self, inattr: CPM_Attribute, outattr: CPM_Attribute, is_aggregated: bool = False):
+        """
+        A causal dependency between two event attributes of the causal model.
+
+        :param inattr: the source of the dependency
+        :param outattr: the target of the dependency
+        :param is_aggregated: whether this is an aggregated dependency
+        """
+        self.__inattr = inattr
+        self.__outattr = outattr
+        self.__is_aggregated = is_aggregated
 
     def get_in(self):
         return self.__inattr
@@ -191,6 +221,15 @@ class CausalProcessStructure:
                  attributeActivities: AttributeActivities,
                  relations: list[AttributeRelation],
                  ):
+        """
+        This structure specifies what attributes exist within the process, at what activities they emerge, and between which attributes
+        there exist (causal) dependencies.
+
+        :param attributes: the attributes
+        :param activities: the activities
+        :param attributeActivities: a map from attributes to activities
+        :param relations: the dependencies between attributes
+        """
         self.__attributes = attributes
         self.__activities = activities
         self.__attributeActivities = attributeActivities
@@ -209,7 +248,9 @@ class CausalProcessStructure:
 
     def get_attributes_with_non_aggregated_dependencies(self):
         """
-        get all attributes that are the source of a non-aggregated dependency
+        Get all attributes that are the source of a non-aggregated dependency.
+
+        :return: the attributes
         """
         r: AttributeRelation
         non_aggregated_relations = self.get_non_aggregated_relations()
@@ -218,7 +259,9 @@ class CausalProcessStructure:
 
     def get_attributes_with_aggregated_dependencies(self):
         """
-        get all attributes that are the source of an aggregated dependency
+        Get all attributes that are the source of an aggregated dependency.
+
+        :return: the attributes
         """
         r: AttributeRelation
         aggregated_relations = self.get_aggregated_relations()
@@ -268,6 +311,6 @@ class CausalProcessStructure:
         return list(preset)
 
     def get_attributes_for_activity_id(self, act_id):
-        attr_ids =  self.__attributeActivities.get_attribute_ids_for_activity_id(act_id)
+        attr_ids = self.__attributeActivities.get_attribute_ids_for_activity_id(act_id)
         attributes = [attr for attr in self.__attributes if attr.get_id() in attr_ids]
         return attributes
