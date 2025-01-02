@@ -8,7 +8,7 @@ from process_model.petri_net import SimplePetriNet, LabelingFunction, \
     SimplePetriNetPlace as Place, SimplePetriNetTransition as Transition, SimplePetriNetArc as Arc
 from simulation_model.simulation_model import SimulationModel
 from simulation_model.simulation_parameters import SimulationParameters
-from simulation_model.timing import FixedTimingFunction, TimeInterval, TimeDensity, ActivityTiming
+from simulation_model.timing import FixedTimingFunction, TimeInterval, TimeDensity, ActivityTiming, TimeDensityFunction
 
 
 def run_example_1():
@@ -101,9 +101,9 @@ def run_example_1():
         # how much time between cases starting the process
         case_arrival_rate=FixedTimingFunction(TimeInterval(hours=1)),
         # at what times do cases arrive
-        case_arrival_density=TimeDensity.StandardDensity(),
+        case_arrival_density=TimeDensityFunction.StandardDensity(),
         # at what times do things happen in the process (i.e., people working)
-        service_time_density=TimeDensity.StandardDensity(),
+        service_time_density=TimeDensityFunction.StandardDensity(),
         # how long executions of specific activities take
         activity_timings=[
             ActivityTiming(activity_name="register patient",
