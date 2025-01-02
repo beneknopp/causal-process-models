@@ -52,7 +52,15 @@ def run_example_1():
             ValuationParameter(attr_doctor),
             ValuationParameter(attr_illness)
         ]),
-        attr_treatment_delayed
+        attr_treatment_delayed,
+        probability_mappings={
+            ("Doc_Aalst", "Bias_Blindness"):                {"No_Delay": 0.1, "Slight_Delay": 0.6, "High_Delay": 0.3},
+            ("Doc_Aalst", "Causal_Confusion_Syndrome"):     {"No_Delay": 0.0, "Slight_Delay": 0.7, "High_Delay": 0.3},
+            ("Doc_Aalst", "Null_Pointer_Neurosis"):         {"No_Delay": 0.1, "Slight_Delay": 0.4, "High_Delay": 0.5},
+            ("Doktor_Bibber", "Bias_Blindness"):            {"No_Delay": 0.5, "Slight_Delay": 0.5, "High_Delay": 0.0},
+            ("Doktor_Bibber", "Causal_Confusion_Syndrome"): {"No_Delay": 0.1, "Slight_Delay": 0.7, "High_Delay": 0.2},
+            ("Doktor_Bibber", "Null_Pointer_Neurosis"):     {"No_Delay": 0.4, "Slight_Delay": 0.4, "High_Delay": 0.2},
+        }
     )
     causal_structure = CausalProcessStructure(
         attributes=[
