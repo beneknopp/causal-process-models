@@ -459,15 +459,15 @@ class ControlFlowManager:
             in_attr_colset_name = self.__colsetManager.get_attribute_domain_colset_name(in_attr_id)
             in_attr_place_name = get_preset_attribute_last_observation_place_name(transition_id, in_attr_id)
             in_attr_variable = self.__colsetManager.get_one_var(in_attr_colset_name)
-            lobs_colset_name = self.__colsetManager.get_attribute_last_observation_colset_name(in_attr_id)
+            preset_list_colset_name = self.__colsetManager.get_attribute_list_colset_name(in_attr_id)
             lobs_place = CPN_Place(in_attr_place_name, x + 50, y - 50 * i, self.cpn_id_manager,
                                    in_attr_colset_name)
             self.__controlFlowMap.add_place(lobs_place)
-            lobs_variable = self.__colsetManager.get_one_var(lobs_colset_name)
-            # the expression to get the last observation: the head (hd) of the second element (#2)
+            preset_list_variable = self.__colsetManager.get_one_var(preset_list_colset_name)
+            # the expression to get the last observation: the head (hd) of the second element
             # the last_observation colset is a product colset and the second element is a list
             # carrying either the last observation or nothing
-            lobs_expression = "hd(#2 {0})".format(lobs_variable)
+            lobs_expression = "hd({0})".format(preset_list_variable)
             start_to_lobs = CPN_Arc(self.cpn_id_manager, start_transition, lobs_place, lobs_expression)
             lobs_to_vt = CPN_Arc(self.cpn_id_manager, lobs_place, valuation_transition, in_attr_variable)
             self.__controlFlowMap.add_arc(start_to_lobs)
@@ -491,26 +491,30 @@ class ControlFlowManager:
     def __control_transition_for_last_observations(self, start_transition: CPN_Transition):
         all_preset_attr_ids = list(self.__current_transformed_transition_dependent_attributes)
         all_preset_colset_names = [
-            self.__colsetManager.get_attribute_last_observation_colset_name(preset_attr_id)
+            self.__colsetManager.get_attribute_list_colset_name(preset_attr_id)
             for preset_attr_id in all_preset_attr_ids]
-        all_preset_lobs_variables = [
+        all_preset_list_variables = [
             self.__colsetManager.get_one_var(preset_colset_name)
             for preset_colset_name in all_preset_colset_names
         ]
         # for each preset attribute of some event attribute, ...
+        case_id_variable = self.__colsetManager.get_one_var(
+            self.__colsetManager.get_case_id_colset().colset_name
+        )
         for i in range(len(all_preset_attr_ids)):
             preset_attr_id = all_preset_attr_ids[i]
-            preset_lobs_variable = all_preset_lobs_variables[i]
+            preset_list_variable = all_preset_list_variables[i]
             # ...make back and forth arcs of the last observation place with the start transition
             global_lobs_place_name = get_attribute_global_last_observation_place_name(preset_attr_id)
             global_lobs_place = self.__controlFlowMap.cpn_places_by_name[global_lobs_place_name]
-            p_to_t = CPN_Arc(self.cpn_id_manager, global_lobs_place, start_transition, preset_lobs_variable)
-            t_to_p = CPN_Arc(self.cpn_id_manager, start_transition, global_lobs_place, preset_lobs_variable)
+            lobs_arc_inscription = "({0}, {1})".format(case_id_variable, preset_list_variable)
+            p_to_t = CPN_Arc(self.cpn_id_manager, global_lobs_place, start_transition, lobs_arc_inscription)
+            t_to_p = CPN_Arc(self.cpn_id_manager, start_transition, global_lobs_place, lobs_arc_inscription)
             self.__controlFlowMap.add_arc(p_to_t)
             self.__controlFlowMap.add_arc(t_to_p)
             # ... make sure the activity can only be executed if there is a well-defined last observation
             # of the preset attribute.
-            start_transition.add_conjunct("length(#2 {0})>0".format(preset_lobs_variable))
+            start_transition.add_conjunct("length({0})>0".format(preset_list_variable))
 
     def add_iostream(self):
         '''

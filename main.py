@@ -8,7 +8,7 @@ from process_model.petri_net import SimplePetriNet, LabelingFunction, \
     SimplePetriNetPlace as Place, SimplePetriNetTransition as Transition, SimplePetriNetArc as Arc
 from simulation_model.simulation_model import SimulationModel
 from simulation_model.simulation_parameters import SimulationParameters
-from simulation_model.timing import FixedTimingFunction, TimeInterval, TimeDensity, ActivityTiming, TimeDensityCalendar, \
+from simulation_model.timing import TimeInterval, ActivityTiming, TimeDensityCalendar, \
     ExponentialTimingFunction
 
 
@@ -38,7 +38,7 @@ def run_example_1():
     )
     attr_doctor = CPM_Categorical_Attribute(
         "doctor",
-        ["Doc_Aalst", "Doktor_Bibber"])
+        ["Dr_Knopp", "Dr_Yuan"])
     attr_illness = CPM_Categorical_Attribute(
         "illness",
         ["Bias_Blindness", "Causal_Confusion_Syndrome", "Null_Pointer_Neurosis"])
@@ -50,16 +50,12 @@ def run_example_1():
     treatment_delayed_valuation = BayesianValuation(
         ValuationParameters([
             ValuationParameter(attr_doctor),
-            ValuationParameter(attr_illness)
+            #ValuationParameter(attr_illness)
         ]),
         attr_treatment_delayed,
         probability_mappings={
-            ("Doc_Aalst", "Bias_Blindness"):                {"No_Delay": 0.1, "Slight_Delay": 0.6, "High_Delay": 0.3},
-            ("Doc_Aalst", "Causal_Confusion_Syndrome"):     {"No_Delay": 0.0, "Slight_Delay": 0.7, "High_Delay": 0.3},
-            ("Doc_Aalst", "Null_Pointer_Neurosis"):         {"No_Delay": 0.1, "Slight_Delay": 0.4, "High_Delay": 0.5},
-            ("Doktor_Bibber", "Bias_Blindness"):            {"No_Delay": 0.5, "Slight_Delay": 0.5, "High_Delay": 0.0},
-            ("Doktor_Bibber", "Causal_Confusion_Syndrome"): {"No_Delay": 0.1, "Slight_Delay": 0.7, "High_Delay": 0.2},
-            ("Doktor_Bibber", "Null_Pointer_Neurosis"):     {"No_Delay": 0.4, "Slight_Delay": 0.4, "High_Delay": 0.2},
+            ("Dr_Knopp",):    {"No_Delay": 0.1, "Slight_Delay": 0.1, "High_Delay": 0.8},
+            ("Dr_Yuan",):     {"No_Delay": 0.5, "High_Delay": 0.5},
         }
     )
     causal_structure = CausalProcessStructure(
@@ -79,7 +75,7 @@ def run_example_1():
         }),
         relations=[
             AttributeRelation(attr_doctor, attr_treatment_delayed, is_aggregated=False),
-            AttributeRelation(attr_illness, attr_treatment_delayed, is_aggregated=False)
+            #AttributeRelation(attr_illness, attr_treatment_delayed, is_aggregated=False)
         ]
     )
     causal_model = CausalProcessModel(
@@ -106,7 +102,7 @@ def run_example_1():
     )
     simulation_parameters = SimulationParameters(
         # how many instances should be simulated in total
-        number_of_cases=100,
+        number_of_cases=1000,
         # how much time between cases starting the process
         case_arrival_rate=ExponentialTimingFunction(average_value=TimeInterval(minutes=15),
                                                     maximal_value=TimeInterval(minutes=120),

@@ -48,7 +48,7 @@
 					<id>STRING</id>
 					<string />
 				</color>
-				<color id="ID218">
+				<color id="ID196">
 					<id>C_cid</id>
 					<timed />
 					<alias>
@@ -56,14 +56,14 @@
 					</alias>
 					<layout>colset C_cid = STRING timed;</layout>
 				</color>
-				<color id="ID219">
+				<color id="ID197">
 					<id>C_eid</id>
 					<alias>
 						<id>STRING</id>
 					</alias>
 					<layout>colset C_eid = STRING;</layout>
 				</color>
-				<color id="ID220">
+				<color id="ID198">
 					<id>C_timedint</id>
 					<timed />
 					<alias>
@@ -71,15 +71,15 @@
 					</alias>
 					<layout>colset C_timedint = INT timed;</layout>
 				</color>
-				<color id="ID221">
+				<color id="ID199">
 					<id>C_doctor_DOM</id>
 					<enum>
-						<id>Doc_Aalst</id>
-						<id>Doktor_Bibber</id>
+						<id>Dr_Knopp</id>
+						<id>Dr_Yuan</id>
 					</enum>
-					<layout>colset C_doctor_DOM = with Doc_Aalst | Doktor_Bibber;</layout>
+					<layout>colset C_doctor_DOM = with Dr_Knopp | Dr_Yuan;</layout>
 				</color>
-				<color id="ID222">
+				<color id="ID200">
 					<id>C_treatment_delayed_DOM</id>
 					<enum>
 						<id>No_Delay</id>
@@ -88,7 +88,7 @@
 					</enum>
 					<layout>colset C_treatment_delayed_DOM = with No_Delay | Slight_Delay | High_Delay;</layout>
 				</color>
-				<color id="ID223">
+				<color id="ID201">
 					<id>C_illness_DOM</id>
 					<enum>
 						<id>Bias_Blindness</id>
@@ -97,7 +97,7 @@
 					</enum>
 					<layout>colset C_illness_DOM = with Bias_Blindness | Causal_Confusion_Syndrome | Null_Pointer_Neurosis;</layout>
 				</color>
-				<color id="ID224">
+				<color id="ID202">
 					<id>C_register_patient_EAVAL</id>
 					<product>
 						<id>C_cid</id>
@@ -106,7 +106,7 @@
 					</product>
 					<layout>colset C_register_patient_EAVAL = product C_cid*C_doctor_DOM*C_illness_DOM;</layout>
 				</color>
-				<color id="ID225">
+				<color id="ID203">
 					<id>C_treat_patient_EAVAL</id>
 					<product>
 						<id>C_cid</id>
@@ -114,14 +114,14 @@
 					</product>
 					<layout>colset C_treat_patient_EAVAL = product C_cid*C_treatment_delayed_DOM;</layout>
 				</color>
-				<color id="ID226">
+				<color id="ID204">
 					<id>C_doctor_LIST</id>
 					<list>
 						<id>C_doctor_DOM</id>
 					</list>
 					<layout>colset C_doctor_LIST = list C_doctor_DOM;</layout>
 				</color>
-				<color id="ID227">
+				<color id="ID205">
 					<id>C_doctor_LAST</id>
 					<product>
 						<id>C_cid</id>
@@ -129,299 +129,270 @@
 					</product>
 					<layout>colset C_doctor_LAST = product C_cid*C_doctor_LIST;</layout>
 				</color>
-				<color id="ID228">
-					<id>C_illness_LIST</id>
-					<list>
-						<id>C_illness_DOM</id>
-					</list>
-					<layout>colset C_illness_LIST = list C_illness_DOM;</layout>
-				</color>
-				<color id="ID229">
-					<id>C_illness_LAST</id>
-					<product>
-						<id>C_cid</id>
-						<id>C_illness_LIST</id>
-					</product>
-					<layout>colset C_illness_LAST = product C_cid*C_illness_LIST;</layout>
-				</color>
 			</block>
-			<block id="ID230">
+			<block id="ID206">
 				<id>Variables</id>
-				<var id="ID231">
+				<var id="ID207">
 					<type>
 						<id>UNIT</id>
 					</type>
 					<id>v_unit</id>
 					<layout>var v_unit: UNIT;</layout>
 				</var>
-				<var id="ID232">
+				<var id="ID208">
 					<type>
 						<id>BOOL</id>
 					</type>
 					<id>v_bool</id>
 					<layout>var v_bool: BOOL;</layout>
 				</var>
-				<var id="ID233">
+				<var id="ID209">
 					<type>
 						<id>INT</id>
 					</type>
 					<id>v_int</id>
 					<layout>var v_int: INT;</layout>
 				</var>
-				<var id="ID234">
+				<var id="ID210">
 					<type>
 						<id>INTINF</id>
 					</type>
 					<id>v_intinf</id>
 					<layout>var v_intinf: INTINF;</layout>
 				</var>
-				<var id="ID235">
+				<var id="ID211">
 					<type>
 						<id>TIME</id>
 					</type>
 					<id>v_time</id>
 					<layout>var v_time: TIME;</layout>
 				</var>
-				<var id="ID236">
+				<var id="ID212">
 					<type>
 						<id>REAL</id>
 					</type>
 					<id>v_real</id>
 					<layout>var v_real: REAL;</layout>
 				</var>
-				<var id="ID237">
+				<var id="ID213">
 					<type>
 						<id>STRING</id>
 					</type>
 					<id>v_string</id>
 					<layout>var v_string: STRING;</layout>
 				</var>
-				<var id="ID238">
+				<var id="ID214">
 					<type>
 						<id>C_cid</id>
 					</type>
 					<id>v_cid</id>
 					<layout>var v_cid: C_cid;</layout>
 				</var>
-				<var id="ID239">
+				<var id="ID215">
 					<type>
 						<id>C_eid</id>
 					</type>
 					<id>v_eid</id>
 					<layout>var v_eid: C_eid;</layout>
 				</var>
-				<var id="ID240">
+				<var id="ID216">
 					<type>
 						<id>C_timedint</id>
 					</type>
 					<id>v_timedint</id>
 					<layout>var v_timedint: C_timedint;</layout>
 				</var>
-				<var id="ID241">
+				<var id="ID217">
 					<type>
 						<id>C_doctor_DOM</id>
 					</type>
 					<id>v_doctor_dom</id>
 					<layout>var v_doctor_dom: C_doctor_DOM;</layout>
 				</var>
-				<var id="ID242">
+				<var id="ID218">
 					<type>
 						<id>C_treatment_delayed_DOM</id>
 					</type>
 					<id>v_treatment_delayed_dom</id>
 					<layout>var v_treatment_delayed_dom: C_treatment_delayed_DOM;</layout>
 				</var>
-				<var id="ID243">
+				<var id="ID219">
 					<type>
 						<id>C_illness_DOM</id>
 					</type>
 					<id>v_illness_dom</id>
 					<layout>var v_illness_dom: C_illness_DOM;</layout>
 				</var>
-				<var id="ID244">
+				<var id="ID220">
 					<type>
 						<id>C_register_patient_EAVAL</id>
 					</type>
 					<id>v_register_patient_eaval</id>
 					<layout>var v_register_patient_eaval: C_register_patient_EAVAL;</layout>
 				</var>
-				<var id="ID245">
+				<var id="ID221">
 					<type>
 						<id>C_treat_patient_EAVAL</id>
 					</type>
 					<id>v_treat_patient_eaval</id>
 					<layout>var v_treat_patient_eaval: C_treat_patient_EAVAL;</layout>
 				</var>
-				<var id="ID246">
+				<var id="ID222">
 					<type>
 						<id>C_doctor_LIST</id>
 					</type>
 					<id>v_doctor_list</id>
 					<layout>var v_doctor_list: C_doctor_LIST;</layout>
 				</var>
-				<var id="ID247">
+				<var id="ID223">
 					<type>
 						<id>C_doctor_LAST</id>
 					</type>
 					<id>v_doctor_last</id>
 					<layout>var v_doctor_last: C_doctor_LAST;</layout>
 				</var>
-				<var id="ID248">
-					<type>
-						<id>C_illness_LIST</id>
-					</type>
-					<id>v_illness_list</id>
-					<layout>var v_illness_list: C_illness_LIST;</layout>
-				</var>
-				<var id="ID249">
-					<type>
-						<id>C_illness_LAST</id>
-					</type>
-					<id>v_illness_last</id>
-					<layout>var v_illness_last: C_illness_LAST;</layout>
-				</var>
 			</block>
-			<block id="ID250">
+			<block id="ID224">
 				<id>Functions</id>
-				<ml id="ID251">val minute = 60.0;<layout>val minute = 60.0;</layout>
+				<ml id="ID225">val minute = 60.0;<layout>val minute = 60.0;</layout>
 				</ml>
-				<ml id="ID252">val hour = 60.0*minute;<layout>val hour = 60.0*minute;</layout>
+				<ml id="ID226">val hour = 60.0*minute;<layout>val hour = 60.0*minute;</layout>
 				</ml>
-				<ml id="ID253">val day = 24.0*hour;<layout>val day = 24.0*hour;</layout>
+				<ml id="ID227">val day = 24.0*hour;<layout>val day = 24.0*hour;</layout>
 				</ml>
-				<ml id="ID254">val week = 7.0*day;<layout>val week = 7.0*day;</layout>
+				<ml id="ID228">val week = 7.0*day;<layout>val week = 7.0*day;</layout>
 				</ml>
-				<ml id="ID255">
+				<ml id="ID229">
     val SEP = ";";
     <layout>
     val SEP = ";";
+    </layout>
+				</ml>
+				<ml id="ID230">
+    fun list2string([]) = ""|
+    list2string(x::l) = x ^ (if l=[] then "" else SEP) ^ list2string(l);    
+    <layout>
+    fun list2string([]) = ""|
+    list2string(x::l) = x ^ (if l=[] then "" else SEP) ^ list2string(l);    
+    </layout>
+				</ml>
+				<ml id="ID231">
+    fun Mtime() = ModelTime.time():time;     
+    <layout>
+    fun Mtime() = ModelTime.time():time;     
+    </layout>
+				</ml>
+				<ml id="ID232">
+    fun start_time() = 1732780800.0;
+    <layout>
+    fun start_time() = 1732780800.0;
+    </layout>
+				</ml>
+				<ml id="ID233">
+    fun now() = toReal(Mtime());    
+    <layout>
+    fun now() = toReal(Mtime());    
+    </layout>
+				</ml>
+				<ml id="ID234">fun t2date(t) = Date.fromTimeLocal(Time.fromReal(t+start_time()));<layout>fun t2date(t) = Date.fromTimeLocal(Time.fromReal(t+start_time()));</layout>
+				</ml>
+				<ml id="ID235">fun t2projected_timeunit_second(t) = Date.second(t2date(t)):int;<layout>fun t2projected_timeunit_second(t) = Date.second(t2date(t)):int;</layout>
+				</ml>
+				<ml id="ID236">fun t2projected_timeunit_minute(t) = Date.minute(t2date(t)):int;<layout>fun t2projected_timeunit_minute(t) = Date.minute(t2date(t)):int;</layout>
+				</ml>
+				<ml id="ID237">fun t2projected_timeunit_hour(t) = Date.hour(t2date(t)):int;<layout>fun t2projected_timeunit_hour(t) = Date.hour(t2date(t)):int;</layout>
+				</ml>
+				<ml id="ID238">fun t2projected_timeunit_day(t) = Date.day(t2date(t)):int;<layout>fun t2projected_timeunit_day(t) = Date.day(t2date(t)):int;</layout>
+				</ml>
+				<ml id="ID239">fun t2projected_timeunit_month(t) = Date.month(t2date(t)):Date.month;<layout>fun t2projected_timeunit_month(t) = Date.month(t2date(t)):Date.month;</layout>
+				</ml>
+				<ml id="ID240">fun t2projected_timeunit_year(t) = Date.year(t2date(t)):int;<layout>fun t2projected_timeunit_year(t) = Date.year(t2date(t)):int;</layout>
+				</ml>
+				<ml id="ID241">fun t2projected_timeunit_weekday(t) = Date.weekDay(t2date(t)):Date.weekday;<layout>fun t2projected_timeunit_weekday(t) = Date.weekDay(t2date(t)):Date.weekday;</layout>
+				</ml>
+				<ml id="ID242">fun t2projected_timeunit_str_weekday(t) = Date.fmt "%a" (Date.fromTimeLocal(Time.fromReal(t+start_time())));<layout>fun t2projected_timeunit_str_weekday(t) = Date.fmt "%a" (Date.fromTimeLocal(Time.fromReal(t+start_time())));</layout>
+				</ml>
+				<ml id="ID243">fun t2projected_timeunit_str_hour(t) = Date.fmt "%H" (Date.fromTimeLocal(Time.fromReal(t+start_time())));<layout>fun t2projected_timeunit_str_hour(t) = Date.fmt "%H" (Date.fromTimeLocal(Time.fromReal(t+start_time())));</layout>
+				</ml>
+				<ml id="ID244">
+    fun t2s(t) = Date.fmt "%Y-%m-%d %H:%M:%S" (Date.fromTimeLocal(Time.fromReal(t+start_time())));    
+    <layout>
+    fun t2s(t) = Date.fmt "%Y-%m-%d %H:%M:%S" (Date.fromTimeLocal(Time.fromReal(t+start_time())));    
+    </layout>
+				</ml>
+				<ml id="ID245">fun remaining_time_hour(t) = hour - ((Real.fromInt(t2projected_timeunit_minute(t))*minute) + Real.fromInt(t2projected_timeunit_second(t)));<layout>fun remaining_time_hour(t) = hour - ((Real.fromInt(t2projected_timeunit_minute(t))*minute) + Real.fromInt(t2projected_timeunit_second(t)));</layout>
+				</ml>
+				<ml id="ID246">
+    fun time_density_service_hour(d:string) =
+    case d of "00" =&gt; 0.0 | "01" =&gt; 0.0 | "02" =&gt; 0.0 | "03" =&gt; 0.0 | "04" =&gt; 0.0 | "05" =&gt; 0.0 | "06" =&gt; 0.0 | "07" =&gt; 0.5 | "08" =&gt; 0.5 | "09" =&gt; 1.0 | "10" =&gt; 1.0 | "11" =&gt; 1.0 | "12" =&gt; 0.5 | "13" =&gt; 1.0 | "14" =&gt; 1.0 | "15" =&gt; 1.0 | "16" =&gt; 1.0 | "17" =&gt; 0.5 | "18" =&gt; 0.5 | "19" =&gt; 0.0 | "20" =&gt; 0.0 | "21" =&gt; 0.0 | "22" =&gt; 0.0 | "23" =&gt; 0.0 | _ =&gt; 1.0;
+    <layout>
+    fun time_density_service_hour(d:string) =
+    case d of "00" =&gt; 0.0 | "01" =&gt; 0.0 | "02" =&gt; 0.0 | "03" =&gt; 0.0 | "04" =&gt; 0.0 | "05" =&gt; 0.0 | "06" =&gt; 0.0 | "07" =&gt; 0.5 | "08" =&gt; 0.5 | "09" =&gt; 1.0 | "10" =&gt; 1.0 | "11" =&gt; 1.0 | "12" =&gt; 0.5 | "13" =&gt; 1.0 | "14" =&gt; 1.0 | "15" =&gt; 1.0 | "16" =&gt; 1.0 | "17" =&gt; 0.5 | "18" =&gt; 0.5 | "19" =&gt; 0.0 | "20" =&gt; 0.0 | "21" =&gt; 0.0 | "22" =&gt; 0.0 | "23" =&gt; 0.0 | _ =&gt; 1.0;
+    </layout>
+				</ml>
+				<ml id="ID247">
+    fun time_density_service_weekday(d:string) =
+    case d of "Mon" =&gt; 1.0 | "Tue" =&gt; 1.0 | "Wed" =&gt; 1.0 | "Thu" =&gt; 1.0 | "Fri" =&gt; 0.8 | "Sat" =&gt; 0.0 | "Sun" =&gt; 0.0 | _ =&gt; 1.0;
+    <layout>
+    fun time_density_service_weekday(d:string) =
+    case d of "Mon" =&gt; 1.0 | "Tue" =&gt; 1.0 | "Wed" =&gt; 1.0 | "Thu" =&gt; 1.0 | "Fri" =&gt; 0.8 | "Sat" =&gt; 0.0 | "Sun" =&gt; 0.0 | _ =&gt; 1.0;
+    </layout>
+				</ml>
+				<ml id="ID248">
+    fun time_density_service(t) = time_density_service_weekday(t2projected_timeunit_str_weekday(t))*time_density_service_hour(t2projected_timeunit_str_hour(t));
+    <layout>
+    fun time_density_service(t) = time_density_service_weekday(t2projected_timeunit_str_weekday(t))*time_density_service_hour(t2projected_timeunit_str_hour(t));
+    </layout>
+				</ml>
+				<ml id="ID249">
+    fun rel_delay_service(t,d) =
+        if d &lt; 0.0001
+        then 0.0
+        else if d &lt; remaining_time_hour(t)*time_density_service(t)
+            then d/time_density_service(t)
+            else rel_delay_service(
+                t + remaining_time_hour(t),
+                d - (remaining_time_hour(t) * time_density_service(t))) + hour ;
+    <layout>
+    fun rel_delay_service(t,d) =
+        if d &lt; 0.0001
+        then 0.0
+        else if d &lt; remaining_time_hour(t)*time_density_service(t)
+            then d/time_density_service(t)
+            else rel_delay_service(
+                t + remaining_time_hour(t),
+                d - (remaining_time_hour(t) * time_density_service(t))) + hour ;
+    </layout>
+				</ml>
+				<ml id="ID250">fun rel_delay_from_now_service(d) = rel_delay_service(now(),d);<layout>fun rel_delay_from_now_service(d) = rel_delay_service(now(),d);</layout>
+				</ml>
+				<ml id="ID251">val eff_del_factor_service = 1.0;<layout>val eff_del_factor_service = 1.0;</layout>
+				</ml>
+				<ml id="ID252">fun normalized_delay_service(d) = rel_delay_from_now_service(d / eff_del_factor_service);<layout>fun normalized_delay_service(d) = rel_delay_from_now_service(d / eff_del_factor_service);</layout>
+				</ml>
+				<ml id="ID253">
+    fun time_density_arrival_hour(d:string) =
+    case d of "00" =&gt; 0.0 | "01" =&gt; 0.0 | "02" =&gt; 0.0 | "03" =&gt; 0.0 | "04" =&gt; 0.0 | "05" =&gt; 0.0 | "06" =&gt; 0.0 | "07" =&gt; 0.5 | "08" =&gt; 0.5 | "09" =&gt; 1.0 | "10" =&gt; 1.0 | "11" =&gt; 1.0 | "12" =&gt; 0.5 | "13" =&gt; 1.0 | "14" =&gt; 1.0 | "15" =&gt; 1.0 | "16" =&gt; 1.0 | "17" =&gt; 0.5 | "18" =&gt; 0.5 | "19" =&gt; 0.0 | "20" =&gt; 0.0 | "21" =&gt; 0.0 | "22" =&gt; 0.0 | "23" =&gt; 0.0 | _ =&gt; 1.0;
+    <layout>
+    fun time_density_arrival_hour(d:string) =
+    case d of "00" =&gt; 0.0 | "01" =&gt; 0.0 | "02" =&gt; 0.0 | "03" =&gt; 0.0 | "04" =&gt; 0.0 | "05" =&gt; 0.0 | "06" =&gt; 0.0 | "07" =&gt; 0.5 | "08" =&gt; 0.5 | "09" =&gt; 1.0 | "10" =&gt; 1.0 | "11" =&gt; 1.0 | "12" =&gt; 0.5 | "13" =&gt; 1.0 | "14" =&gt; 1.0 | "15" =&gt; 1.0 | "16" =&gt; 1.0 | "17" =&gt; 0.5 | "18" =&gt; 0.5 | "19" =&gt; 0.0 | "20" =&gt; 0.0 | "21" =&gt; 0.0 | "22" =&gt; 0.0 | "23" =&gt; 0.0 | _ =&gt; 1.0;
+    </layout>
+				</ml>
+				<ml id="ID254">
+    fun time_density_arrival_weekday(d:string) =
+    case d of "Mon" =&gt; 1.0 | "Tue" =&gt; 1.0 | "Wed" =&gt; 1.0 | "Thu" =&gt; 1.0 | "Fri" =&gt; 0.8 | "Sat" =&gt; 0.0 | "Sun" =&gt; 0.0 | _ =&gt; 1.0;
+    <layout>
+    fun time_density_arrival_weekday(d:string) =
+    case d of "Mon" =&gt; 1.0 | "Tue" =&gt; 1.0 | "Wed" =&gt; 1.0 | "Thu" =&gt; 1.0 | "Fri" =&gt; 0.8 | "Sat" =&gt; 0.0 | "Sun" =&gt; 0.0 | _ =&gt; 1.0;
+    </layout>
+				</ml>
+				<ml id="ID255">
+    fun time_density_arrival(t) = time_density_arrival_weekday(t2projected_timeunit_str_weekday(t))*time_density_arrival_hour(t2projected_timeunit_str_hour(t));
+    <layout>
+    fun time_density_arrival(t) = time_density_arrival_weekday(t2projected_timeunit_str_weekday(t))*time_density_arrival_hour(t2projected_timeunit_str_hour(t));
     </layout>
 				</ml>
 				<ml id="ID256">
-    fun list2string([]) = ""|
-    list2string(x::l) = x ^ (if l=[] then "" else SEP) ^ list2string(l);    
-    <layout>
-    fun list2string([]) = ""|
-    list2string(x::l) = x ^ (if l=[] then "" else SEP) ^ list2string(l);    
-    </layout>
-				</ml>
-				<ml id="ID257">
-    fun Mtime() = ModelTime.time():time;     
-    <layout>
-    fun Mtime() = ModelTime.time():time;     
-    </layout>
-				</ml>
-				<ml id="ID258">
-    fun start_time() = 1732780800.0;
-    <layout>
-    fun start_time() = 1732780800.0;
-    </layout>
-				</ml>
-				<ml id="ID259">
-    fun now() = toReal(Mtime());    
-    <layout>
-    fun now() = toReal(Mtime());    
-    </layout>
-				</ml>
-				<ml id="ID260">fun t2date(t) = Date.fromTimeLocal(Time.fromReal(t+start_time()));<layout>fun t2date(t) = Date.fromTimeLocal(Time.fromReal(t+start_time()));</layout>
-				</ml>
-				<ml id="ID261">fun t2projected_timeunit_second(t) = Date.second(t2date(t)):int;<layout>fun t2projected_timeunit_second(t) = Date.second(t2date(t)):int;</layout>
-				</ml>
-				<ml id="ID262">fun t2projected_timeunit_minute(t) = Date.minute(t2date(t)):int;<layout>fun t2projected_timeunit_minute(t) = Date.minute(t2date(t)):int;</layout>
-				</ml>
-				<ml id="ID263">fun t2projected_timeunit_hour(t) = Date.hour(t2date(t)):int;<layout>fun t2projected_timeunit_hour(t) = Date.hour(t2date(t)):int;</layout>
-				</ml>
-				<ml id="ID264">fun t2projected_timeunit_day(t) = Date.day(t2date(t)):int;<layout>fun t2projected_timeunit_day(t) = Date.day(t2date(t)):int;</layout>
-				</ml>
-				<ml id="ID265">fun t2projected_timeunit_month(t) = Date.month(t2date(t)):Date.month;<layout>fun t2projected_timeunit_month(t) = Date.month(t2date(t)):Date.month;</layout>
-				</ml>
-				<ml id="ID266">fun t2projected_timeunit_year(t) = Date.year(t2date(t)):int;<layout>fun t2projected_timeunit_year(t) = Date.year(t2date(t)):int;</layout>
-				</ml>
-				<ml id="ID267">fun t2projected_timeunit_weekday(t) = Date.weekDay(t2date(t)):Date.weekday;<layout>fun t2projected_timeunit_weekday(t) = Date.weekDay(t2date(t)):Date.weekday;</layout>
-				</ml>
-				<ml id="ID268">fun t2projected_timeunit_str_weekday(t) = Date.fmt "%a" (Date.fromTimeLocal(Time.fromReal(t+start_time())));<layout>fun t2projected_timeunit_str_weekday(t) = Date.fmt "%a" (Date.fromTimeLocal(Time.fromReal(t+start_time())));</layout>
-				</ml>
-				<ml id="ID269">fun t2projected_timeunit_str_hour(t) = Date.fmt "%H" (Date.fromTimeLocal(Time.fromReal(t+start_time())));<layout>fun t2projected_timeunit_str_hour(t) = Date.fmt "%H" (Date.fromTimeLocal(Time.fromReal(t+start_time())));</layout>
-				</ml>
-				<ml id="ID270">
-    fun t2s(t) = Date.fmt "%Y-%m-%d %H:%M:%S" (Date.fromTimeLocal(Time.fromReal(t+start_time())));    
-    <layout>
-    fun t2s(t) = Date.fmt "%Y-%m-%d %H:%M:%S" (Date.fromTimeLocal(Time.fromReal(t+start_time())));    
-    </layout>
-				</ml>
-				<ml id="ID271">fun remaining_time_hour(t) = hour - ((Real.fromInt(t2projected_timeunit_minute(t))*minute) + Real.fromInt(t2projected_timeunit_second(t)));<layout>fun remaining_time_hour(t) = hour - ((Real.fromInt(t2projected_timeunit_minute(t))*minute) + Real.fromInt(t2projected_timeunit_second(t)));</layout>
-				</ml>
-				<ml id="ID272">
-    fun time_density_service_hour(d:string) =
-    case d of "00" =&gt; 0.0 | "01" =&gt; 0.0 | "02" =&gt; 0.0 | "03" =&gt; 0.0 | "04" =&gt; 0.0 | "05" =&gt; 0.0 | "06" =&gt; 0.0 | "07" =&gt; 0.5 | "08" =&gt; 0.5 | "09" =&gt; 1.0 | "10" =&gt; 1.0 | "11" =&gt; 1.0 | "12" =&gt; 0.5 | "13" =&gt; 1.0 | "14" =&gt; 1.0 | "15" =&gt; 1.0 | "16" =&gt; 1.0 | "17" =&gt; 0.5 | "18" =&gt; 0.5 | "19" =&gt; 0.0 | "20" =&gt; 0.0 | "21" =&gt; 0.0 | "22" =&gt; 0.0 | "23" =&gt; 0.0 | _ =&gt; 1.0;
-    <layout>
-    fun time_density_service_hour(d:string) =
-    case d of "00" =&gt; 0.0 | "01" =&gt; 0.0 | "02" =&gt; 0.0 | "03" =&gt; 0.0 | "04" =&gt; 0.0 | "05" =&gt; 0.0 | "06" =&gt; 0.0 | "07" =&gt; 0.5 | "08" =&gt; 0.5 | "09" =&gt; 1.0 | "10" =&gt; 1.0 | "11" =&gt; 1.0 | "12" =&gt; 0.5 | "13" =&gt; 1.0 | "14" =&gt; 1.0 | "15" =&gt; 1.0 | "16" =&gt; 1.0 | "17" =&gt; 0.5 | "18" =&gt; 0.5 | "19" =&gt; 0.0 | "20" =&gt; 0.0 | "21" =&gt; 0.0 | "22" =&gt; 0.0 | "23" =&gt; 0.0 | _ =&gt; 1.0;
-    </layout>
-				</ml>
-				<ml id="ID273">
-    fun time_density_service_weekday(d:string) =
-    case d of "Mon" =&gt; 1.0 | "Tue" =&gt; 1.0 | "Wed" =&gt; 1.0 | "Thu" =&gt; 1.0 | "Fri" =&gt; 0.8 | "Sat" =&gt; 0.0 | "Sun" =&gt; 0.0 | _ =&gt; 1.0;
-    <layout>
-    fun time_density_service_weekday(d:string) =
-    case d of "Mon" =&gt; 1.0 | "Tue" =&gt; 1.0 | "Wed" =&gt; 1.0 | "Thu" =&gt; 1.0 | "Fri" =&gt; 0.8 | "Sat" =&gt; 0.0 | "Sun" =&gt; 0.0 | _ =&gt; 1.0;
-    </layout>
-				</ml>
-				<ml id="ID274">
-    fun time_density_service(t) = time_density_service_weekday(t2projected_timeunit_str_weekday(t))*time_density_service_hour(t2projected_timeunit_str_hour(t));
-    <layout>
-    fun time_density_service(t) = time_density_service_weekday(t2projected_timeunit_str_weekday(t))*time_density_service_hour(t2projected_timeunit_str_hour(t));
-    </layout>
-				</ml>
-				<ml id="ID275">
-    fun rel_delay_service(t,d) =
-        if d &lt; 0.0001
-        then 0.0
-        else if d &lt; remaining_time_hour(t)*time_density_service(t)
-            then d/time_density_service(t)
-            else rel_delay_service(
-                t + remaining_time_hour(t),
-                d - (remaining_time_hour(t) * time_density_service(t))) + hour ;
-    <layout>
-    fun rel_delay_service(t,d) =
-        if d &lt; 0.0001
-        then 0.0
-        else if d &lt; remaining_time_hour(t)*time_density_service(t)
-            then d/time_density_service(t)
-            else rel_delay_service(
-                t + remaining_time_hour(t),
-                d - (remaining_time_hour(t) * time_density_service(t))) + hour ;
-    </layout>
-				</ml>
-				<ml id="ID276">fun rel_delay_from_now_service(d) = rel_delay_service(now(),d);<layout>fun rel_delay_from_now_service(d) = rel_delay_service(now(),d);</layout>
-				</ml>
-				<ml id="ID277">val eff_del_factor_service = 1.0;<layout>val eff_del_factor_service = 1.0;</layout>
-				</ml>
-				<ml id="ID278">fun normalized_delay_service(d) = rel_delay_from_now_service(d / eff_del_factor_service);<layout>fun normalized_delay_service(d) = rel_delay_from_now_service(d / eff_del_factor_service);</layout>
-				</ml>
-				<ml id="ID279">
-    fun time_density_arrival_hour(d:string) =
-    case d of "00" =&gt; 0.0 | "01" =&gt; 0.0 | "02" =&gt; 0.0 | "03" =&gt; 0.0 | "04" =&gt; 0.0 | "05" =&gt; 0.0 | "06" =&gt; 0.0 | "07" =&gt; 0.5 | "08" =&gt; 0.5 | "09" =&gt; 1.0 | "10" =&gt; 1.0 | "11" =&gt; 1.0 | "12" =&gt; 0.5 | "13" =&gt; 1.0 | "14" =&gt; 1.0 | "15" =&gt; 1.0 | "16" =&gt; 1.0 | "17" =&gt; 0.5 | "18" =&gt; 0.5 | "19" =&gt; 0.0 | "20" =&gt; 0.0 | "21" =&gt; 0.0 | "22" =&gt; 0.0 | "23" =&gt; 0.0 | _ =&gt; 1.0;
-    <layout>
-    fun time_density_arrival_hour(d:string) =
-    case d of "00" =&gt; 0.0 | "01" =&gt; 0.0 | "02" =&gt; 0.0 | "03" =&gt; 0.0 | "04" =&gt; 0.0 | "05" =&gt; 0.0 | "06" =&gt; 0.0 | "07" =&gt; 0.5 | "08" =&gt; 0.5 | "09" =&gt; 1.0 | "10" =&gt; 1.0 | "11" =&gt; 1.0 | "12" =&gt; 0.5 | "13" =&gt; 1.0 | "14" =&gt; 1.0 | "15" =&gt; 1.0 | "16" =&gt; 1.0 | "17" =&gt; 0.5 | "18" =&gt; 0.5 | "19" =&gt; 0.0 | "20" =&gt; 0.0 | "21" =&gt; 0.0 | "22" =&gt; 0.0 | "23" =&gt; 0.0 | _ =&gt; 1.0;
-    </layout>
-				</ml>
-				<ml id="ID280">
-    fun time_density_arrival_weekday(d:string) =
-    case d of "Mon" =&gt; 1.0 | "Tue" =&gt; 1.0 | "Wed" =&gt; 1.0 | "Thu" =&gt; 1.0 | "Fri" =&gt; 0.8 | "Sat" =&gt; 0.0 | "Sun" =&gt; 0.0 | _ =&gt; 1.0;
-    <layout>
-    fun time_density_arrival_weekday(d:string) =
-    case d of "Mon" =&gt; 1.0 | "Tue" =&gt; 1.0 | "Wed" =&gt; 1.0 | "Thu" =&gt; 1.0 | "Fri" =&gt; 0.8 | "Sat" =&gt; 0.0 | "Sun" =&gt; 0.0 | _ =&gt; 1.0;
-    </layout>
-				</ml>
-				<ml id="ID281">
-    fun time_density_arrival(t) = time_density_arrival_weekday(t2projected_timeunit_str_weekday(t))*time_density_arrival_hour(t2projected_timeunit_str_hour(t));
-    <layout>
-    fun time_density_arrival(t) = time_density_arrival_weekday(t2projected_timeunit_str_weekday(t))*time_density_arrival_hour(t2projected_timeunit_str_hour(t));
-    </layout>
-				</ml>
-				<ml id="ID282">
     fun rel_delay_arrival(t,d) =
         if d &lt; 0.0001
         then 0.0
@@ -441,13 +412,13 @@
                 d - (remaining_time_hour(t) * time_density_arrival(t))) + hour ;
     </layout>
 				</ml>
-				<ml id="ID283">fun rel_delay_from_now_arrival(d) = rel_delay_arrival(now(),d);<layout>fun rel_delay_from_now_arrival(d) = rel_delay_arrival(now(),d);</layout>
+				<ml id="ID257">fun rel_delay_from_now_arrival(d) = rel_delay_arrival(now(),d);<layout>fun rel_delay_from_now_arrival(d) = rel_delay_arrival(now(),d);</layout>
 				</ml>
-				<ml id="ID284">val eff_del_factor_arrival = 1.0;<layout>val eff_del_factor_arrival = 1.0;</layout>
+				<ml id="ID258">val eff_del_factor_arrival = 1.0;<layout>val eff_del_factor_arrival = 1.0;</layout>
 				</ml>
-				<ml id="ID285">fun normalized_delay_arrival(d) = rel_delay_from_now_arrival(d / eff_del_factor_arrival);<layout>fun normalized_delay_arrival(d) = rel_delay_from_now_arrival(d / eff_del_factor_arrival);</layout>
+				<ml id="ID259">fun normalized_delay_arrival(d) = rel_delay_from_now_arrival(d / eff_del_factor_arrival);<layout>fun normalized_delay_arrival(d) = rel_delay_from_now_arrival(d / eff_del_factor_arrival);</layout>
 				</ml>
-				<ml id="ID286">
+				<ml id="ID260">
     fun write_record(file_id, l) = 
     let
        val file = TextIO.openAppend(file_id)
@@ -467,25 +438,25 @@
     end;    
     </layout>
 				</ml>
-				<ml id="ID287">fun valuate_doctor() = if true then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then Doc_Aalst else Doktor_Bibber) end) else Doc_Aalst<layout>fun valuate_doctor() = if true then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then Doc_Aalst else Doktor_Bibber) end) else Doc_Aalst</layout>
+				<ml id="ID261">fun valuate_doctor() = if true then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then Dr_Knopp else Dr_Yuan) end) else Dr_Knopp<layout>fun valuate_doctor() = if true then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then Dr_Knopp else Dr_Yuan) end) else Dr_Knopp</layout>
 				</ml>
-				<ml id="ID288">fun valuate_illness() = if true then (let val p=uniform(0.0,1.0) in (if p &lt; 0.3333333333333333 then Bias_Blindness else if p &lt; 0.6666666666666666 then Causal_Confusion_Syndrome else Null_Pointer_Neurosis) end) else Bias_Blindness<layout>fun valuate_illness() = if true then (let val p=uniform(0.0,1.0) in (if p &lt; 0.3333333333333333 then Bias_Blindness else if p &lt; 0.6666666666666666 then Causal_Confusion_Syndrome else Null_Pointer_Neurosis) end) else Bias_Blindness</layout>
+				<ml id="ID262">fun valuate_illness() = if true then (let val p=uniform(0.0,1.0) in (if p &lt; 0.3333333333333333 then Bias_Blindness else if p &lt; 0.6666666666666666 then Causal_Confusion_Syndrome else Null_Pointer_Neurosis) end) else Bias_Blindness<layout>fun valuate_illness() = if true then (let val p=uniform(0.0,1.0) in (if p &lt; 0.3333333333333333 then Bias_Blindness else if p &lt; 0.6666666666666666 then Causal_Confusion_Syndrome else Null_Pointer_Neurosis) end) else Bias_Blindness</layout>
 				</ml>
-				<ml id="ID289">fun valuate_treatment_delayed(x0,x1) = if x0=Doc_Aalst andalso x1=Bias_Blindness then (let val p=uniform(0.0,1.0) in (if p &lt; 0.3 then High_Delay else if p &lt; 0.4 then No_Delay else Slight_Delay) end) else if x0=Doc_Aalst andalso x1=Causal_Confusion_Syndrome then (let val p=uniform(0.0,1.0) in (if p &lt; 0.3 then High_Delay else if p &lt; 0.3 then No_Delay else Slight_Delay) end) else if x0=Doc_Aalst andalso x1=Null_Pointer_Neurosis then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then High_Delay else if p &lt; 0.6 then No_Delay else Slight_Delay) end) else if x0=Doktor_Bibber andalso x1=Bias_Blindness then (let val p=uniform(0.0,1.0) in (if p &lt; 0.0 then High_Delay else if p &lt; 0.5 then No_Delay else Slight_Delay) end) else if x0=Doktor_Bibber andalso x1=Causal_Confusion_Syndrome then (let val p=uniform(0.0,1.0) in (if p &lt; 0.2 then High_Delay else if p &lt; 0.30000000000000004 then No_Delay else Slight_Delay) end) else if x0=Doktor_Bibber andalso x1=Null_Pointer_Neurosis then (let val p=uniform(0.0,1.0) in (if p &lt; 0.2 then High_Delay else if p &lt; 0.6000000000000001 then No_Delay else Slight_Delay) end) else No_Delay<layout>fun valuate_treatment_delayed(x0,x1) = if x0=Doc_Aalst andalso x1=Bias_Blindness then (let val p=uniform(0.0,1.0) in (if p &lt; 0.3 then High_Delay else if p &lt; 0.4 then No_Delay else Slight_Delay) end) else if x0=Doc_Aalst andalso x1=Causal_Confusion_Syndrome then (let val p=uniform(0.0,1.0) in (if p &lt; 0.3 then High_Delay else if p &lt; 0.3 then No_Delay else Slight_Delay) end) else if x0=Doc_Aalst andalso x1=Null_Pointer_Neurosis then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then High_Delay else if p &lt; 0.6 then No_Delay else Slight_Delay) end) else if x0=Doktor_Bibber andalso x1=Bias_Blindness then (let val p=uniform(0.0,1.0) in (if p &lt; 0.0 then High_Delay else if p &lt; 0.5 then No_Delay else Slight_Delay) end) else if x0=Doktor_Bibber andalso x1=Causal_Confusion_Syndrome then (let val p=uniform(0.0,1.0) in (if p &lt; 0.2 then High_Delay else if p &lt; 0.30000000000000004 then No_Delay else Slight_Delay) end) else if x0=Doktor_Bibber andalso x1=Null_Pointer_Neurosis then (let val p=uniform(0.0,1.0) in (if p &lt; 0.2 then High_Delay else if p &lt; 0.6000000000000001 then No_Delay else Slight_Delay) end) else No_Delay</layout>
+				<ml id="ID263">fun valuate_treatment_delayed(x0) = if x0=Dr_Knopp then (let val p=uniform(0.0,1.0) in (if p &lt; 0.8 then High_Delay else if p &lt; 0.9 then No_Delay else Slight_Delay) end) else if x0=Dr_Yuan then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then High_Delay else No_Delay) end) else No_Delay<layout>fun valuate_treatment_delayed(x0) = if x0=Dr_Knopp then (let val p=uniform(0.0,1.0) in (if p &lt; 0.8 then High_Delay else if p &lt; 0.9 then No_Delay else Slight_Delay) end) else if x0=Dr_Yuan then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then High_Delay else No_Delay) end) else No_Delay</layout>
 				</ml>
-				<ml id="ID290">fun label_to_string_doctor(x: C_doctor_DOM) =
-case x of Doc_Aalst =&gt; "Doc_Aalst" | Doktor_Bibber =&gt; "Doktor_Bibber";<layout>fun label_to_string_doctor(x: C_doctor_DOM) =
-case x of Doc_Aalst =&gt; "Doc_Aalst" | Doktor_Bibber =&gt; "Doktor_Bibber";</layout>
+				<ml id="ID264">fun label_to_string_doctor(x: C_doctor_DOM) =
+case x of Dr_Knopp =&gt; "Dr_Knopp" | Dr_Yuan =&gt; "Dr_Yuan";<layout>fun label_to_string_doctor(x: C_doctor_DOM) =
+case x of Dr_Knopp =&gt; "Dr_Knopp" | Dr_Yuan =&gt; "Dr_Yuan";</layout>
 				</ml>
-				<ml id="ID291">fun label_to_string_treatment_delayed(x: C_treatment_delayed_DOM) =
+				<ml id="ID265">fun label_to_string_treatment_delayed(x: C_treatment_delayed_DOM) =
 case x of No_Delay =&gt; "No_Delay" | Slight_Delay =&gt; "Slight_Delay" | High_Delay =&gt; "High_Delay";<layout>fun label_to_string_treatment_delayed(x: C_treatment_delayed_DOM) =
 case x of No_Delay =&gt; "No_Delay" | Slight_Delay =&gt; "Slight_Delay" | High_Delay =&gt; "High_Delay";</layout>
 				</ml>
-				<ml id="ID292">fun label_to_string_illness(x: C_illness_DOM) =
+				<ml id="ID266">fun label_to_string_illness(x: C_illness_DOM) =
 case x of Bias_Blindness =&gt; "Bias_Blindness" | Causal_Confusion_Syndrome =&gt; "Causal_Confusion_Syndrome" | Null_Pointer_Neurosis =&gt; "Null_Pointer_Neurosis";<layout>fun label_to_string_illness(x: C_illness_DOM) =
 case x of Bias_Blindness =&gt; "Bias_Blindness" | Causal_Confusion_Syndrome =&gt; "Causal_Confusion_Syndrome" | Null_Pointer_Neurosis =&gt; "Null_Pointer_Neurosis";</layout>
 				</ml>
-				<ml id="ID293">
+				<ml id="ID267">
     fun create_event_table_register_patient() = 
     let
        val file_id = TextIO.openOut("./event_register_patient.csv")
@@ -505,7 +476,7 @@ case x of Bias_Blindness =&gt; "Bias_Blindness" | Causal_Confusion_Syndrome =&gt
     end;
     </layout>
 				</ml>
-				<ml id="ID294">
+				<ml id="ID268">
     fun eaval2list_register_patient(v_eaval: C_register_patient_EAVAL) =
     let 
     val x2 = #2 v_eaval
@@ -523,7 +494,7 @@ val x3 = #3 v_eaval
     end;
     </layout>
 				</ml>
-				<ml id="ID295">
+				<ml id="ID269">
     fun write_event_register_patient(event_counter: INT, activity_name: string, delay: real, eaval: C_register_patient_EAVAL) = 
     let
         val event_id = "EVENT" ^ Int.toString event_counter
@@ -553,7 +524,7 @@ val x3 = #3 v_eaval
     end;        
     </layout>
 				</ml>
-				<ml id="ID296">
+				<ml id="ID270">
     fun create_event_table_treat_patient() = 
     let
        val file_id = TextIO.openOut("./event_treat_patient.csv")
@@ -573,7 +544,7 @@ val x3 = #3 v_eaval
     end;
     </layout>
 				</ml>
-				<ml id="ID297">
+				<ml id="ID271">
     fun eaval2list_treat_patient(v_eaval: C_treat_patient_EAVAL) =
     let 
     val x2 = #2 v_eaval
@@ -589,7 +560,7 @@ val x3 = #3 v_eaval
     end;
     </layout>
 				</ml>
-				<ml id="ID298">
+				<ml id="ID272">
     fun write_event_treat_patient(event_counter: INT, activity_name: string, delay: real, eaval: C_treat_patient_EAVAL) = 
     let
         val event_id = "EVENT" ^ Int.toString event_counter
@@ -619,18 +590,18 @@ val x3 = #3 v_eaval
     end;        
     </layout>
 				</ml>
-				<ml id="ID299">fun register_patient_delay()=let val x = exponential(1.0/300.0) in if x &gt; 1200.0 then register_patient_delay() else x end:real;<layout>fun register_patient_delay()=let val x = exponential(1.0/300.0) in if x &gt; 1200.0 then register_patient_delay() else x end:real;</layout>
+				<ml id="ID273">fun register_patient_delay()=let val x = exponential(1.0/300.0) in if x &gt; 1200.0 then register_patient_delay() else x end:real;<layout>fun register_patient_delay()=let val x = exponential(1.0/300.0) in if x &gt; 1200.0 then register_patient_delay() else x end:real;</layout>
 				</ml>
-				<ml id="ID300">fun treat_patient_delay()=let val x = exponential(1.0/1200.0) in if x &gt; 5400.0 then treat_patient_delay() else x end:real;<layout>fun treat_patient_delay()=let val x = exponential(1.0/1200.0) in if x &gt; 5400.0 then treat_patient_delay() else x end:real;</layout>
+				<ml id="ID274">fun treat_patient_delay()=let val x = exponential(1.0/1200.0) in if x &gt; 5400.0 then treat_patient_delay() else x end:real;<layout>fun treat_patient_delay()=let val x = exponential(1.0/1200.0) in if x &gt; 5400.0 then treat_patient_delay() else x end:real;</layout>
 				</ml>
-				<ml id="ID301">fun case_arrival()=let val x = exponential(1.0/900.0) in if x &gt; 7200.0 then case_arrival() else x end:real;<layout>fun case_arrival()=let val x = exponential(1.0/900.0) in if x &gt; 7200.0 then case_arrival() else x end:real;</layout>
+				<ml id="ID275">fun case_arrival()=let val x = exponential(1.0/900.0) in if x &gt; 7200.0 then case_arrival() else x end:real;<layout>fun case_arrival()=let val x = exponential(1.0/900.0) in if x &gt; 7200.0 then case_arrival() else x end:real;</layout>
 				</ml>
 			</block>
 		</globbox>
 		<page id="ID0">
 			<pageattr name="New Page" />
 			<constraints />
-			<place id="ID19">
+			<place id="ID17">
 				<posattr x="0" y="0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -641,14 +612,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID17">
+				<type id="ID15">
 					<posattr x="40.0" y="-20.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">C_cid</text>
 				</type>
-				<initmark id="ID18">
+				<initmark id="ID16">
 					<posattr x="50.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -656,7 +627,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID29">
+			<place id="ID27">
 				<posattr x="400" y="0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -667,14 +638,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID27">
+				<type id="ID25">
 					<posattr x="440.0" y="-20.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">C_cid</text>
 				</type>
-				<initmark id="ID28">
+				<initmark id="ID26">
 					<posattr x="450.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -682,7 +653,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID41">
+			<place id="ID39">
 				<posattr x="800" y="0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -693,14 +664,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID39">
+				<type id="ID37">
 					<posattr x="840.0" y="-20.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">C_cid</text>
 				</type>
-				<initmark id="ID40">
+				<initmark id="ID38">
 					<posattr x="850.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -708,7 +679,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID46">
+			<place id="ID44">
 				<posattr x="0" y="-100" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -719,14 +690,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID44">
+				<type id="ID42">
 					<posattr x="40.0" y="-120.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">C_doctor_LAST</text>
 				</type>
-				<initmark id="ID45">
+				<initmark id="ID43">
 					<posattr x="50.0" y="-70.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -734,34 +705,8 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID49">
-				<posattr x="50" y="-100" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<text tool="CPN Tools" version="4.0.1">p_illness_LAST</text>
-				<ellipse w="60.000000" h="40.000000" />
-				<token x="-44.000000" y="0.000000" />
-				<marking x="0.000000" y="0.000000" hidden="true">
-					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
-				</marking>
-				<type id="ID47">
-					<posattr x="90.0" y="-120.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">C_illness_LAST</text>
-				</type>
-				<initmark id="ID48">
-					<posattr x="100.0" y="-70.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1" />
-				</initmark>
-			</place>
-			<place id="ID52">
-				<posattr x="100" y="-200" />
+			<place id="ID47">
+				<posattr x="50" y="-200" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
@@ -771,22 +716,22 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID50">
-					<posattr x="140.0" y="-220.0" />
+				<type id="ID45">
+					<posattr x="90.0" y="-220.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">INT</text>
 				</type>
-				<initmark id="ID51">
-					<posattr x="150.0" y="-170.0" />
+				<initmark id="ID46">
+					<posattr x="100.0" y="-170.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">1</text>
 				</initmark>
 			</place>
-			<place id="ID62">
+			<place id="ID57">
 				<posattr x="250" y="0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -797,14 +742,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID60">
+				<type id="ID55">
 					<posattr x="290.0" y="-20.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">C_cid</text>
 				</type>
-				<initmark id="ID61">
+				<initmark id="ID56">
 					<posattr x="300.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -812,7 +757,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID65">
+			<place id="ID60">
 				<posattr x="250" y="0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -823,14 +768,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID63">
+				<type id="ID58">
 					<posattr x="290.0" y="-20.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">INT</text>
 				</type>
-				<initmark id="ID64">
+				<initmark id="ID59">
 					<posattr x="300.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -838,7 +783,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID81">
+			<place id="ID76">
 				<posattr x="200.0" y="50.0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -849,14 +794,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID79">
+				<type id="ID74">
 					<posattr x="240.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">UNIT</text>
 				</type>
-				<initmark id="ID80">
+				<initmark id="ID75">
 					<posattr x="250.0" y="80.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -864,7 +809,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID88">
+			<place id="ID83">
 				<posattr x="300.0" y="50.0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -875,14 +820,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID86">
+				<type id="ID81">
 					<posattr x="340.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">C_doctor_DOM</text>
 				</type>
-				<initmark id="ID87">
+				<initmark id="ID82">
 					<posattr x="350.0" y="80.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -890,7 +835,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID100">
+			<place id="ID95">
 				<posattr x="200.0" y="100.0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -901,14 +846,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID98">
+				<type id="ID93">
 					<posattr x="240.0" y="80.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">UNIT</text>
 				</type>
-				<initmark id="ID99">
+				<initmark id="ID94">
 					<posattr x="250.0" y="130.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -916,7 +861,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID107">
+			<place id="ID102">
 				<posattr x="300.0" y="100.0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -927,14 +872,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID105">
+				<type id="ID100">
 					<posattr x="340.0" y="80.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">C_illness_DOM</text>
 				</type>
-				<initmark id="ID106">
+				<initmark id="ID101">
 					<posattr x="350.0" y="130.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -942,7 +887,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID133">
+			<place id="ID124">
 				<posattr x="650" y="0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -953,14 +898,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID131">
+				<type id="ID122">
 					<posattr x="690.0" y="-20.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">C_cid</text>
 				</type>
-				<initmark id="ID132">
+				<initmark id="ID123">
 					<posattr x="700.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -968,7 +913,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID136">
+			<place id="ID127">
 				<posattr x="650" y="0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -979,14 +924,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID134">
+				<type id="ID125">
 					<posattr x="690.0" y="-20.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">INT</text>
 				</type>
-				<initmark id="ID135">
+				<initmark id="ID126">
 					<posattr x="700.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -994,7 +939,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID160">
+			<place id="ID147">
 				<posattr x="600.0" y="50.0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -1005,14 +950,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID158">
+				<type id="ID145">
 					<posattr x="640.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">UNIT</text>
 				</type>
-				<initmark id="ID159">
+				<initmark id="ID146">
 					<posattr x="650.0" y="80.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1020,7 +965,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID167">
+			<place id="ID154">
 				<posattr x="700.0" y="50.0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -1031,14 +976,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID165">
+				<type id="ID152">
 					<posattr x="740.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">C_doctor_DOM</text>
 				</type>
-				<initmark id="ID166">
+				<initmark id="ID153">
 					<posattr x="750.0" y="80.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1046,33 +991,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID174">
-				<posattr x="700.0" y="0.0" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<text tool="CPN Tools" version="4.0.1">p_t_treat_illness_LAST</text>
-				<ellipse w="60.000000" h="40.000000" />
-				<token x="-44.000000" y="0.000000" />
-				<marking x="0.000000" y="0.000000" hidden="true">
-					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
-				</marking>
-				<type id="ID172">
-					<posattr x="740.0" y="-20.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">C_illness_DOM</text>
-				</type>
-				<initmark id="ID173">
-					<posattr x="750.0" y="30.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1" />
-				</initmark>
-			</place>
-			<place id="ID181">
+			<place id="ID161">
 				<posattr x="700.0" y="50.0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -1083,14 +1002,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID179">
+				<type id="ID159">
 					<posattr x="740.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">C_treatment_delayed_DOM</text>
 				</type>
-				<initmark id="ID180">
+				<initmark id="ID160">
 					<posattr x="750.0" y="80.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1098,7 +1017,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1" />
 				</initmark>
 			</place>
-			<place id="ID197">
+			<place id="ID177">
 				<posattr x="0" y="150.0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -1109,14 +1028,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID195">
+				<type id="ID175">
 					<posattr x="40.0" y="130.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">C_timedint</text>
 				</type>
-				<initmark id="ID196">
+				<initmark id="ID176">
 					<posattr x="50.0" y="180.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1124,7 +1043,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1">1</text>
 				</initmark>
 			</place>
-			<place id="ID215">
+			<place id="ID193">
 				<posattr x="-200" y="0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -1135,14 +1054,14 @@ val x3 = #3 v_eaval
 				<marking x="0.000000" y="0.000000" hidden="true">
 					<snap anchor.horizontal="0" anchor.vertical="0" snap_id="0" />
 				</marking>
-				<type id="ID213">
+				<type id="ID191">
 					<posattr x="-160.0" y="-20.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">UNIT</text>
 				</type>
-				<initmark id="ID214">
+				<initmark id="ID192">
 					<posattr x="-150.0" y="30.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1150,7 +1069,7 @@ val x3 = #3 v_eaval
 					<text tool="CPN Tools" version="4.0.1">()</text>
 				</initmark>
 			</place>
-			<trans explicit="false" id="ID24">
+			<trans explicit="false" id="ID22">
 				<posattr x="200" y="0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -1158,21 +1077,21 @@ val x3 = #3 v_eaval
 				<text tool="CPN Tools" version="4.0.1">register patient</text>
 				<box w="128.2" h="40.000000" />
 				<binding x="7.200000" y="-3.000000" />
-				<cond id="ID20">
+				<cond id="ID18">
 					<posattr x="161.0" y="31.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">[(v_register_patient_eaval=(v_cid,v_doctor_dom,v_illness_dom))]</text>
 				</cond>
-				<time id="ID21">
+				<time id="ID19">
 					<posattr x="224.5" y="24.5" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</time>
-				<code id="ID22">
+				<code id="ID20">
 					<posattr x="234.5" y="-32.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1181,7 +1100,7 @@ val x3 = #3 v_eaval
 output(v_time);
 action(write_event_register_patient(v_int,"register patient",register_patient_delay(), v_register_patient_eaval));</text>
 				</code>
-				<priority id="ID23">
+				<priority id="ID21">
 					<posattr x="132.0" y="-15.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1189,7 +1108,7 @@ action(write_event_register_patient(v_int,"register patient",register_patient_de
 					<text tool="CPN Tools" version="4.0.1" />
 				</priority>
 			</trans>
-			<trans explicit="false" id="ID36">
+			<trans explicit="false" id="ID34">
 				<posattr x="600" y="0" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
@@ -1197,21 +1116,21 @@ action(write_event_register_patient(v_int,"register patient",register_patient_de
 				<text tool="CPN Tools" version="4.0.1">treat patient</text>
 				<box w="32.000000" h="26.000000" />
 				<binding x="7.200000" y="-3.000000" />
-				<cond id="ID32">
+				<cond id="ID30">
 					<posattr x="561.0" y="31.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">[(v_treat_patient_eaval=(v_cid,v_treatment_delayed_dom))]</text>
 				</cond>
-				<time id="ID33">
+				<time id="ID31">
 					<posattr x="624.5" y="24.5" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</time>
-				<code id="ID34">
+				<code id="ID32">
 					<posattr x="634.5" y="-32.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1220,7 +1139,7 @@ action(write_event_register_patient(v_int,"register patient",register_patient_de
 output(v_time);
 action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_treat_patient_eaval));</text>
 				</code>
-				<priority id="ID35">
+				<priority id="ID33">
 					<posattr x="532.0" y="-15.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1228,7 +1147,7 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</priority>
 			</trans>
-			<trans explicit="false" id="ID57">
+			<trans explicit="false" id="ID52">
 				<posattr x="150" y="0" />
 				<fillattr colour="Gray" pattern="" filled="false" />
 				<lineattr colour="Gray" thick="1" type="Solid" />
@@ -1236,28 +1155,28 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 				<text tool="CPN Tools" version="4.0.1">t_start_t_register</text>
 				<box w="32.000000" h="26.000000" />
 				<binding x="7.200000" y="-3.000000" />
-				<cond id="ID53">
+				<cond id="ID48">
 					<posattr x="111.0" y="31.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</cond>
-				<time id="ID54">
+				<time id="ID49">
 					<posattr x="174.5" y="24.5" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</time>
-				<code id="ID55">
+				<code id="ID50">
 					<posattr x="184.5" y="-32.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</code>
-				<priority id="ID56">
+				<priority id="ID51">
 					<posattr x="82.0" y="-15.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1265,7 +1184,7 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</priority>
 			</trans>
-			<trans explicit="false" id="ID78">
+			<trans explicit="false" id="ID73">
 				<posattr x="250.0" y="50.0" />
 				<fillattr colour="Gray" pattern="" filled="false" />
 				<lineattr colour="Gray" thick="1" type="Solid" />
@@ -1273,28 +1192,28 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 				<text tool="CPN Tools" version="4.0.1">t_V_t_register_doctor</text>
 				<box w="32.000000" h="26.000000" />
 				<binding x="7.200000" y="-3.000000" />
-				<cond id="ID74">
+				<cond id="ID69">
 					<posattr x="211.0" y="81.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">[v_doctor_dom=valuate_doctor()]</text>
 				</cond>
-				<time id="ID75">
+				<time id="ID70">
 					<posattr x="274.5" y="74.5" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</time>
-				<code id="ID76">
+				<code id="ID71">
 					<posattr x="284.5" y="18.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</code>
-				<priority id="ID77">
+				<priority id="ID72">
 					<posattr x="182.0" y="35.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1302,7 +1221,7 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</priority>
 			</trans>
-			<trans explicit="false" id="ID97">
+			<trans explicit="false" id="ID92">
 				<posattr x="250.0" y="100.0" />
 				<fillattr colour="Gray" pattern="" filled="false" />
 				<lineattr colour="Gray" thick="1" type="Solid" />
@@ -1310,28 +1229,28 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 				<text tool="CPN Tools" version="4.0.1">t_V_t_register_illness</text>
 				<box w="32.000000" h="26.000000" />
 				<binding x="7.200000" y="-3.000000" />
-				<cond id="ID93">
+				<cond id="ID88">
 					<posattr x="211.0" y="131.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">[v_illness_dom=valuate_illness()]</text>
 				</cond>
-				<time id="ID94">
+				<time id="ID89">
 					<posattr x="274.5" y="124.5" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</time>
-				<code id="ID95">
+				<code id="ID90">
 					<posattr x="284.5" y="68.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</code>
-				<priority id="ID96">
+				<priority id="ID91">
 					<posattr x="182.0" y="85.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1339,7 +1258,7 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</priority>
 			</trans>
-			<trans explicit="false" id="ID128">
+			<trans explicit="false" id="ID119">
 				<posattr x="550" y="0" />
 				<fillattr colour="Gray" pattern="" filled="false" />
 				<lineattr colour="Gray" thick="1" type="Solid" />
@@ -1347,28 +1266,28 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 				<text tool="CPN Tools" version="4.0.1">t_start_t_treat</text>
 				<box w="32.000000" h="26.000000" />
 				<binding x="7.200000" y="-3.000000" />
-				<cond id="ID124">
+				<cond id="ID115">
 					<posattr x="511.0" y="31.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">[(length(#2 v_doctor_last)&gt;0)andalso(length(#2 v_illness_last)&gt;0)]</text>
+					<text tool="CPN Tools" version="4.0.1">[(length(v_doctor_list)&gt;0)]</text>
 				</cond>
-				<time id="ID125">
+				<time id="ID116">
 					<posattr x="574.5" y="24.5" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</time>
-				<code id="ID126">
+				<code id="ID117">
 					<posattr x="584.5" y="-32.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</code>
-				<priority id="ID127">
+				<priority id="ID118">
 					<posattr x="482.0" y="-15.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1376,7 +1295,7 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</priority>
 			</trans>
-			<trans explicit="false" id="ID157">
+			<trans explicit="false" id="ID144">
 				<posattr x="650.0" y="50.0" />
 				<fillattr colour="Gray" pattern="" filled="false" />
 				<lineattr colour="Gray" thick="1" type="Solid" />
@@ -1384,28 +1303,28 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 				<text tool="CPN Tools" version="4.0.1">t_V_t_treat_treatment_delayed</text>
 				<box w="32.000000" h="26.000000" />
 				<binding x="7.200000" y="-3.000000" />
-				<cond id="ID153">
+				<cond id="ID140">
 					<posattr x="611.0" y="81.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">[v_treatment_delayed_dom=valuate_treatment_delayed(v_doctor_dom,v_illness_dom)]</text>
+					<text tool="CPN Tools" version="4.0.1">[v_treatment_delayed_dom=valuate_treatment_delayed(v_doctor_dom)]</text>
 				</cond>
-				<time id="ID154">
+				<time id="ID141">
 					<posattr x="674.5" y="74.5" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</time>
-				<code id="ID155">
+				<code id="ID142">
 					<posattr x="684.5" y="18.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</code>
-				<priority id="ID156">
+				<priority id="ID143">
 					<posattr x="582.0" y="35.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1413,7 +1332,7 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</priority>
 			</trans>
-			<trans explicit="false" id="ID194">
+			<trans explicit="false" id="ID174">
 				<posattr x="0" y="100.0" />
 				<fillattr colour="Gray" pattern="" filled="false" />
 				<lineattr colour="Gray" thick="1" type="Solid" />
@@ -1421,28 +1340,28 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 				<text tool="CPN Tools" version="4.0.1">init_t_case_generator</text>
 				<box w="166.7" h="40.000000" />
 				<binding x="7.200000" y="-3.000000" />
-				<cond id="ID190">
+				<cond id="ID170">
 					<posattr x="-39.0" y="131.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">[(v_timedint &lt;= 100)]</text>
+					<text tool="CPN Tools" version="4.0.1">[(v_timedint &lt;= 1000)]</text>
 				</cond>
-				<time id="ID191">
+				<time id="ID171">
 					<posattr x="24.5" y="124.5" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</time>
-				<code id="ID192">
+				<code id="ID172">
 					<posattr x="34.5" y="68.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</code>
-				<priority id="ID193">
+				<priority id="ID173">
 					<posattr x="-68.0" y="85.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1450,7 +1369,7 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</priority>
 			</trans>
-			<trans explicit="false" id="ID212">
+			<trans explicit="false" id="ID190">
 				<posattr x="-150" y="0" />
 				<fillattr colour="Gray" pattern="" filled="false" />
 				<lineattr colour="Gray" thick="1" type="Solid" />
@@ -1458,28 +1377,28 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 				<text tool="CPN Tools" version="4.0.1">t_kickstart</text>
 				<box w="32.000000" h="26.000000" />
 				<binding x="7.200000" y="-3.000000" />
-				<cond id="ID208">
+				<cond id="ID186">
 					<posattr x="-189.0" y="31.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</cond>
-				<time id="ID209">
+				<time id="ID187">
 					<posattr x="-125.5" y="24.5" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
 				</time>
-				<code id="ID210">
+				<code id="ID188">
 					<posattr x="-115.5" y="-32.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">input();output();action(create_event_table_register_patient();create_event_table_treat_patient())</text>
 				</code>
-				<priority id="ID211">
+				<priority id="ID189">
 					<posattr x="-218.0" y="-15.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1487,15 +1406,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">P_HIGH</text>
 				</priority>
 			</trans>
-			<arc orientation="TtoP" order="1" id="ID31">
+			<arc orientation="TtoP" order="1" id="ID29">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID24" />
-				<placeend idref="ID29" />
-				<annot id="ID30">
+				<transend idref="ID22" />
+				<placeend idref="ID27" />
+				<annot id="ID28">
 					<posattr x="300.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1503,15 +1422,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_cid@++v_time</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID43">
+			<arc orientation="TtoP" order="1" id="ID41">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID36" />
-				<placeend idref="ID41" />
-				<annot id="ID42">
+				<transend idref="ID34" />
+				<placeend idref="ID39" />
+				<annot id="ID40">
 					<posattr x="700.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1519,15 +1438,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_cid@++v_time</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID59">
+			<arc orientation="PtoT" order="1" id="ID54">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID57" />
-				<placeend idref="ID19" />
-				<annot id="ID58">
+				<transend idref="ID52" />
+				<placeend idref="ID17" />
+				<annot id="ID53">
 					<posattr x="75.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1535,15 +1454,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_cid</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID67">
+			<arc orientation="TtoP" order="1" id="ID62">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID57" />
-				<placeend idref="ID62" />
-				<annot id="ID66">
+				<transend idref="ID52" />
+				<placeend idref="ID57" />
+				<annot id="ID61">
 					<posattr x="200.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1551,15 +1470,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_cid</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID69">
+			<arc orientation="PtoT" order="1" id="ID64">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID24" />
-				<placeend idref="ID62" />
-				<annot id="ID68">
+				<transend idref="ID22" />
+				<placeend idref="ID57" />
+				<annot id="ID63">
 					<posattr x="225.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1567,15 +1486,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_cid</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID71">
+			<arc orientation="TtoP" order="1" id="ID66">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID57" />
-				<placeend idref="ID65" />
-				<annot id="ID70">
+				<transend idref="ID52" />
+				<placeend idref="ID60" />
+				<annot id="ID65">
 					<posattr x="200.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1583,15 +1502,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_int</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID73">
+			<arc orientation="PtoT" order="1" id="ID68">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID24" />
-				<placeend idref="ID65" />
-				<annot id="ID72">
+				<transend idref="ID22" />
+				<placeend idref="ID60" />
+				<annot id="ID67">
 					<posattr x="225.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1599,15 +1518,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_int</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID83">
+			<arc orientation="TtoP" order="1" id="ID78">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID57" />
-				<placeend idref="ID81" />
-				<annot id="ID82">
+				<transend idref="ID52" />
+				<placeend idref="ID76" />
+				<annot id="ID77">
 					<posattr x="175.0" y="25.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1615,15 +1534,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID85">
+			<arc orientation="PtoT" order="1" id="ID80">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID78" />
-				<placeend idref="ID81" />
-				<annot id="ID84">
+				<transend idref="ID73" />
+				<placeend idref="ID76" />
+				<annot id="ID79">
 					<posattr x="225.0" y="50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1631,15 +1550,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID90">
+			<arc orientation="TtoP" order="1" id="ID85">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID78" />
-				<placeend idref="ID88" />
-				<annot id="ID89">
+				<transend idref="ID73" />
+				<placeend idref="ID83" />
+				<annot id="ID84">
 					<posattr x="275.0" y="50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1647,15 +1566,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_doctor_dom</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID92">
+			<arc orientation="PtoT" order="1" id="ID87">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID24" />
-				<placeend idref="ID88" />
-				<annot id="ID91">
+				<transend idref="ID22" />
+				<placeend idref="ID83" />
+				<annot id="ID86">
 					<posattr x="250.0" y="25.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1663,15 +1582,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_doctor_dom</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID102">
+			<arc orientation="TtoP" order="1" id="ID97">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID57" />
-				<placeend idref="ID100" />
-				<annot id="ID101">
+				<transend idref="ID52" />
+				<placeend idref="ID95" />
+				<annot id="ID96">
 					<posattr x="175.0" y="50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1679,15 +1598,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID104">
+			<arc orientation="PtoT" order="1" id="ID99">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID97" />
-				<placeend idref="ID100" />
-				<annot id="ID103">
+				<transend idref="ID92" />
+				<placeend idref="ID95" />
+				<annot id="ID98">
 					<posattr x="225.0" y="100.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1695,15 +1614,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID109">
+			<arc orientation="TtoP" order="1" id="ID104">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID97" />
-				<placeend idref="ID107" />
-				<annot id="ID108">
+				<transend idref="ID92" />
+				<placeend idref="ID102" />
+				<annot id="ID103">
 					<posattr x="275.0" y="100.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1711,15 +1630,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_illness_dom</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID111">
+			<arc orientation="PtoT" order="1" id="ID106">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID24" />
-				<placeend idref="ID107" />
-				<annot id="ID110">
+				<transend idref="ID22" />
+				<placeend idref="ID102" />
+				<annot id="ID105">
 					<posattr x="250.0" y="50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1727,15 +1646,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_illness_dom</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID113">
+			<arc orientation="PtoT" order="1" id="ID108">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID24" />
-				<placeend idref="ID46" />
-				<annot id="ID112">
+				<transend idref="ID22" />
+				<placeend idref="ID44" />
+				<annot id="ID107">
 					<posattr x="100.0" y="-50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1743,15 +1662,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">(v_cid,v_doctor_list)</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID115">
+			<arc orientation="TtoP" order="1" id="ID110">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID24" />
-				<placeend idref="ID46" />
-				<annot id="ID114">
+				<transend idref="ID22" />
+				<placeend idref="ID44" />
+				<annot id="ID109">
 					<posattr x="100.0" y="-50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1759,36 +1678,36 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">(v_cid,[v_doctor_dom])</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID117">
+			<arc orientation="PtoT" order="1" id="ID112">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID24" />
-				<placeend idref="ID49" />
-				<annot id="ID116">
-					<posattr x="125.0" y="-50.0" />
+				<transend idref="ID52" />
+				<placeend idref="ID47" />
+				<annot id="ID111">
+					<posattr x="100.0" y="-100.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">(v_cid,v_illness_list)</text>
+					<text tool="CPN Tools" version="4.0.1">v_int</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID119">
+			<arc orientation="TtoP" order="1" id="ID114">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID24" />
-				<placeend idref="ID49" />
-				<annot id="ID118">
-					<posattr x="125.0" y="-50.0" />
+				<transend idref="ID22" />
+				<placeend idref="ID47" />
+				<annot id="ID113">
+					<posattr x="125.0" y="-100.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">(v_cid,[v_illness_dom])</text>
+					<text tool="CPN Tools" version="4.0.1">v_int + 1</text>
 				</annot>
 			</arc>
 			<arc orientation="PtoT" order="1" id="ID121">
@@ -1797,41 +1716,9 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID57" />
-				<placeend idref="ID52" />
+				<transend idref="ID119" />
+				<placeend idref="ID27" />
 				<annot id="ID120">
-					<posattr x="125.0" y="-100.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_int</text>
-				</annot>
-			</arc>
-			<arc orientation="TtoP" order="1" id="ID123">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID24" />
-				<placeend idref="ID52" />
-				<annot id="ID122">
-					<posattr x="150.0" y="-100.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_int + 1</text>
-				</annot>
-			</arc>
-			<arc orientation="PtoT" order="1" id="ID130">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID128" />
-				<placeend idref="ID29" />
-				<annot id="ID129">
 					<posattr x="475.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1839,15 +1726,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_cid</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID138">
+			<arc orientation="TtoP" order="1" id="ID129">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID128" />
-				<placeend idref="ID133" />
-				<annot id="ID137">
+				<transend idref="ID119" />
+				<placeend idref="ID124" />
+				<annot id="ID128">
 					<posattr x="600.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1855,15 +1742,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_cid</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID140">
+			<arc orientation="PtoT" order="1" id="ID131">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID36" />
-				<placeend idref="ID133" />
-				<annot id="ID139">
+				<transend idref="ID34" />
+				<placeend idref="ID124" />
+				<annot id="ID130">
 					<posattr x="625.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1871,15 +1758,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_cid</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID142">
+			<arc orientation="TtoP" order="1" id="ID133">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID128" />
-				<placeend idref="ID136" />
-				<annot id="ID141">
+				<transend idref="ID119" />
+				<placeend idref="ID127" />
+				<annot id="ID132">
 					<posattr x="600.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1887,15 +1774,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_int</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID144">
+			<arc orientation="PtoT" order="1" id="ID135">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID36" />
-				<placeend idref="ID136" />
-				<annot id="ID143">
+				<transend idref="ID34" />
+				<placeend idref="ID127" />
+				<annot id="ID134">
 					<posattr x="625.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1903,79 +1790,47 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_int</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID146">
+			<arc orientation="PtoT" order="1" id="ID137">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID128" />
-				<placeend idref="ID46" />
-				<annot id="ID145">
+				<transend idref="ID119" />
+				<placeend idref="ID44" />
+				<annot id="ID136">
 					<posattr x="275.0" y="-50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_doctor_last</text>
+					<text tool="CPN Tools" version="4.0.1">(v_cid, v_doctor_list)</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID148">
+			<arc orientation="TtoP" order="1" id="ID139">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID128" />
-				<placeend idref="ID46" />
-				<annot id="ID147">
+				<transend idref="ID119" />
+				<placeend idref="ID44" />
+				<annot id="ID138">
 					<posattr x="275.0" y="-50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_doctor_last</text>
+					<text tool="CPN Tools" version="4.0.1">(v_cid, v_doctor_list)</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID150">
+			<arc orientation="TtoP" order="1" id="ID149">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID128" />
-				<placeend idref="ID49" />
-				<annot id="ID149">
-					<posattr x="300.0" y="-50.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_illness_last</text>
-				</annot>
-			</arc>
-			<arc orientation="TtoP" order="1" id="ID152">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID128" />
-				<placeend idref="ID49" />
-				<annot id="ID151">
-					<posattr x="300.0" y="-50.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_illness_last</text>
-				</annot>
-			</arc>
-			<arc orientation="TtoP" order="1" id="ID162">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID128" />
-				<placeend idref="ID160" />
-				<annot id="ID161">
+				<transend idref="ID119" />
+				<placeend idref="ID147" />
+				<annot id="ID148">
 					<posattr x="575.0" y="25.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -1983,20 +1838,100 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1" />
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID164">
+			<arc orientation="PtoT" order="1" id="ID151">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID157" />
-				<placeend idref="ID160" />
-				<annot id="ID163">
+				<transend idref="ID144" />
+				<placeend idref="ID147" />
+				<annot id="ID150">
 					<posattr x="625.0" y="50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1" />
+				</annot>
+			</arc>
+			<arc orientation="TtoP" order="1" id="ID156">
+				<posattr x="0.000000" y="0.000000" />
+				<fillattr colour="White" pattern="" filled="false" />
+				<lineattr colour="Black" thick="1" type="Solid" />
+				<textattr colour="Black" bold="false" />
+				<arrowattr headsize="1.200000" currentcyckle="2" />
+				<transend idref="ID119" />
+				<placeend idref="ID154" />
+				<annot id="ID155">
+					<posattr x="625.0" y="25.0" />
+					<fillattr colour="White" pattern="Solid" filled="false" />
+					<lineattr colour="Black" thick="0" type="Solid" />
+					<textattr colour="Black" bold="false" />
+					<text tool="CPN Tools" version="4.0.1">hd(v_doctor_list)</text>
+				</annot>
+			</arc>
+			<arc orientation="PtoT" order="1" id="ID158">
+				<posattr x="0.000000" y="0.000000" />
+				<fillattr colour="White" pattern="" filled="false" />
+				<lineattr colour="Black" thick="1" type="Solid" />
+				<textattr colour="Black" bold="false" />
+				<arrowattr headsize="1.200000" currentcyckle="2" />
+				<transend idref="ID144" />
+				<placeend idref="ID154" />
+				<annot id="ID157">
+					<posattr x="675.0" y="50.0" />
+					<fillattr colour="White" pattern="Solid" filled="false" />
+					<lineattr colour="Black" thick="0" type="Solid" />
+					<textattr colour="Black" bold="false" />
+					<text tool="CPN Tools" version="4.0.1">v_doctor_dom</text>
+				</annot>
+			</arc>
+			<arc orientation="TtoP" order="1" id="ID163">
+				<posattr x="0.000000" y="0.000000" />
+				<fillattr colour="White" pattern="" filled="false" />
+				<lineattr colour="Black" thick="1" type="Solid" />
+				<textattr colour="Black" bold="false" />
+				<arrowattr headsize="1.200000" currentcyckle="2" />
+				<transend idref="ID144" />
+				<placeend idref="ID161" />
+				<annot id="ID162">
+					<posattr x="675.0" y="50.0" />
+					<fillattr colour="White" pattern="Solid" filled="false" />
+					<lineattr colour="Black" thick="0" type="Solid" />
+					<textattr colour="Black" bold="false" />
+					<text tool="CPN Tools" version="4.0.1">v_treatment_delayed_dom</text>
+				</annot>
+			</arc>
+			<arc orientation="PtoT" order="1" id="ID165">
+				<posattr x="0.000000" y="0.000000" />
+				<fillattr colour="White" pattern="" filled="false" />
+				<lineattr colour="Black" thick="1" type="Solid" />
+				<textattr colour="Black" bold="false" />
+				<arrowattr headsize="1.200000" currentcyckle="2" />
+				<transend idref="ID34" />
+				<placeend idref="ID161" />
+				<annot id="ID164">
+					<posattr x="650.0" y="25.0" />
+					<fillattr colour="White" pattern="Solid" filled="false" />
+					<lineattr colour="Black" thick="0" type="Solid" />
+					<textattr colour="Black" bold="false" />
+					<text tool="CPN Tools" version="4.0.1">v_treatment_delayed_dom</text>
+				</annot>
+			</arc>
+			<arc orientation="PtoT" order="1" id="ID167">
+				<posattr x="0.000000" y="0.000000" />
+				<fillattr colour="White" pattern="" filled="false" />
+				<lineattr colour="Black" thick="1" type="Solid" />
+				<textattr colour="Black" bold="false" />
+				<arrowattr headsize="1.200000" currentcyckle="2" />
+				<transend idref="ID119" />
+				<placeend idref="ID47" />
+				<annot id="ID166">
+					<posattr x="300.0" y="-100.0" />
+					<fillattr colour="White" pattern="Solid" filled="false" />
+					<lineattr colour="Black" thick="0" type="Solid" />
+					<textattr colour="Black" bold="false" />
+					<text tool="CPN Tools" version="4.0.1">v_int</text>
 				</annot>
 			</arc>
 			<arc orientation="TtoP" order="1" id="ID169">
@@ -2005,137 +1940,25 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID128" />
-				<placeend idref="ID167" />
+				<transend idref="ID34" />
+				<placeend idref="ID47" />
 				<annot id="ID168">
-					<posattr x="625.0" y="25.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">hd(#2 v_doctor_last)</text>
-				</annot>
-			</arc>
-			<arc orientation="PtoT" order="1" id="ID171">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID157" />
-				<placeend idref="ID167" />
-				<annot id="ID170">
-					<posattr x="675.0" y="50.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_doctor_dom</text>
-				</annot>
-			</arc>
-			<arc orientation="TtoP" order="1" id="ID176">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID128" />
-				<placeend idref="ID174" />
-				<annot id="ID175">
-					<posattr x="625.0" y="0.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">hd(#2 v_illness_last)</text>
-				</annot>
-			</arc>
-			<arc orientation="PtoT" order="1" id="ID178">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID157" />
-				<placeend idref="ID174" />
-				<annot id="ID177">
-					<posattr x="675.0" y="25.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_illness_dom</text>
-				</annot>
-			</arc>
-			<arc orientation="TtoP" order="1" id="ID183">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID157" />
-				<placeend idref="ID181" />
-				<annot id="ID182">
-					<posattr x="675.0" y="50.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_treatment_delayed_dom</text>
-				</annot>
-			</arc>
-			<arc orientation="PtoT" order="1" id="ID185">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID36" />
-				<placeend idref="ID181" />
-				<annot id="ID184">
-					<posattr x="650.0" y="25.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_treatment_delayed_dom</text>
-				</annot>
-			</arc>
-			<arc orientation="PtoT" order="1" id="ID187">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID128" />
-				<placeend idref="ID52" />
-				<annot id="ID186">
 					<posattr x="325.0" y="-100.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">v_int</text>
-				</annot>
-			</arc>
-			<arc orientation="TtoP" order="1" id="ID189">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID36" />
-				<placeend idref="ID52" />
-				<annot id="ID188">
-					<posattr x="350.0" y="-100.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">v_int + 1</text>
 				</annot>
 			</arc>
-			<arc orientation="PtoT" order="1" id="ID199">
+			<arc orientation="PtoT" order="1" id="ID179">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID194" />
-				<placeend idref="ID197" />
-				<annot id="ID198">
+				<transend idref="ID174" />
+				<placeend idref="ID177" />
+				<annot id="ID178">
 					<posattr x="0.0" y="125.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -2143,15 +1966,15 @@ action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_
 					<text tool="CPN Tools" version="4.0.1">v_timedint</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID201">
+			<arc orientation="TtoP" order="1" id="ID181">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID194" />
-				<placeend idref="ID197" />
-				<annot id="ID200">
+				<transend idref="ID174" />
+				<placeend idref="ID177" />
+				<annot id="ID180">
 					<posattr x="0.0" y="125.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -2162,15 +1985,15 @@ normalized_delay_arrival
 ((case_arrival()))))</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID203">
+			<arc orientation="TtoP" order="1" id="ID183">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID194" />
-				<placeend idref="ID19" />
-				<annot id="ID202">
+				<transend idref="ID174" />
+				<placeend idref="ID17" />
+				<annot id="ID182">
 					<posattr x="0.0" y="50.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -2178,15 +2001,15 @@ normalized_delay_arrival
 					<text tool="CPN Tools" version="4.0.1">"CASE" ^ Int.toString(v_timedint)</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID205">
+			<arc orientation="TtoP" order="1" id="ID185">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID194" />
-				<placeend idref="ID46" />
-				<annot id="ID204">
+				<transend idref="ID174" />
+				<placeend idref="ID44" />
+				<annot id="ID184">
 					<posattr x="0.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
@@ -2194,31 +2017,15 @@ normalized_delay_arrival
 					<text tool="CPN Tools" version="4.0.1">("CASE" ^ Int.toString(v_timedint),[])</text>
 				</annot>
 			</arc>
-			<arc orientation="TtoP" order="1" id="ID207">
+			<arc orientation="PtoT" order="1" id="ID195">
 				<posattr x="0.000000" y="0.000000" />
 				<fillattr colour="White" pattern="" filled="false" />
 				<lineattr colour="Black" thick="1" type="Solid" />
 				<textattr colour="Black" bold="false" />
 				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID194" />
-				<placeend idref="ID49" />
-				<annot id="ID206">
-					<posattr x="25.0" y="0.0" />
-					<fillattr colour="White" pattern="Solid" filled="false" />
-					<lineattr colour="Black" thick="0" type="Solid" />
-					<textattr colour="Black" bold="false" />
-					<text tool="CPN Tools" version="4.0.1">("CASE" ^ Int.toString(v_timedint),[])</text>
-				</annot>
-			</arc>
-			<arc orientation="PtoT" order="1" id="ID217">
-				<posattr x="0.000000" y="0.000000" />
-				<fillattr colour="White" pattern="" filled="false" />
-				<lineattr colour="Black" thick="1" type="Solid" />
-				<textattr colour="Black" bold="false" />
-				<arrowattr headsize="1.200000" currentcyckle="2" />
-				<transend idref="ID212" />
-				<placeend idref="ID215" />
-				<annot id="ID216">
+				<transend idref="ID190" />
+				<placeend idref="ID193" />
+				<annot id="ID194">
 					<posattr x="-175.0" y="0.0" />
 					<fillattr colour="White" pattern="Solid" filled="false" />
 					<lineattr colour="Black" thick="0" type="Solid" />
