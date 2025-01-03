@@ -65,7 +65,7 @@ def define_uniform_probability_mapping(valuation_parameters: ValuationParameters
     label_lists = [vp.get_attribute().get_labels() for vp in vp_list]
     cartesian_product = list(product(*label_lists))
     umap = {
-        c: udist
+        tuple(c): udist
         for c in cartesian_product
     }
     return umap
@@ -100,20 +100,10 @@ class BayesianValuation(AttributeValuation):
         """
         Initialize the probabilistic Bayesian mapper with predefined mappings.
 
-        :param valuation_parameters: The ValuationParameters
-        :param outcome_attribute: The codomain of the valuation function
-        :param probability_mappings: The probabilities for all possible input tuples, that is,
-            a dictionary where keys are tuples representing parameter states, and values are
-            dictionaries mapping outcomes to their probabilities. Tuples are ordered w.r.t.
-            the parameter ordering of valuation_parameters. Example:
-            {
-             ("Sunny", "Heavy"): {"HighRisk": 0.7, "MediumRisk": 0.3},
-             ("Rainy", "Light"): {"LowRisk": 1.0}
-             ... }
-             If this is None, a uniform distribution will be auto-defined for all input configurations.
-        :param has_complete_mappings: Whether probability_mappings should define valuations for
-        all (exponentially many) input configurations. If this is False, the simulation may not be
-        deadlock-free.
+        :param valuation_parameters: The ValuationParameters. Each parameter corresponds to an attribute in the preset of the valuated attribute in the causal graph. The order must be respected.
+        :param outcome_attribute: The codomain of the valuation function.
+        :param probability_mappings: The probabilities for all possible input tuples, that is, a dictionary where keys are tuples representing parameter states, and values are dictionaries mapping outcomes to their probabilities. Tuples are ordered w.r.t. the parameter ordering of valuation_parameters. If this is None, a uniform distribution will be auto-defined for all input configurations.
+        :param has_complete_mappings: Whether probability_mappings should define valuations for all (exponentially many) input configurations.
         """
         self.__validate_valuation_parameters(valuation_parameters)
         super().__init__(valuation_parameters, outcome_attribute)
@@ -193,5 +183,3 @@ class BayesianValuation(AttributeValuation):
                 cum_dist_body
             )
         return "if {0} then {1} ".format(key_body, dist_body)
-
-
