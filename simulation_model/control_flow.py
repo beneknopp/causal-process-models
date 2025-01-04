@@ -13,21 +13,20 @@ from simulation_model.timing import ProcessTimeCategory
 
 
 class ControlFlowMap:
-    cpn_places: list[CPN_Place] = list()
-    cpn_lobs_places: list[CPN_Place] = list()
-    cpn_transitions: list[CPN_Transition] = list()
-    cpn_nodes_by_id: dict = dict()
-    cpn_places_by_id: dict = dict()
-    cpn_places_by_name: dict[str, CPN_Place] = dict()
-    cpn_places_by_simple_pn_place_id: dict = dict()
-    cpn_transitions_by_simple_pn_transition_id: dict[str, CPN_Transition] = dict()
-    cpn_transitions_by_id: dict = dict()
-    cpn_arcs: list[CPN_Arc] = list()
-    cpn_arcs_by_id: dict = dict()
-    cpn_arcs_by_simple_pn_arc_id: dict = dict()
 
     def __init__(self):
-        pass
+        self.cpn_places: list[CPN_Place] = list()
+        self.cpn_lobs_places: list[CPN_Place] = list()
+        self.cpn_transitions: list[CPN_Transition] = list()
+        self.cpn_nodes_by_id: dict = dict()
+        self.cpn_places_by_id: dict = dict()
+        self.cpn_places_by_name: dict[str, CPN_Place] = dict()
+        self.cpn_places_by_simple_pn_place_id: dict = dict()
+        self.cpn_transitions_by_simple_pn_transition_id: dict[str, CPN_Transition] = dict()
+        self.cpn_transitions_by_id: dict = dict()
+        self.cpn_arcs: list[CPN_Arc] = list()
+        self.cpn_arcs_by_id: dict = dict()
+        self.cpn_arcs_by_simple_pn_arc_id: dict = dict()
 
     def add_place(self, place: CPN_Place, simple_place_id: str = None):
         place_id = place.get_id()
@@ -135,6 +134,14 @@ def get_control_place_id_event(t: SimplePetriNetTransition):
 
 def get_global_semaphore_place_name():
     return "p_global_semaphore"
+
+
+def get_kickstart_transition_name():
+    return "t_kickstart"
+
+
+def get_kickstart_place_name():
+    return "p_kickstart"
 
 
 class ControlFlowManager:
@@ -534,7 +541,7 @@ class ControlFlowManager:
                 '''
                 input(v_int,v_register_patient_eaval);
                 output();
-                action(write_event_register_patient(v_int,"register patient", reg_patient_delay(), v_register_patient_eaval));
+                action(write_event_register_patient(v_int, reg_patient_delay(), v_register_patient_eaval));
                 '''
                 cpn_t = self.__controlFlowMap.cpn_transitions_by_simple_pn_transition_id[t.get_id()]
                 delay_term = self.__simulationParameters.get_activity_delay_call(act_name)
@@ -544,9 +551,8 @@ class ControlFlowManager:
                 )
                 action_input  = int_var + "," + eaval_var
                 action_output = self.__colsetManager.get_one_var("TIME")
-                action_parameters = '{0},"{1}",{2}, {3}'.format(
+                action_parameters = '{0},{1},{2}'.format(
                     int_var,
-                    act_name,
                     delay_term,
                     eaval_var
                 )
@@ -556,16 +562,14 @@ class ControlFlowManager:
                 )
                 cpn_t.make_code(action_input, action_output, action)
 
-    def get_kickstart_transition_name(self):
-        return "t_kickstart"
-
-    def get_kickstart_place_name(self):
-        return "p_kickstart"
-
     def add_table_initializing(self):
+        """
+        Make sure for each activity there is an event table file (.csv) created when starting the simulation.
+
+        """
         kickstart_transition = CPN_Transition(
             transition_type=TransitionType.SILENT,
-            name=self.get_kickstart_transition_name(),
+            name=get_kickstart_transition_name(),
             x = -150,
             y = 0,
             cpn_id_manager=self.cpn_id_manager,
@@ -579,7 +583,7 @@ class ControlFlowManager:
         code_text = code_text[:-1] + ")"
         kickstart_transition.set_code(code_text)
         kickstart_place = CPN_Place(
-            name=self.get_kickstart_place_name(),
+            name=get_kickstart_place_name(),
             x = -200,
             y=0,
             cpn_id_manager=self.cpn_id_manager,
@@ -615,7 +619,7 @@ class ControlFlowManager:
         x = some_initial_place.x
         y = some_initial_place.y
         timed_int_colset_name = self.__colsetManager.get_timed_int_colset().colset_name
-        case_id_colset_name =   self.__colsetManager.get_case_id_colset().colset_name
+        #case_id_colset_name =   self.__colsetManager.get_case_id_colset().colset_name
         timedint_v = self.__colsetManager.get_one_var(timed_int_colset_name)
         #caseid_v = self.__colsetManager.get_one_var(case_id_colset_name)
         caseid_term = '"CASE" ^ Int.toString({0})'.format(timedint_v)

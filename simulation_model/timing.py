@@ -1,5 +1,7 @@
 from enum import Enum
 
+from utils.validators import validate_condition
+
 
 class TimingType(Enum):
     FIXED = "FIXED",
@@ -85,10 +87,16 @@ class FixedTimingFunction(TimingFunction):
 
 class ExponentialTimingFunction(TimingFunction):
 
+    def __validate(self):
+        validate_condition(self.average_value.get_seconds() < self.maximal_value.get_seconds(),
+                           msg="Exponential Timing Function {0} initialized with maximal value below average value".format(str(self)),
+                           warn_only=True)
+
     def __init__(self, average_value: TimeInterval, maximal_value: TimeInterval, function_name=None):
         super().__init__([], TimingType.EXPONENTIAL, function_name)
         self.average_value = average_value
         self.maximal_value = maximal_value
+        self.__validate()
 
     def get_body_SML(self):
         return "let val x = exponential(1.0/{1}) in if x > {2} then {0}() else x end:real;".format(

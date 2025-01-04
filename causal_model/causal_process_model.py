@@ -64,6 +64,18 @@ class AttributeValuations:
         self.__attributeIdToValuation = attributeIdToValuation
         self.__validate()
 
+    def sort(self, sorted_attribute_ids):
+        """
+        Make sure the sorting of the parameters corresponds to the way attributes are sorted in the causal model.
+        This function is called after initializing the ValuationParameters class within a new causal model.
+        This is to facilitate manually using the API (i.e., user does not need to worry about passing attributes in the right order).
+
+        :param sorted_attribute_ids: All attributes in the causal model, sorted
+        """
+        sorted_parameter_attribute_ids = list(filter(lambda a: a in self.__attribute_ids, sorted_attribute_ids))
+        self.__attribute_ids = sorted_parameter_attribute_ids
+
+
     def get_attribute_ids(self):
         return self.__attribute_ids
 
@@ -102,6 +114,21 @@ class CausalProcessModel:
             all(r in sagg_relations for r in fagg_relations))
         validate_condition(
             all(r in fagg_relations for r in sagg_relations))
+        relations_in_causal_structure = self.__CS.get_relations()
+        for attribute_id in self.__V.get_attribute_ids():
+            valuation = self.__V.get_attribute_valuation(attribute_id)
+            valuation_params = valuation.valuation_parameters.get_valuation_parameters_list()
+            params_not_in_causal_structure = [param.get_attribute().get_id() for param in valuation_params if param.get_attribute() not in self.get_attributes()]
+            validate_condition(
+                not len(params_not_in_causal_structure),
+                'There are attributes "{0}" that are used to valuate attribute "{1}", but those were not found among '
+                'the attributes listed in the causal structure.'.format(params_not_in_causal_structure, attribute_id))
+            params_not_covered_in_relations = [param.get_attribute().get_id() for param in valuation_params
+                                               if not self.has_relation(param.get_attribute().get_id(), attribute_id)]
+            validate_condition(
+                not len(params_not_covered_in_relations),
+                'There are attributes "{0}" that are used to valuate attribute "{1}", but the relation between those attributes and "{1}"'
+                'is not listed in the causal structure.'.format(params_not_covered_in_relations, attribute_id))
 
     def __init__(self,
                  CS: CausalProcessStructure,
@@ -120,6 +147,7 @@ class CausalProcessModel:
         self.__CS = CS
         self.__Sagg = Sagg
         self.__Fagg = Fagg
+        V.sort(CS.get_attribute_ids())
         self.__V = V
         self.__validate()
 
@@ -157,8 +185,11 @@ class CausalProcessModel:
         attr_names = [attr.get_name() for attr in attrs]
         return attr_names
 
-    def add_activity(self, activity_name, activity_id):
-        return self.__CS.add_activity(activity_name, activity_id)
+    def get_relations(self):
+        return self.__CS.get_relations()
+
+    def add_activity(self, activity_name):
+        return self.__CS.add_activity(activity_name)
 
     def to_string(self):
         s = ""
@@ -178,3 +209,5 @@ class CausalProcessModel:
     def get_attributes_for_activity_id(self, act_id):
         return self.__CS.get_attributes_for_activity_id(act_id)
 
+    def has_relation(self, attr_in_id: str, attr_out_id: str, is_aggregated:bool=None):
+        return self.__CS.has_relation(attr_in_id, attr_out_id, is_aggregated)

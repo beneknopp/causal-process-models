@@ -442,7 +442,7 @@
 				</ml>
 				<ml id="ID262">fun valuate_illness() = if true then (let val p=uniform(0.0,1.0) in (if p &lt; 0.3333333333333333 then Bias_Blindness else if p &lt; 0.6666666666666666 then Causal_Confusion_Syndrome else Null_Pointer_Neurosis) end) else Bias_Blindness<layout>fun valuate_illness() = if true then (let val p=uniform(0.0,1.0) in (if p &lt; 0.3333333333333333 then Bias_Blindness else if p &lt; 0.6666666666666666 then Causal_Confusion_Syndrome else Null_Pointer_Neurosis) end) else Bias_Blindness</layout>
 				</ml>
-				<ml id="ID263">fun valuate_treatment_delayed(x0) = if x0=Dr_Knopp then (let val p=uniform(0.0,1.0) in (if p &lt; 0.8 then High_Delay else if p &lt; 0.9 then No_Delay else Slight_Delay) end) else if x0=Dr_Yuan then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then High_Delay else No_Delay) end) else No_Delay<layout>fun valuate_treatment_delayed(x0) = if x0=Dr_Knopp then (let val p=uniform(0.0,1.0) in (if p &lt; 0.8 then High_Delay else if p &lt; 0.9 then No_Delay else Slight_Delay) end) else if x0=Dr_Yuan then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then High_Delay else No_Delay) end) else No_Delay</layout>
+				<ml id="ID263">fun valuate_treatment_delayed(x0) = if x0=Dr_Knopp then (let val p=uniform(0.0,1.0) in (if p &lt; 0.8 then High_Delay else if p &lt; 0.9 then No_Delay else Slight_Delay) end) else if x0=Dr_Yuan then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then High_Delay else if p &lt; 1.0 then No_Delay else Slight_Delay) end) else No_Delay<layout>fun valuate_treatment_delayed(x0) = if x0=Dr_Knopp then (let val p=uniform(0.0,1.0) in (if p &lt; 0.8 then High_Delay else if p &lt; 0.9 then No_Delay else Slight_Delay) end) else if x0=Dr_Yuan then (let val p=uniform(0.0,1.0) in (if p &lt; 0.5 then High_Delay else if p &lt; 1.0 then No_Delay else Slight_Delay) end) else No_Delay</layout>
 				</ml>
 				<ml id="ID264">fun label_to_string_doctor(x: C_doctor_DOM) =
 case x of Dr_Knopp =&gt; "Dr_Knopp" | Dr_Yuan =&gt; "Dr_Yuan";<layout>fun label_to_string_doctor(x: C_doctor_DOM) =
@@ -459,7 +459,7 @@ case x of Bias_Blindness =&gt; "Bias_Blindness" | Causal_Confusion_Syndrome =&gt
 				<ml id="ID267">
     fun create_event_table_register_patient() = 
     let
-       val file_id = TextIO.openOut("./event_register_patient.csv")
+       val file_id = TextIO.openOut("./collider_simple_output/event_register_patient.csv")
        val _ = TextIO.output(file_id, list2string(["event_id", "case_id", "activity", "timestamp"]^^["doctor","illness"])) 
        val _ = TextIO.output(file_id, "\n")
     in
@@ -468,7 +468,7 @@ case x of Bias_Blindness =&gt; "Bias_Blindness" | Causal_Confusion_Syndrome =&gt
     <layout>
     fun create_event_table_register_patient() = 
     let
-       val file_id = TextIO.openOut("./event_register_patient.csv")
+       val file_id = TextIO.openOut("./collider_simple_output/event_register_patient.csv")
        val _ = TextIO.output(file_id, list2string(["event_id", "case_id", "activity", "timestamp"]^^["doctor","illness"])) 
        val _ = TextIO.output(file_id, "\n")
     in
@@ -495,10 +495,10 @@ val x3 = #3 v_eaval
     </layout>
 				</ml>
 				<ml id="ID269">
-    fun write_event_register_patient(event_counter: INT, activity_name: string, delay: real, eaval: C_register_patient_EAVAL) = 
+    fun write_event_register_patient(event_counter: INT, delay: real, eaval: C_register_patient_EAVAL) = 
     let
         val event_id = "EVENT" ^ Int.toString event_counter
-        val event_file_id = "./event_register_patient.csv"
+        val event_file_id = "./collider_simple_output/event_register_patient.csv"
         val case_id = #1 eaval
         val starttime = now()
         val norm_delay = normalized_delay_service(delay) 
@@ -509,10 +509,10 @@ val x3 = #3 v_eaval
        ModelTime.fromInt(round(norm_delay))
     end;        
     <layout>
-    fun write_event_register_patient(event_counter: INT, activity_name: string, delay: real, eaval: C_register_patient_EAVAL) = 
+    fun write_event_register_patient(event_counter: INT, delay: real, eaval: C_register_patient_EAVAL) = 
     let
         val event_id = "EVENT" ^ Int.toString event_counter
-        val event_file_id = "./event_register_patient.csv"
+        val event_file_id = "./collider_simple_output/event_register_patient.csv"
         val case_id = #1 eaval
         val starttime = now()
         val norm_delay = normalized_delay_service(delay) 
@@ -527,7 +527,7 @@ val x3 = #3 v_eaval
 				<ml id="ID270">
     fun create_event_table_treat_patient() = 
     let
-       val file_id = TextIO.openOut("./event_treat_patient.csv")
+       val file_id = TextIO.openOut("./collider_simple_output/event_treat_patient.csv")
        val _ = TextIO.output(file_id, list2string(["event_id", "case_id", "activity", "timestamp"]^^["treatment_delayed"])) 
        val _ = TextIO.output(file_id, "\n")
     in
@@ -536,7 +536,7 @@ val x3 = #3 v_eaval
     <layout>
     fun create_event_table_treat_patient() = 
     let
-       val file_id = TextIO.openOut("./event_treat_patient.csv")
+       val file_id = TextIO.openOut("./collider_simple_output/event_treat_patient.csv")
        val _ = TextIO.output(file_id, list2string(["event_id", "case_id", "activity", "timestamp"]^^["treatment_delayed"])) 
        val _ = TextIO.output(file_id, "\n")
     in
@@ -561,10 +561,10 @@ val x3 = #3 v_eaval
     </layout>
 				</ml>
 				<ml id="ID272">
-    fun write_event_treat_patient(event_counter: INT, activity_name: string, delay: real, eaval: C_treat_patient_EAVAL) = 
+    fun write_event_treat_patient(event_counter: INT, delay: real, eaval: C_treat_patient_EAVAL) = 
     let
         val event_id = "EVENT" ^ Int.toString event_counter
-        val event_file_id = "./event_treat_patient.csv"
+        val event_file_id = "./collider_simple_output/event_treat_patient.csv"
         val case_id = #1 eaval
         val starttime = now()
         val norm_delay = normalized_delay_service(delay) 
@@ -575,10 +575,10 @@ val x3 = #3 v_eaval
        ModelTime.fromInt(round(norm_delay))
     end;        
     <layout>
-    fun write_event_treat_patient(event_counter: INT, activity_name: string, delay: real, eaval: C_treat_patient_EAVAL) = 
+    fun write_event_treat_patient(event_counter: INT, delay: real, eaval: C_treat_patient_EAVAL) = 
     let
         val event_id = "EVENT" ^ Int.toString event_counter
-        val event_file_id = "./event_treat_patient.csv"
+        val event_file_id = "./collider_simple_output/event_treat_patient.csv"
         val case_id = #1 eaval
         val starttime = now()
         val norm_delay = normalized_delay_service(delay) 
@@ -1098,7 +1098,7 @@ val x3 = #3 v_eaval
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">input(v_int,v_register_patient_eaval);
 output(v_time);
-action(write_event_register_patient(v_int,"register patient",register_patient_delay(), v_register_patient_eaval));</text>
+action(write_event_register_patient(v_int,register_patient_delay(),v_register_patient_eaval));</text>
 				</code>
 				<priority id="ID21">
 					<posattr x="132.0" y="-15.0" />
@@ -1137,7 +1137,7 @@ action(write_event_register_patient(v_int,"register patient",register_patient_de
 					<textattr colour="Black" bold="false" />
 					<text tool="CPN Tools" version="4.0.1">input(v_int,v_treat_patient_eaval);
 output(v_time);
-action(write_event_treat_patient(v_int,"treat patient",treat_patient_delay(), v_treat_patient_eaval));</text>
+action(write_event_treat_patient(v_int,treat_patient_delay(),v_treat_patient_eaval));</text>
 				</code>
 				<priority id="ID33">
 					<posattr x="532.0" y="-15.0" />
