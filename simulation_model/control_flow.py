@@ -13,18 +13,6 @@ from simulation_model.timing import ProcessTimeCategory
 
 
 class ControlFlowMap:
-    cpn_places: list[CPN_Place] = list()
-    cpn_lobs_places: list[CPN_Place] = list()
-    cpn_transitions: list[CPN_Transition] = list()
-    cpn_nodes_by_id: dict = dict()
-    cpn_places_by_id: dict = dict()
-    cpn_places_by_name: dict[str, CPN_Place] = dict()
-    cpn_places_by_simple_pn_place_id: dict = dict()
-    cpn_transitions_by_simple_pn_transition_id: dict[str, CPN_Transition] = dict()
-    cpn_transitions_by_id: dict = dict()
-    cpn_arcs: list[CPN_Arc] = list()
-    cpn_arcs_by_id: dict = dict()
-    cpn_arcs_by_simple_pn_arc_id: dict = dict()
 
     def __init__(self):
         self.cpn_places: list[CPN_Place] = list()

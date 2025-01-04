@@ -94,7 +94,7 @@ class CPM_CPN_Converter:
         cm_labels = [act.get_name() for act in cm_acts]
         new_labels = set([l for l in pn_labels if l not in cm_labels])
         for l in new_labels:
-            causal_model.add_activity(activity_name=l, activity_id=l)
+            causal_model.add_activity(activity_name=l)
         all_acts = causal_model.get_activities()
         return all_acts
 
