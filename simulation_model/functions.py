@@ -326,8 +326,8 @@ def get_activity_event_table_initializer_name(activity_id: str):
     return "create_event_table_{0}".format(activity_id)
 
 
-def get_event_table_file_path(activity_id: str, logs_path: str):
-    return "./{0}/event_{1}.csv".format(logs_path, activity_id)
+def get_event_table_file_path(activity_id: str, model_name: str):
+    return "./{0}_event_{1}.csv".format(model_name, activity_id)
 
 
 def get_activity_event_table_initializer_sml(activity_id: str, attribute_names: list[str], logs_path: str):
@@ -341,7 +341,7 @@ def get_activity_event_table_initializer_sml(activity_id: str, attribute_names: 
        TextIO.closeOut(file_id)
     end;
     '''.format(get_activity_event_table_initializer_name(activity_id),
-               get_event_table_file_path(activity_id, logs_path),
+               get_event_table_file_path(activity_id, model_name),
                LIST2STRING_CONVERTER_NAME,
                "[" + ",".join(['"' + attr_name + '"' for attr_name in attribute_names]) + "]")
 
@@ -407,7 +407,7 @@ def get_eaval2list_converter_sml(act_id: str, eaval_colset_name: str,
     return sml
 
 
-def get_event_writer_sml(activity_id: str, activity_name: str, eaval_colset_name: str, log_path: str):
+def get_event_writer_sml(activity_id: str, activity_name: str, eaval_colset_name: str, model_name: str):
     """
     A function for writing an event, taking an event id, the activity name, and ordered event attribute values.
 
@@ -429,7 +429,7 @@ def get_event_writer_sml(activity_id: str, activity_name: str, eaval_colset_name
     end;        
     '''.format(get_activity_event_writer_name(activity_id),
                eaval_colset_name,
-               get_event_table_file_path(activity_id, log_path),
+               get_event_table_file_path(activity_id, model_name),
                get_now_time_getter_name(),
                get_normalized_delay_from_now_function_name(ProcessTimeCategory.SERVICE),
                activity_name,

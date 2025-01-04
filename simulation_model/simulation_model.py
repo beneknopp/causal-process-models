@@ -1,6 +1,5 @@
 import os
 
-from causal_model import causal_process_model
 from causal_model.causal_process_model import CausalProcessModel
 from process_model.petri_net import SimplePetriNet
 from simulation_model.cpm_cpn_converter import CPM_CPN_Converter
@@ -55,17 +54,13 @@ class SimulationModel:
         cwd = os.getcwd()
         output_path_abs = os.path.join(cwd, output_path)
         model_out_path =  os.path.join(output_path_abs, model_name + ".cpn")
-        logs_out_folder = model_name + "_output"
-        logs_out_path = os.path.join(output_path_abs, logs_out_folder)
         if not os.path.exists(output_path):
             os.makedirs(output_path)
-        if not os.path.exists(logs_out_path):
-            os.makedirs(logs_out_path)
         cpn_template_path = "resources/empty.cpn"
         converter = CPM_CPN_Converter(cpn_template_path,
                                       petriNet=self.__petriNet,
                                       causalModel=self.__causalModel,
                                       simulationParameters=self.__simulationParameters,
-                                      logs_out_path=logs_out_folder)
+                                      model_name=model_name)
         converter.convert()
         converter.export(model_out_path)

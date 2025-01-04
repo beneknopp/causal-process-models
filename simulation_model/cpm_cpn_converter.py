@@ -25,9 +25,9 @@ class CPM_CPN_Converter:
                  petriNet: SimplePetriNet,
                  causalModel: CausalProcessModel,
                  simulationParameters: SimulationParameters,
-                 logs_out_path: str
+                 model_name: str
                  ):
-        self.logs_out_path = logs_out_path
+        self.model_name = model_name
         self.tree = ET.parse(cpn_template_path)
         self.root = self.tree.getroot()
         self.mainpage = self.root.find("cpnet").find("page")
@@ -250,9 +250,9 @@ class CPM_CPN_Converter:
             eaval_to_list_converter_sml = get_eaval2list_converter_sml(
                 act_id, eaval_colset_name, attributes)
             event_writer_name = get_activity_event_writer_name(act_id)
-            event_writer_sml = get_event_writer_sml(act_id, act_name, eaval_colset_name, self.logs_out_path)
+            event_writer_sml = get_event_writer_sml(act_id, act_name, eaval_colset_name, self.model_name)
             event_initializer_name = get_activity_event_table_initializer_name(act_id)
-            event_initializer_sml  = get_activity_event_table_initializer_sml(act_id, attribute_names, self.logs_out_path)
+            event_initializer_sml  = get_activity_event_table_initializer_sml(act_id, attribute_names, self.model_name)
             all_functions.append((event_initializer_name, event_initializer_sml))
             all_functions.append((eaval_to_list_converter_name, eaval_to_list_converter_sml))
             all_functions.append((event_writer_name, event_writer_sml))
