@@ -22,6 +22,9 @@ class ValuationParameters:
     def __validate(self):
         validate_condition(all(
             isinstance(p, ValuationParameter) for p in self.__valuation_parameters_list))
+        validate_condition(all(
+            isinstance(a, CPM_Attribute) for a in [p.get_attribute() for p in self.__valuation_parameters_list]
+        ))
 
     def __init__(self, valuation_parameters_list: list[ValuationParameter]):
         self.__valuation_parameters_list = valuation_parameters_list
@@ -59,7 +62,6 @@ def define_uniform_probability_mapping(valuation_parameters: ValuationParameters
     udist = {
         l: 1 / len(outcome_labels) for l in outcome_labels
     }
-    umap = dict[tuple, dict[str, float]]()
     vp: ValuationParameter
     vp_list = valuation_parameters.get_valuation_parameters_list()
     label_lists = [vp.get_attribute().get_labels() for vp in vp_list]
@@ -72,7 +74,6 @@ def define_uniform_probability_mapping(valuation_parameters: ValuationParameters
 
 
 class BayesianValuation(AttributeValuation):
-
     outcome_attribute: CPM_Categorical_Attribute
 
     def __validate_valuation_parameters(
@@ -112,6 +113,29 @@ class BayesianValuation(AttributeValuation):
                 valuation_parameters, outcome_attribute)
         self.__probability_mappings = probability_mappings
         self.__has_complete_mappings = has_complete_mappings
+        self.__validate_valuation_function()
+
+    def __validate_valuation_function(self):
+        """
+        Make sure that the valuation function makes sense.
+
+        """
+        parameter_list = self.valuation_parameters.get_valuation_parameters_list()
+        outcome_attribute = self.outcome_attribute
+        admissible_outcomes = outcome_attribute.get_labels()
+        for key, probs in self.__probability_mappings.items():
+            uncovered_labels = [label for label in admissible_outcomes if label not in probs.keys()]
+            validate_condition(not len(uncovered_labels),
+                               ('Key {0} does not specify probabilities for label(s) {1}.'
+                                + 'Please make all probabilities explicit, even if they are 0.').format(
+                                   key, uncovered_labels))
+            for i in range(len(key)):
+                label = key[i]
+                admissible_labels = parameter_list[i].get_attribute().get_labels()
+                validate_condition(label in admissible_labels,
+                                   'Key {0} has invalid label "{1}"'.format(key, label))
+                validate_condition(abs(1 - sum(probs.values())) < 0.0001,
+                                   "Probabilities at key {0} do not sum to 1".format(key))
 
     def __get_function_name(self):
         return super(BayesianValuation, self).get_function_name()
@@ -173,11 +197,11 @@ class BayesianValuation(AttributeValuation):
             # if x < P0 then V0 else if x < P0+P1 then V1 else V2 ...
             cum_dist_body = ""
             cum_dist_items = list(cum_dist.items())
-            for v, p  in cum_dist_items[:-1]:
+            for v, p in cum_dist_items[:-1]:
                 cum_dist_body += 'if p < {0} then {1} else '.format(
                     str(p), v
                 )
-            lastv, _  = cum_dist_items[-1]
+            lastv, _ = cum_dist_items[-1]
             cum_dist_body += lastv
             dist_body = "(let val p=uniform(0.0,1.0) in ({0}) end)".format(
                 cum_dist_body

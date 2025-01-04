@@ -27,7 +27,18 @@ class ControlFlowMap:
     cpn_arcs_by_simple_pn_arc_id: dict = dict()
 
     def __init__(self):
-        pass
+        self.cpn_places: list[CPN_Place] = list()
+        self.cpn_lobs_places: list[CPN_Place] = list()
+        self.cpn_transitions: list[CPN_Transition] = list()
+        self.cpn_nodes_by_id: dict = dict()
+        self.cpn_places_by_id: dict = dict()
+        self.cpn_places_by_name: dict[str, CPN_Place] = dict()
+        self.cpn_places_by_simple_pn_place_id: dict = dict()
+        self.cpn_transitions_by_simple_pn_transition_id: dict[str, CPN_Transition] = dict()
+        self.cpn_transitions_by_id: dict = dict()
+        self.cpn_arcs: list[CPN_Arc] = list()
+        self.cpn_arcs_by_id: dict = dict()
+        self.cpn_arcs_by_simple_pn_arc_id: dict = dict()
 
     def add_place(self, place: CPN_Place, simple_place_id: str = None):
         place_id = place.get_id()
@@ -135,6 +146,14 @@ def get_control_place_id_event(t: SimplePetriNetTransition):
 
 def get_global_semaphore_place_name():
     return "p_global_semaphore"
+
+
+def get_kickstart_transition_name():
+    return "t_kickstart"
+
+
+def get_kickstart_place_name():
+    return "p_kickstart"
 
 
 class ControlFlowManager:
@@ -459,15 +478,15 @@ class ControlFlowManager:
             in_attr_colset_name = self.__colsetManager.get_attribute_domain_colset_name(in_attr_id)
             in_attr_place_name = get_preset_attribute_last_observation_place_name(transition_id, in_attr_id)
             in_attr_variable = self.__colsetManager.get_one_var(in_attr_colset_name)
-            lobs_colset_name = self.__colsetManager.get_attribute_last_observation_colset_name(in_attr_id)
+            preset_list_colset_name = self.__colsetManager.get_attribute_list_colset_name(in_attr_id)
             lobs_place = CPN_Place(in_attr_place_name, x + 50, y - 50 * i, self.cpn_id_manager,
                                    in_attr_colset_name)
             self.__controlFlowMap.add_place(lobs_place)
-            lobs_variable = self.__colsetManager.get_one_var(lobs_colset_name)
-            # the expression to get the last observation: the head (hd) of the second element (#2)
+            preset_list_variable = self.__colsetManager.get_one_var(preset_list_colset_name)
+            # the expression to get the last observation: the head (hd) of the second element
             # the last_observation colset is a product colset and the second element is a list
             # carrying either the last observation or nothing
-            lobs_expression = "hd(#2 {0})".format(lobs_variable)
+            lobs_expression = "hd({0})".format(preset_list_variable)
             start_to_lobs = CPN_Arc(self.cpn_id_manager, start_transition, lobs_place, lobs_expression)
             lobs_to_vt = CPN_Arc(self.cpn_id_manager, lobs_place, valuation_transition, in_attr_variable)
             self.__controlFlowMap.add_arc(start_to_lobs)
@@ -491,26 +510,30 @@ class ControlFlowManager:
     def __control_transition_for_last_observations(self, start_transition: CPN_Transition):
         all_preset_attr_ids = list(self.__current_transformed_transition_dependent_attributes)
         all_preset_colset_names = [
-            self.__colsetManager.get_attribute_last_observation_colset_name(preset_attr_id)
+            self.__colsetManager.get_attribute_list_colset_name(preset_attr_id)
             for preset_attr_id in all_preset_attr_ids]
-        all_preset_lobs_variables = [
+        all_preset_list_variables = [
             self.__colsetManager.get_one_var(preset_colset_name)
             for preset_colset_name in all_preset_colset_names
         ]
         # for each preset attribute of some event attribute, ...
+        case_id_variable = self.__colsetManager.get_one_var(
+            self.__colsetManager.get_case_id_colset().colset_name
+        )
         for i in range(len(all_preset_attr_ids)):
             preset_attr_id = all_preset_attr_ids[i]
-            preset_lobs_variable = all_preset_lobs_variables[i]
+            preset_list_variable = all_preset_list_variables[i]
             # ...make back and forth arcs of the last observation place with the start transition
             global_lobs_place_name = get_attribute_global_last_observation_place_name(preset_attr_id)
             global_lobs_place = self.__controlFlowMap.cpn_places_by_name[global_lobs_place_name]
-            p_to_t = CPN_Arc(self.cpn_id_manager, global_lobs_place, start_transition, preset_lobs_variable)
-            t_to_p = CPN_Arc(self.cpn_id_manager, start_transition, global_lobs_place, preset_lobs_variable)
+            lobs_arc_inscription = "({0}, {1})".format(case_id_variable, preset_list_variable)
+            p_to_t = CPN_Arc(self.cpn_id_manager, global_lobs_place, start_transition, lobs_arc_inscription)
+            t_to_p = CPN_Arc(self.cpn_id_manager, start_transition, global_lobs_place, lobs_arc_inscription)
             self.__controlFlowMap.add_arc(p_to_t)
             self.__controlFlowMap.add_arc(t_to_p)
             # ... make sure the activity can only be executed if there is a well-defined last observation
             # of the preset attribute.
-            start_transition.add_conjunct("length(#2 {0})>0".format(preset_lobs_variable))
+            start_transition.add_conjunct("length({0})>0".format(preset_list_variable))
 
     def add_iostream(self):
         '''
@@ -530,7 +553,7 @@ class ControlFlowManager:
                 '''
                 input(v_int,v_register_patient_eaval);
                 output();
-                action(write_event_register_patient(v_int,"register patient", reg_patient_delay(), v_register_patient_eaval));
+                action(write_event_register_patient(v_int, reg_patient_delay(), v_register_patient_eaval));
                 '''
                 cpn_t = self.__controlFlowMap.cpn_transitions_by_simple_pn_transition_id[t.get_id()]
                 delay_term = self.__simulationParameters.get_activity_delay_call(act_name)
@@ -540,9 +563,8 @@ class ControlFlowManager:
                 )
                 action_input  = int_var + "," + eaval_var
                 action_output = self.__colsetManager.get_one_var("TIME")
-                action_parameters = '{0},"{1}",{2}, {3}'.format(
+                action_parameters = '{0},{1},{2}'.format(
                     int_var,
-                    act_name,
                     delay_term,
                     eaval_var
                 )
@@ -552,16 +574,14 @@ class ControlFlowManager:
                 )
                 cpn_t.make_code(action_input, action_output, action)
 
-    def get_kickstart_transition_name(self):
-        return "t_kickstart"
-
-    def get_kickstart_place_name(self):
-        return "p_kickstart"
-
     def add_table_initializing(self):
+        """
+        Make sure for each activity there is an event table file (.csv) created when starting the simulation.
+
+        """
         kickstart_transition = CPN_Transition(
             transition_type=TransitionType.SILENT,
-            name=self.get_kickstart_transition_name(),
+            name=get_kickstart_transition_name(),
             x = -150,
             y = 0,
             cpn_id_manager=self.cpn_id_manager,
@@ -575,7 +595,7 @@ class ControlFlowManager:
         code_text = code_text[:-1] + ")"
         kickstart_transition.set_code(code_text)
         kickstart_place = CPN_Place(
-            name=self.get_kickstart_place_name(),
+            name=get_kickstart_place_name(),
             x = -200,
             y=0,
             cpn_id_manager=self.cpn_id_manager,
@@ -611,7 +631,7 @@ class ControlFlowManager:
         x = some_initial_place.x
         y = some_initial_place.y
         timed_int_colset_name = self.__colsetManager.get_timed_int_colset().colset_name
-        case_id_colset_name =   self.__colsetManager.get_case_id_colset().colset_name
+        #case_id_colset_name =   self.__colsetManager.get_case_id_colset().colset_name
         timedint_v = self.__colsetManager.get_one_var(timed_int_colset_name)
         #caseid_v = self.__colsetManager.get_one_var(case_id_colset_name)
         caseid_term = '"CASE" ^ Int.toString({0})'.format(timedint_v)

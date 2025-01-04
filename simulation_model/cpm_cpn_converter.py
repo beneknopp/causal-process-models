@@ -24,8 +24,10 @@ class CPM_CPN_Converter:
                  cpn_template_path: str,
                  petriNet: SimplePetriNet,
                  causalModel: CausalProcessModel,
-                 simulationParameters: SimulationParameters
+                 simulationParameters: SimulationParameters,
+                 logs_out_path: str
                  ):
+        self.logs_out_path = logs_out_path
         self.tree = ET.parse(cpn_template_path)
         self.root = self.tree.getroot()
         self.mainpage = self.root.find("cpnet").find("page")
@@ -59,16 +61,16 @@ class CPM_CPN_Converter:
         self.__add_actions()
         self.__build_dom()
 
-    def export(self, outpath):
+    def export(self, model_outpath):
         ET.indent(self.tree, space="\t", level=0)
-        self.tree.write(outpath, encoding="utf-8")
+        self.tree.write(model_outpath, encoding="utf-8")
         preamble = '<?xml version="1.0" encoding="iso-8859-1"?>' + \
                    '<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://cpntools.org/DTD/6/cpn.dtd">'
-        xmlstring = open(outpath, "r").read()
+        xmlstring = open(model_outpath, "r").read()
         xmlstring = preamble + xmlstring
         # TODO
         hotfix = xmlstring.replace("&amp;", "&")
-        f = open(outpath, "w")
+        f = open(model_outpath, "w")
         f.write(hotfix)
         f.close()
 
@@ -106,7 +108,8 @@ class CPM_CPN_Converter:
         attribute_ids = [attr.get_id() for attr in self.__attributes]
         attributes_with_last_observations = [
             attr.get_id() for attr in
-            self.causalModel.get_attributes_with_non_aggregated_dependencies()]
+            self.causalModel.get_attributes_with_non_aggregated_dependencies()
+        ]
         attributes_with_system_aggregations = [
             attr.get_id() for attr in
             self.causalModel.get_attributes_with_aggregated_dependencies()]
@@ -247,9 +250,9 @@ class CPM_CPN_Converter:
             eaval_to_list_converter_sml = get_eaval2list_converter_sml(
                 act_id, eaval_colset_name, attributes)
             event_writer_name = get_activity_event_writer_name(act_id)
-            event_writer_sml = get_event_writer_sml(act_id, act_name, eaval_colset_name)
+            event_writer_sml = get_event_writer_sml(act_id, act_name, eaval_colset_name, self.logs_out_path)
             event_initializer_name = get_activity_event_table_initializer_name(act_id)
-            event_initializer_sml  = get_activity_event_table_initializer_sml(act_id, attribute_names)
+            event_initializer_sml  = get_activity_event_table_initializer_sml(act_id, attribute_names, self.logs_out_path)
             all_functions.append((event_initializer_name, event_initializer_sml))
             all_functions.append((eaval_to_list_converter_name, eaval_to_list_converter_sml))
             all_functions.append((event_writer_name, event_writer_sml))

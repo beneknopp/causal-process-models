@@ -104,8 +104,8 @@ class AttributeActivities:
         self.__amap = amap
         self.__validate()
 
-    def get_activity_for_attribute(self, attribute):
-        return self.__amap[attribute]
+    def get_activity_for_attribute_id(self, attribute_id):
+        return self.__amap[attribute_id]
 
     def get_attributes_for_activity(self, activity):
         return [attr for attr, act in self.__amap.items() if act == activity]
@@ -183,14 +183,18 @@ class CausalProcessStructure:
     def __validate_attribute_activities(self):
         validate_condition(
             all(attr_id in [a.get_id() for a in self.__attributes]
-                for attr_id in self.__attributeActivities.get_attribute_ids()))
+                for attr_id in self.__attributeActivities.get_attribute_ids()),
+            "There is an attribute for which an activity is specified, but the attribute is not explicitly listed among the attributes in the causal structure."
+        )
         validate_condition(
             all(attr_id in self.__attributeActivities.get_attribute_ids()
-                for attr_id in [a.get_id() for a in self.__attributes])
+                for attr_id in [a.get_id() for a in self.__attributes]),
+            "There is an attribute listed among the attributes in the causal structure, but no activity is specified for the attribute."
         )
         validate_condition(
             all(act in self.__activities
-                for act in self.__attributeActivities.get_activities()))
+                for act in self.__attributeActivities.get_activities()),
+            "There is an activity for which an attribute is assigned, but the activity is not explicitly listed among the activities in the causal structure.")
 
     def __validate_relations(self):
         validate_condition(
@@ -205,8 +209,8 @@ class CausalProcessStructure:
         # no non-aggregated causality between attributes at the same events
         validate_condition(
             all(not (
-                    self.__attributeActivities.get_activity_for_attribute(r.get_in()) ==
-                    self.__attributeActivities.get_activity_for_attribute(r.get_out())
+                    self.__attributeActivities.get_activity_for_attribute_id(r.get_in().get_id()) ==
+                    self.__attributeActivities.get_activity_for_attribute_id(r.get_out().get_id())
             ) for r in non_aggregated_relations),
             "There are non-aggregated causality between attributes at the same events.")
 
@@ -214,6 +218,7 @@ class CausalProcessStructure:
         self.__validate_attributes()
         self.__validate_activities()
         self.__validate_attribute_activities()
+        self.__validate_relations()
 
     def __init__(self,
                  attributes: list[CPM_Attribute],
@@ -236,6 +241,9 @@ class CausalProcessStructure:
         self.__relations = relations
         self.__validate()
 
+    def get_relations(self):
+        return self.__relations
+
     def get_aggregated_relations(self):
         return list(filter(
             lambda r: r.is_aggregated(),
@@ -254,7 +262,7 @@ class CausalProcessStructure:
         """
         r: AttributeRelation
         non_aggregated_relations = self.get_non_aggregated_relations()
-        non_aggregated_attributes = [r.get_in() for r in non_aggregated_relations]
+        non_aggregated_attributes = list(set([r.get_in() for r in non_aggregated_relations]))
         return non_aggregated_attributes
 
     def get_attributes_with_aggregated_dependencies(self):
@@ -277,12 +285,13 @@ class CausalProcessStructure:
     def get_attribute_activities(self):
         return self.__attributeActivities
 
-    def add_activity(self, activity_name, activity_id):
+    def add_activity(self, activity_name):
+        act = CPM_Activity(activity_name)
+        activity_id = act.act_id
         if activity_id in [act.get_id() for act in self.__activities]:
             raise ValueError("activity with id {0} already exists".format(activity_id))
         if activity_name in [act.get_name() for act in self.__activities]:
             raise ValueError("activity with name {0} already exists".format(activity_name))
-        act = CPM_Activity(activity_name, activity_id)
         self.__activities.append(act)
         return act
 
@@ -294,7 +303,7 @@ class CausalProcessStructure:
             map(lambda x: x.print(), self.__activities))))
         s += ("\n\tnon-aggregated relations: {0}".format(", ".join(
             map(lambda x: x.print(), self.get_non_aggregated_relations()))))
-        s += ("\n\taggregated relations: {0}".format(", ".join(
+        s += ("\n\taggregated relations: {0}\n".format(", ".join(
             map(lambda x: x.print(), self.get_aggregated_relations()))))
         return s
 
@@ -314,3 +323,11 @@ class CausalProcessStructure:
         attr_ids = self.__attributeActivities.get_attribute_ids_for_activity_id(act_id)
         attributes = [attr for attr in self.__attributes if attr.get_id() in attr_ids]
         return attributes
+
+    def has_relation(self,  attr_in_id: str, attr_out_id: str, is_aggregated:bool=None):
+        if is_aggregated is not None:
+            relations = self.get_aggregated_relations() if is_aggregated else self.get_non_aggregated_relations()
+        else:
+            relations = self.get_relations()
+        r: AttributeRelation
+        return any(r.get_in().get_id() == attr_in_id and r.get_out().get_id() == attr_out_id for r in relations)
