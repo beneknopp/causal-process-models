@@ -4,7 +4,7 @@ from causal_model.causal_process_structure import CausalProcessStructure, Attrib
     CPM_Activity, \
     AttributeRelation, CPM_Categorical_Attribute
 from causal_model.valuation import BayesianValuation, ValuationParameters, ValuationParameter
-from object_model.object_type_structure import ObjectType, ObjectTypeStructure, ObjectTypeRelation, Multiplicity
+from object_centric.object_type_structure import ObjectType, ObjectTypeStructure
 from process_model.petri_net import SimplePetriNet, LabelingFunction, \
     SimplePetriNetPlace as Place, SimplePetriNetTransition as Transition, SimplePetriNetArc as Arc, \
     ObjectCentricPetriNet, ObjectCentricPetriNetArc as OCPN_Arc, ObjectCentricPetriNetPlace as OCPN_Place,\

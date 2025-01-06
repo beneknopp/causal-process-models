@@ -330,7 +330,7 @@ def get_event_table_file_path(activity_id: str, model_name: str):
     return "./{0}_event_{1}.csv".format(model_name, activity_id)
 
 
-def get_activity_event_table_initializer_sml(activity_id: str, attribute_names: list[str], logs_path: str):
+def get_activity_event_table_initializer_sml(activity_id: str, attribute_names: list[str], model_name: str):
     return '''
     fun {0}() = 
     let
