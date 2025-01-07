@@ -4,11 +4,10 @@ from causal_model.causal_process_structure import CausalProcessStructure, Attrib
     CPM_Activity, \
     AttributeRelation, CPM_Categorical_Attribute
 from causal_model.valuation import BayesianValuation, ValuationParameters, ValuationParameter
-from object_centric.object_type_structure import ObjectType, ObjectTypeStructure
-from process_model.petri_net import SimplePetriNet, LabelingFunction, \
-    SimplePetriNetPlace as Place, SimplePetriNetTransition as Transition, SimplePetriNetArc as Arc, \
-    ObjectCentricPetriNet, ObjectCentricPetriNetArc as OCPN_Arc, ObjectCentricPetriNetPlace as OCPN_Place,\
-    ObjectCentricPetriNetTransition as OCPN_Transition
+from object_centric.object_type_structure import ObjectType, ObjectTypeStructure, ObjectTypeRelation, Multiplicity
+from object_centric.object_centric_petri_net import ObjectCentricPetriNet as OCPN, ObjectCentricPetriNetArc as Arc, \
+    ObjectCentricPetriNetPlace as Place, ObjectCentricPetriNetTransition as Transition
+from process_model.petri_net import LabelingFunction
 from simulation_model.simulation_model import SimulationModel
 from simulation_model.simulation_parameters import SimulationParameters
 from simulation_model.timing import TimeInterval, ActivityTiming, TimeDensityCalendar, \
@@ -17,11 +16,11 @@ from simulation_model.timing import TimeInterval, ActivityTiming, TimeDensityCal
 
 def run_example_1(output_path, model_name):
     p_source = Place("source", 0, 0, is_initial=True)
-    t_register = Transition("t_register", 200, 0)
-    p1 = Place("p1", 400, 0)
-    t_treat = Transition("t_treat", 600, 0)
-    p_sink = Place("sink", 800, 0)
-    petri_net = SimplePetriNet(
+    t_register = Transition("t_register", 600, 0)
+    p1 = Place("p1", 1200, 0)
+    t_treat = Transition("t_treat", 1600, 0)
+    p_sink = Place("sink", 2400, 0, is_final=True)
+    petri_net = OCPN(
         places=[
             p_source, p1, p_sink
         ],
@@ -58,7 +57,7 @@ def run_example_1(output_path, model_name):
         attr_treatment_delayed,
         probability_mappings={
             ("Dr_Knopp",): {"No_Delay": 0.1, "Slight_Delay": 0.1, "High_Delay": 0.8},
-            ("Dr_Yuan",):  {"No_Delay": 0.5, "Slight_Delay": 0.0, "High_Delay": 0.5},
+            ("Dr_Yuan",): {"No_Delay": 0.5, "Slight_Delay": 0.0, "High_Delay": 0.5},
         }
     )
     causal_structure = CausalProcessStructure(
@@ -107,8 +106,8 @@ def run_example_1(output_path, model_name):
         # how many instances should be simulated in total
         number_of_cases=1000,
         # how much time between cases starting the process
-        case_arrival_rate=ExponentialTimingFunction(average_value=TimeInterval(minutes=15),
-                                                    maximal_value=TimeInterval(minutes=120),
+        case_arrival_rate=ExponentialTimingFunction(average_value=TimeInterval(minutes=5),
+                                                    maximal_value=TimeInterval(minutes=15),
                                                     function_name="case_arrival"),
         # at what times do cases arrive
         case_arrival_density=TimeDensityCalendar.StandardDensity(),
@@ -121,13 +120,14 @@ def run_example_1(output_path, model_name):
                                                                      maximal_value=TimeInterval(minutes=20),
                                                                      function_name="register_patient_delay")),
             ActivityTiming(activity_name="treat patient",
-                           execution_delay=ExponentialTimingFunction(average_value=TimeInterval(minutes=20),
-                                                                     maximal_value=TimeInterval(minutes=90),
+                           execution_delay=ExponentialTimingFunction(average_value=TimeInterval(minutes=30),
+                                                                     maximal_value=TimeInterval(minutes=120),
                                                                      function_name="treat_patient_delay")),
         ]
 
     )
-    sim = SimulationModel(petri_net, causal_model, simulation_parameters)
+    object_type_structure = ObjectTypeStructure()
+    sim = SimulationModel(petri_net, causal_model, object_type_structure, simulation_parameters)
     print(sim.to_string())
     sim.to_CPN(output_path, model_name)
 
@@ -143,7 +143,7 @@ def run_example_2(output_path, model_name):
     p_post_bill = Place("p_post_bill", 800, 300)
     t_complete = Transition("t_complete", 900, 0)
     p_sink = Place("sink", 1200, 0)
-    petri_net = SimplePetriNet(
+    petri_net = OCPN(
         places=[
             p_source, p_pre_treat, p_pre_bill, p_post_treat, p_post_bill, p_sink
         ],
@@ -164,7 +164,7 @@ def run_example_2(output_path, model_name):
         ],
         labels=LabelingFunction({
             t_register.get_id(): "register patient",
-            t_treat.get_id():    "treat patient",
+            t_treat.get_id(): "treat patient",
             t_bill.get_id(): "send bill",
             t_complete.get_id(): "complete treatment",
         })
@@ -192,7 +192,7 @@ def run_example_2(output_path, model_name):
         attr_treatment_delayed,
         probability_mappings={
             ("Dr_Knopp",): {"No_Delay": 0.2, "High_Delay": 0.8},
-            ("Dr_Yuan",):  {"No_Delay": 0.7, "High_Delay": 0.3},
+            ("Dr_Yuan",): {"No_Delay": 0.7, "High_Delay": 0.3},
         }
     )
     costs_valuation = BayesianValuation(
@@ -206,9 +206,9 @@ def run_example_2(output_path, model_name):
         ValuationParameters([ValuationParameter(attr_doctor), ValuationParameter(attr_treatment_delayed)]),
         attr_outcome,
         probability_mappings={
-            ("Dr_Yuan", "No_Delay"):    {"Happy": 1.0, "Mad": 0.0},
-            ("Dr_Knopp", "No_Delay"):   {"Happy": 0.9, "Mad": 0.1},
-            ("Dr_Yuan", "High_Delay"):  {"Happy": 0.7, "Mad": 0.3},
+            ("Dr_Yuan", "No_Delay"): {"Happy": 1.0, "Mad": 0.0},
+            ("Dr_Knopp", "No_Delay"): {"Happy": 0.9, "Mad": 0.1},
+            ("Dr_Yuan", "High_Delay"): {"Happy": 0.7, "Mad": 0.3},
             ("Dr_Knopp", "High_Delay"): {"Happy": 0.6, "Mad": 0.4},
         }
     )
@@ -290,37 +290,113 @@ def run_example_2(output_path, model_name):
     print(sim.to_string())
     sim.to_CPN(output_path, model_name)
 
-def run_example_oc():
+
+def run_example_oc(output_path, model_name):
     ot_orders = ObjectType("orders")
-    ot_struct = ObjectTypeStructure([ot_orders], [])
-    p_source = OCPN_Place("source", 0, 0, object_type=ot_orders, is_initial=True)
-    t_place = OCPN_Transition("t_place", 200, 0, leading_type=ot_orders)
-    p1 = OCPN_Place("p1", 400, 0, object_type=ot_orders)
-    t_ship = OCPN_Transition("t_ship", 600, 0, leading_type=ot_orders)
-    p_sink = OCPN_Place("sink", 800, 0, object_type=ot_orders)
-    oc_petri_net = ObjectCentricPetriNet(
+    ot_items = ObjectType("items")
+    ot_struct = ObjectTypeStructure([ot_orders, ot_items], [
+        ObjectTypeRelation(ot_orders, Multiplicity.ONE, Multiplicity.MANY, ot_items)
+    ])
+    yo = 400
+    yi = 200
+    ysync = (yo + yi) / 2
+    po1 = Place("po1", 0, yo, object_type=ot_orders, is_initial=True)
+    pi1 = Place("pi1", 0, yi, object_type=ot_items, is_initial=True)
+    to1 = Transition("to1", 400, yo, leading_type=ot_orders)
+    ti1 = Transition("ti1", 400, yi, leading_type=ot_items)
+    po2 = Place("po2", 800, yo, object_type=ot_orders)
+    pi2 = Place("pi2", 800, yi, object_type=ot_items)
+    tsync = Transition("tsync", 1200, ysync, leading_type=ot_orders)
+    po3 = Place("po3", 1600, yo, object_type=ot_orders, is_final=True)
+    pi3 = Place("pi3", 1600, yi, object_type=ot_items, is_final=True)
+    ocpn = OCPN(
         places=[
-            p_source, p1, p_sink
+            po1, pi1, po2, pi2, po3, pi3
         ],
         transitions=[
-            t_place, t_ship
+            to1, ti1, tsync
         ],
         arcs=[
-            OCPN_Arc(p_source, t_place),
-            OCPN_Arc(t_place, p1),
-            OCPN_Arc(p1, t_ship),
-            OCPN_Arc(t_ship, p_sink)
+            Arc(po1, to1),
+            Arc(pi1, ti1),
+            Arc(to1, po2),
+            Arc(ti1, pi2),
+            Arc(po2, tsync),
+            Arc(pi2, tsync, is_variable=True),
+            Arc(tsync, po3),
+            Arc(tsync, pi3, is_variable=True),
         ],
         labels=LabelingFunction({
-            t_place.get_id(): "place order",
-            t_ship.get_id():  "ship order"
+            tsync.get_id(): "place order"
         })
     )
+    attr_priority = CPM_Categorical_Attribute(
+        "priority",
+        ["Prio_High", "Prio_Low"])
+    act_place_order = CPM_Activity("place order", leading_type=ot_orders)
+    priority_valuation = BayesianValuation(
+        ValuationParameters([]),
+        attr_priority,
+        probability_mappings={
+            (): {"Prio_High": 0.1, "Prio_Low": 0.9},
+        }
+    )
+    causal_structure = CausalProcessStructure(
+        attributes=[
+            attr_priority
+        ],
+        activities=[
+            act_place_order
+        ],
+        attributeActivities=AttributeActivities(amap={
+            attr_priority.get_id(): act_place_order
+        }),
+        relations=[]
+    )
+    causal_model = CausalProcessModel(
+        CS=causal_structure,
+        Sagg=AggregationSelections(
+            relationsToSelection={}
+        ),
+        Fagg=AggregationFunctions(
+            relationsToAggregation={}
+        ),
+        V=AttributeValuations(
+            attributeIdToValuation={
+                "priority": priority_valuation
+            }
+        )
+    )
+    simulation_parameters = SimulationParameters(
+        # how many instances should be simulated in total
+        number_of_cases=1000,
+        # how much time between cases starting the process
+        case_arrival_rate=ExponentialTimingFunction(average_value=TimeInterval(minutes=15),
+                                                    maximal_value=TimeInterval(minutes=120),
+                                                    function_name="case_arrival"),
+        # at what times do cases arrive
+        case_arrival_density=TimeDensityCalendar.StandardDensity(),
+        # at what times do things happen in the process (i.e., people working)
+        service_time_density=TimeDensityCalendar.StandardDensity(),
+        # how long executions of specific activities take
+        activity_timings=[
+            ActivityTiming(activity_name="place order",
+                           execution_delay=ExponentialTimingFunction(average_value=TimeInterval(minutes=5),
+                                                                     maximal_value=TimeInterval(minutes=20),
+                                                                     function_name="place_order_delay"))
+        ]
+
+    )
+    sim = SimulationModel(ocpn, causal_model, ot_struct, simulation_parameters)
+    print(sim.to_string())
+    sim.to_CPN(output_path, model_name)
 
 
 if __name__ == "__main__":
     output_path = "output"
-    model_name_1 = "collider_simple"
-    model_name_2 = "confounder_simple"
-    run_example_1(output_path, model_name_1)
-    run_example_2(output_path, model_name_2)
+    #model_name_1 = "collider_simple"
+    #model_name_2 = "confounder_simple"
+    model_name_oc = "object_centric"
+    #run_example_1(output_path, model_name_1)
+    # run_example_2(output_path, model_name_2)
+    run_example_oc(output_path, model_name_oc)

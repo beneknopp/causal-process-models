@@ -3,7 +3,9 @@ from xml.etree.ElementTree import Element
 
 from causal_model.causal_process_model import CausalProcessModel
 from causal_model.causal_process_structure import CPM_Categorical_Attribute
-from process_model.petri_net import SimplePetriNet
+from object_centric.object_centric_petri_net import ObjectCentricPetriNet as OCPN
+from object_centric.object_centricity_management import ObjectCentricityManager
+from object_centric.object_type_structure import ObjectTypeStructure
 from simulation_model.cpn_utils.cpn_transition import CPN_Transition
 from simulation_model.functions import get_all_standard_functions_ordered_sml, get_event_writer_sml, \
     get_activity_event_writer_name, get_eaval2list_converter_sml, get_eaval2list_converter_name, \
@@ -22,8 +24,9 @@ class CPM_CPN_Converter:
 
     def __init__(self,
                  cpn_template_path: str,
-                 petriNet: SimplePetriNet,
+                 petriNet: OCPN,
                  causalModel: CausalProcessModel,
+                 objectTypeStructure: ObjectTypeStructure,
                  simulationParameters: SimulationParameters,
                  model_name: str
                  ):
@@ -36,8 +39,11 @@ class CPM_CPN_Converter:
         cpn_id_manager = CPN_ID_Manager(open(cpn_template_path).read())
         self.cpn_id_manager = cpn_id_manager
         self.colset_manager = ColsetManager(cpn_id_manager)
+        self.objectcentricity_manager = ObjectCentricityManager(
+            cpn_id_manager, petriNet, objectTypeStructure, self.colset_manager
+        )
         self.controlflow_manager = ControlFlowManager(
-            cpn_id_manager, petriNet, causalModel, simulationParameters, self.colset_manager
+            cpn_id_manager, petriNet, causalModel, simulationParameters, self.objectcentricity_manager, self.colset_manager
         )
         self.initial_places = {}
         self.new_colsets = []
@@ -49,6 +55,7 @@ class CPM_CPN_Converter:
         self.uses = []
         self.petriNet = petriNet
         self.causalModel = causalModel
+        self.objectTypeStructure = objectTypeStructure
         self.simulationParameters = simulationParameters
 
     def convert(self):
@@ -56,7 +63,9 @@ class CPM_CPN_Converter:
         self.__make_colsets()
         self.__make_colset_variables()
         self.__merge_nets()
+        self.__make_object_type_synchronization()
         self.__make_case_generator()
+        self.__make_case_terminator()
         self.__add_timing()
         self.__add_actions()
         self.__build_dom()
@@ -104,22 +113,23 @@ class CPM_CPN_Converter:
         return el
 
     def __make_colsets(self):
-        activity_ids = [act.get_id() for act in self.__activities]
-        attribute_ids = [attr.get_id() for attr in self.__attributes]
         attributes_with_last_observations = [
-            attr.get_id() for attr in
-            self.causalModel.get_attributes_with_non_aggregated_dependencies()
+            attr for attr in self.causalModel.get_attributes_with_non_aggregated_dependencies()
         ]
         attributes_with_system_aggregations = [
-            attr.get_id() for attr in
-            self.causalModel.get_attributes_with_aggregated_dependencies()]
+            attr for attr in self.causalModel.get_attributes_with_aggregated_dependencies()]
         standard_declarations_element = self.__get_dom_block_element("Standard declarations")
         self.colset_manager.parse_standard_colsets(standard_declarations_element)
-        self.colset_manager.add_case_id_colset()
         self.colset_manager.add_event_id_colset()
         self.colset_manager.add_timedint_colset()
+        for ot in self.objectTypeStructure.get_object_types():
+            self.colset_manager.add_object_type_ID_colset(ot)
+            self.colset_manager.add_object_type_ID_list_colset(ot)
+        for ot in self.objectTypeStructure.get_object_types():
+            self.colset_manager.add_object_type_colset(ot, self.objectTypeStructure)
+            self.colset_manager.add_object_type_list_colset(ot)
         self.colset_manager.add_activity_and_attribute_colsets(
-            activity_ids=activity_ids,
+            activities=self.__activities,
             attributes=self.__attributes,
             attribute_activities=self.__attributeActivities,
             attributes_with_last_observations=attributes_with_last_observations,
@@ -131,6 +141,9 @@ class CPM_CPN_Converter:
 
     def __make_case_generator(self):
         self.controlflow_manager.make_case_generator()
+
+    def __make_case_terminator(self):
+        self.controlflow_manager.make_case_terminator()
 
     def __merge_nets(self):
         self.controlflow_manager.merge_models()
@@ -218,6 +231,7 @@ class CPM_CPN_Converter:
         layout_element.text = layout
 
     def __build_functions(self):
+        # TODO: refactor (make blocks for specific concerns)
         globbox = self.root.find("cpnet").find("globbox")
         fun_block = ET.SubElement(globbox, "block")
         fun_block_id = self.cpn_id_manager.give_ID()
@@ -240,6 +254,10 @@ class CPM_CPN_Converter:
             l2s_name = get_label_to_string_converter_name(attribute)
             l2s_sml = get_label_to_string_converter_sml(attribute, domain_colset_name)
             all_functions.append((l2s_name, l2s_sml))
+
+        ot_sml_functions = self.objectcentricity_manager.get_object_type_sml_functions()
+        all_functions += ot_sml_functions
+
         for activity in self.__activities:
             act_id = activity.get_id()
             act_name = activity.get_name()
@@ -279,3 +297,6 @@ class CPM_CPN_Converter:
     def __add_actions(self):
         self.controlflow_manager.add_iostream()
         self.controlflow_manager.add_table_initializing()
+
+    def __make_object_type_synchronization(self):
+        self.controlflow_manager.make_object_type_synchronization()

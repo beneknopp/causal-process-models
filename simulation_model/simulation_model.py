@@ -1,7 +1,8 @@
 import os
 
 from causal_model.causal_process_model import CausalProcessModel
-from process_model.petri_net import SimplePetriNet
+from object_centric.object_type_structure import ObjectTypeStructure
+from object_centric.object_centric_petri_net import ObjectCentricPetriNet as OCPN
 from simulation_model.cpm_cpn_converter import CPM_CPN_Converter
 from simulation_model.simulation_parameters import SimulationParameters
 from utils.validators import validate_condition
@@ -27,11 +28,13 @@ class SimulationModel:
             ))
 
     def __init__(self,
-                 petriNet: SimplePetriNet,
+                 petriNet: OCPN,
                  causalModel: CausalProcessModel,
+                 objectTypeStructure: ObjectTypeStructure,
                  simulation_parameters: SimulationParameters):
         self.__petriNet = petriNet
         self.__causalModel = causalModel
+        self.__objectTypeStructure = objectTypeStructure
         self.__simulationParameters = simulation_parameters
         self.__validate()
 
@@ -61,6 +64,7 @@ class SimulationModel:
                                       petriNet=self.__petriNet,
                                       causalModel=self.__causalModel,
                                       simulationParameters=self.__simulationParameters,
+                                      objectTypeStructure = self.__objectTypeStructure,
                                       model_name=model_name)
         converter.convert()
         converter.export(model_out_path)

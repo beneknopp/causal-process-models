@@ -210,3 +210,6 @@ class CausalProcessModel:
 
     def has_relation(self, attr_in_id: str, attr_out_id: str, is_aggregated:bool=None):
         return self.__CS.has_relation(attr_in_id, attr_out_id, is_aggregated)
+
+    def get_activity_for_attribute_id(self, attribute_id):
+        return self.__CS.get_activity_for_attribute_id(attribute_id)

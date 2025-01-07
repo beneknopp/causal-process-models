@@ -2,6 +2,8 @@ from enum import Enum
 
 from utils.validators import validate_condition
 
+DEFAULT_OBJECT_TYPE_NAME = "CASE"
+
 
 class Multiplicity(Enum):
     """
@@ -17,10 +19,27 @@ class Multiplicity(Enum):
 class ObjectType:
 
     def __init__(self, object_type_name: str, object_type_id: str = None):
-        self.object_type_name = object_type_name
+        self.__object_type_name = object_type_name
         if object_type_id is None:
             object_type_id = "_".join(object_type_name.split(" "))
-        self.object_type_id = object_type_id
+        self.__object_type_id = object_type_id
+
+    def get_name(self):
+        return self.__object_type_name
+
+    def get_id(self):
+        return self.__object_type_id
+
+
+DEFAULT_OBJECT_TYPE = ObjectType(DEFAULT_OBJECT_TYPE_NAME)
+
+
+def get_default_object_type_name():
+    return DEFAULT_OBJECT_TYPE_NAME
+
+
+def get_default_object_type():
+    return DEFAULT_OBJECT_TYPE
 
 
 class ObjectTypeRelation:
@@ -59,11 +78,34 @@ class ObjectTypeStructure:
 
     def __validate(self):
         r: ObjectTypeRelation
-        key_pairs = [(r.get_ot1(), r.get_ot2()) for r in self.object_type_relations]
-        validate_condition(len(set(key_pairs)) == len(self.object_type_relations))
+        rs = self.get_object_type_relations()
+        ots = self.get_object_types()
+        key_pairs = [(r.get_ot1(), r.get_ot2()) for r in rs]
+        validate_condition(len(set(key_pairs)) == len(self.get_object_type_relations()))
         validate_condition(all(k1 != k2 for (k1, k2) in key_pairs))
+        validate_condition(all(k1 in ots and k2 in ots for (k1, k2) in key_pairs))
 
-    def __init__(self, object_types: list[ObjectType], object_type_relations: list[ObjectTypeRelation]):
-        self.object_types = object_types
-        self.object_type_relations = object_type_relations
+    def __init__(self, object_types: list[ObjectType]=None, object_type_relations: list[ObjectTypeRelation]=None):
+        if object_types is None:
+            if object_type_relations is not None:
+                raise ValueError()
+            object_types = [get_default_object_type()]
+            object_type_relations = []
+        self.__object_types = object_types
+        self.__object_type_relations = object_type_relations
         self.__validate()
+
+    def get_object_types(self):
+        return self.__object_types
+
+    def get_object_type_relations(self):
+        return self.__object_type_relations
+
+    def get_sorted_relations(self, ot: ObjectType) -> list[Multiplicity, ObjectType]:
+        sorted_relations = []
+        for r in self.get_object_type_relations():
+            if r.get_ot1() is ot:
+                sorted_relations.append((r.get_m2(), r.get_ot2()))
+            if r.get_ot2() is ot:
+                sorted_relations.append((r.get_m1(), r.get_ot1()))
+        return sorted_relations

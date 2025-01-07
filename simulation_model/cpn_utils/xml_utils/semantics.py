@@ -43,6 +43,10 @@ class PlaceType(CPN_Node):
         child_elements.append(Text(colset_name))
         CPN_Node.__init__(self, tag, cpn_id_manager, attributes, child_elements)
 
+    def set_colset_name(self, colset_name):
+        text: Text = list(filter(lambda c: isinstance(c, Text), self.child_elements))[0]
+        text.set_text(colset_name)
+
 
 class Token(DOM_Element):
 
@@ -92,3 +96,7 @@ class Initmark(CPN_Node):
         child_elements.append(Textattr())
         child_elements.append(Text(initmark))
         CPN_Node.__init__(self, tag, cpn_id_manager, attributes, child_elements)
+
+    def set_text_content(self, initmark_text):
+        text_child: Text = list(filter(lambda c: isinstance(c, Text), self.child_elements))[0]
+        text_child.set_text(initmark_text)

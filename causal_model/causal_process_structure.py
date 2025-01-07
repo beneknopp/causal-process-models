@@ -1,5 +1,7 @@
 from collections import Counter
 from enum import Enum
+
+from object_centric.object_type_structure import ObjectType, get_default_object_type
 from utils.validators import validate_condition
 
 
@@ -68,7 +70,7 @@ class CPM_Categorical_Attribute(CPM_Attribute):
 
 class CPM_Activity:
 
-    def __init__(self, act_name):
+    def __init__(self, act_name, leading_type: ObjectType = None):
         """
         An activity within a CausalProcessStructure.
 
@@ -76,6 +78,9 @@ class CPM_Activity:
         """
         self.act_name = act_name
         self.act_id = "_".join(act_name.lower().split(" "))
+        if leading_type is None:
+            leading_type = get_default_object_type()
+        self.leading_type = leading_type
 
     def print(self):
         return self.act_name
@@ -86,6 +91,9 @@ class CPM_Activity:
     def get_name(self):
         return self.act_name
 
+    def get_leading_type(self):
+        return self.leading_type
+
 
 class AttributeActivities:
 
@@ -93,7 +101,7 @@ class AttributeActivities:
         validate_condition(all(attr in self.__amap for attr in self.__attribute_ids))
         validate_condition(all(key in self.__attribute_ids for key in self.__amap))
 
-    def __init__(self, amap: dict):
+    def __init__(self, amap: dict[str, CPM_Activity]):
         """
         At which activity each attribute within a causal structure is observed.
 
@@ -331,3 +339,6 @@ class CausalProcessStructure:
             relations = self.get_relations()
         r: AttributeRelation
         return any(r.get_in().get_id() == attr_in_id and r.get_out().get_id() == attr_out_id for r in relations)
+
+    def get_activity_for_attribute_id(self, attribute_id):
+        return self.__attributeActivities.get_activity_for_attribute_id(attribute_id)

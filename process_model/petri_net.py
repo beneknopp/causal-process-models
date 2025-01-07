@@ -1,3 +1,5 @@
+from enum import Enum
+
 from object_centric.object_type_structure import ObjectType
 from utils.validators import validate_condition
 
@@ -25,8 +27,9 @@ class SimplePetriNetNode:
 
 class SimplePetriNetPlace(SimplePetriNetNode):
 
-    def __init__(self, node_id: str, x: float, y: float, is_initial: bool = False):
+    def __init__(self, node_id: str, x: float, y: float, is_initial: bool = False, is_final: bool = False):
         self.is_initial = is_initial
+        self.is_final = is_final
         super().__init__(node_id, x, y)
 
 
@@ -34,6 +37,11 @@ class SimplePetriNetTransition(SimplePetriNetNode):
 
     def __init__(self, node_id: str, x: float, y: float):
         super().__init__(node_id, x, y)
+
+
+class ArcDirection(Enum):
+    P2T = "PtoT"
+    T2P = "TtoP"
 
 
 class SimplePetriNetArc:
@@ -79,8 +87,8 @@ class SimplePetriNetArc:
 
     def get_direction(self):
         if isinstance(self.__source, SimplePetriNetPlace):
-            return "PtoT"
-        return "TtoP"
+            return ArcDirection.P2T
+        return ArcDirection.T2P
 
     def get_id(self):
         return self.__id
@@ -105,19 +113,22 @@ class LabelingFunction:
     def get_labels(self):
         return list(self.__lmap.values())
 
+    def has_label(self, transition_id: str):
+        return transition_id in self.get_keys()
+
 
 class SimplePetriNet:
 
     def __validate(self):
         validate_condition(
-            all(isinstance(p, SimplePetriNetPlace) for p in self.__places))
+            all(isinstance(p, SimplePetriNetPlace) for p in self.places))
         validate_condition(
-            all(isinstance(p, SimplePetriNetTransition) for p in self.__transitions))
+            all(isinstance(p, SimplePetriNetTransition) for p in self.transitions))
         validate_condition(
-            all(isinstance(p, SimplePetriNetArc) for p in self.__arcs))
-        transition_ids = map(lambda t: t.get_id(), self.__transitions)
+            all(isinstance(p, SimplePetriNetArc) for p in self.arcs))
+        transition_ids = map(lambda t: t.get_id(), self.transitions)
         validate_condition(
-            all(t in transition_ids for t in self.__labels.get_keys()))
+            all(t in transition_ids for t in self.labels.get_keys()))
 
     def __init__(self,
                  places: list[SimplePetriNetPlace],
@@ -132,10 +143,10 @@ class SimplePetriNet:
         :param arcs: The arcs
         :param labels: The labels of the labeled transitions
         """
-        self.__places = places
-        self.__transitions = transitions
-        self.__arcs = arcs
-        self.__labels = labels
+        self.places = places
+        self.transitions = transitions
+        self.arcs = arcs
+        self.labels = labels
         self.__validate()
 
     def get_activities(self):
@@ -144,7 +155,7 @@ class SimplePetriNet:
 
         :return: The activities (transition labels)
         """
-        return list(self.__labels.get_labels())
+        return list(self.labels.get_labels())
 
     def get_places(self):
         """
@@ -152,7 +163,7 @@ class SimplePetriNet:
 
         :return: The places
         """
-        return self.__places
+        return self.places
 
     def get_transitions(self):
         """
@@ -160,7 +171,7 @@ class SimplePetriNet:
 
         :return: The transitions
         """
-        return self.__transitions
+        return self.transitions
 
     def get_arcs(self):
         """
@@ -168,24 +179,24 @@ class SimplePetriNet:
 
         :return: The arcs
         """
-        return self.__arcs
+        return self.arcs
 
     def get_labels(self):
-        return self.__labels
+        return self.labels
 
     def to_string(self):
         s = ""
         s += (
             "\tplaces: {0}".format(", ".join(
-                map(lambda x: x.to_string(), self.__places)))
+                map(lambda x: x.to_string(), self.places)))
         )
         s += (
             "\n\ttransitions: {0}".format(", ".join(
-                map(lambda x: x.to_string(), self.__transitions)))
+                map(lambda x: x.to_string(), self.transitions)))
         )
         s += (
             "\n\tarcs: {0}".format(", ".join(
-                map(lambda x: x.to_string(), self.__arcs)))
+                map(lambda x: x.to_string(), self.arcs)))
         )
         return s
 
@@ -197,10 +208,13 @@ class SimplePetriNet:
         :return: The transitions
         """
         t: SimplePetriNetTransition
-        transitions_with_label = list(filter(
-            lambda t: label == self.__labels.get_label(transition_id=t.get_id()),
-            self.__transitions))
-        return transitions_with_label
+        labeled_transitions = list(filter(
+            lambda t: self.labels.has_label(t.get_id()),
+            self.transitions ))
+        transitions_with_this_label = list(filter(
+            lambda t: label == self.labels.get_label(transition_id=t.get_id()),
+            labeled_transitions))
+        return transitions_with_this_label
 
     def get_incoming_arcs(self, node_id: str):
         """
@@ -210,12 +224,17 @@ class SimplePetriNet:
         :return: The arcs
         """
         a: SimplePetriNetArc
-        incoming_arcs = [a for a in self.__arcs if a.get_target().get_id() == node_id]
+        incoming_arcs = [a for a in self.arcs if a.get_target().get_id() == node_id]
         return incoming_arcs
 
     def get_initial_places(self):
         p: SimplePetriNetPlace
-        initial_places = [p for p in self.__places if p.is_initial]
+        initial_places = [p for p in self.places if p.is_initial]
+        return initial_places
+
+    def get_final_places(self):
+        p: SimplePetriNetPlace
+        initial_places = [p for p in self.places if p.is_final]
         return initial_places
 
 

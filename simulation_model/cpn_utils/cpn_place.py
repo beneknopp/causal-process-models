@@ -1,3 +1,4 @@
+from object_centric.object_type_structure import ObjectType
 from simulation_model.cpn_utils.semantic_net_node import SemanticNetNode
 from simulation_model.cpn_utils.xml_utils.attributes import Posattr, Fillattr, Lineattr, Textattr
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
@@ -5,6 +6,7 @@ from simulation_model.cpn_utils.xml_utils.cpn_node import CPN_Node
 from simulation_model.cpn_utils.xml_utils.dom_element import DOM_Element
 from simulation_model.cpn_utils.xml_utils.layout import Text, Ellipse
 from simulation_model.cpn_utils.xml_utils.semantics import Token, Marking, Type, Initmark, PlaceType
+from object_centric.object_centric_petri_net import ObjectCentricPetriNetPlace as OCPN_Place
 
 
 class Port(CPN_Node):
@@ -45,10 +47,13 @@ class CPN_Place(SemanticNetNode):
     colour_layout: str
     initmark: str
     is_initial: bool
+    object_type: ObjectType
 
     def __init__(self, name, x, y, cpn_id_manager: CPN_ID_Manager, colset_name: str = "UNIT",
                  is_initial: bool = False, initmark: str = None, coordinate_scaling_factor=1.0,
-                 fill_colour="White", line_colour="Black", text_colour="Black"):
+                 fill_colour="White", line_colour="Black", text_colour="Black",
+                 object_type: ObjectType = None,
+                 ocpn_place: OCPN_Place = None):
         self.cpn_id_manager = cpn_id_manager
         self.colset_name = colset_name
         self.name = name
@@ -57,6 +62,11 @@ class CPN_Place(SemanticNetNode):
         self.initmark = initmark
         self.is_initial = is_initial
         self.arcs = []
+        if ocpn_place is not None and object_type is not None:
+            if ocpn_place.get_object_type() != object_type:
+                raise ValueError()
+        self.ocpn_place = ocpn_place
+        self.object_type = object_type
         tag = "place"
         attributes = dict()
         pos = Posattr(x, y)
@@ -78,6 +88,9 @@ class CPN_Place(SemanticNetNode):
         text_child.set_text(name)
         self.name = name
 
+    def get_ocpn_place(self):
+        return self.ocpn_place
+
     @classmethod
     def fromPlace(cls, place):
         name = place.name
@@ -98,9 +111,9 @@ class CPN_Place(SemanticNetNode):
         initmark: Initmark = list(filter(lambda c: isinstance(c, Initmark), self.child_elements))[0]
         initmark.set_text_content(initmark_text)
 
-    def set_colset(self, colset_name: str):
-        type_child: Type = list(filter(lambda c: isinstance(c, Type), self.child_elements))[0]
-        type_child.set_text(colset_name)
+    def set_colset_name(self, colset_name: str):
+        place_type_child: PlaceType = list(filter(lambda c: isinstance(c, PlaceType), self.child_elements))[0]
+        place_type_child.set_colset_name(colset_name)
         self.colset_name = colset_name
 
     def get_name(self):

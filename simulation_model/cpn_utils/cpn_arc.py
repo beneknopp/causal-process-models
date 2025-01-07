@@ -1,3 +1,4 @@
+from process_model.petri_net import ArcDirection
 from simulation_model.cpn_utils.cpn_place import CPN_Place
 from simulation_model.cpn_utils.cpn_transition import CPN_Transition
 from simulation_model.cpn_utils.semantic_net_node import SemanticNetNode
@@ -6,6 +7,7 @@ from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
 from simulation_model.cpn_utils.xml_utils.cpn_node import CPN_Node
 from simulation_model.cpn_utils.xml_utils.dom_element import DOM_Element
 from simulation_model.cpn_utils.xml_utils.layout import Text
+from object_centric.object_centric_petri_net import ObjectCentricPetriNetArc as OCPN_Arc
 
 
 class Annotation(CPN_Node):
@@ -39,18 +41,18 @@ class CPN_Arc(CPN_Node):
     placeend: CPN_Place
     transend: CPN_Transition
     isVariableArc: bool
-    orientation: str
+    orientation: ArcDirection
     annotation: Annotation
     cpn_id_manager: CPN_ID_Manager
 
     def __init__(self, cpn_id_manager: CPN_ID_Manager, source: SemanticNetNode, target: SemanticNetNode,
-                 annotation_text: str = ""):
+                 annotation_text: str = "", ocpn_arc: OCPN_Arc = None):
         if source.__class__ == CPN_Place and target.__class__ == CPN_Transition:
-            orientation = "PtoT"
+            orientation = ArcDirection.P2T
             self.placeend = source
             self.transend = target
         elif source.__class__ == CPN_Transition and target.__class__ == CPN_Place:
-            orientation = "TtoP"
+            orientation = ArcDirection.T2P
             self.transend = source
             self.placeend = target
         else:
@@ -64,18 +66,19 @@ class CPN_Arc(CPN_Node):
         self.annotation = Annotation(cpn_id_manager, source, target, annotation_text)
         self.orientation = orientation
         self.cpn_id_manager = cpn_id_manager
+        self.ocpn_arc = ocpn_arc
         tag = "arc"
         attributes = dict()
         child_elements = []
-        attributes["orientation"] = orientation
+        attributes["orientation"] = orientation.value
         attributes["order"] = self.__order_default
         child_elements.append(Posattr(self.__x_default, self.__y_default))
         child_elements.append(Fillattr(""))
         child_elements.append(Lineattr("1"))
         child_elements.append(Textattr())
         child_elements.append(Arrowattr())
-        transend_id = source.get_id() if orientation == "TtoP" else target.get_id()
-        placeend_id = source.get_id() if orientation == "PtoT" else target.get_id()
+        transend_id = source.get_id() if orientation is ArcDirection.T2P else target.get_id()
+        placeend_id = source.get_id() if orientation is ArcDirection.P2T else target.get_id()
         child_elements.append(Transend(transend_id))
         child_elements.append(Placeend(placeend_id))
         child_elements.append(self.annotation)
@@ -90,8 +93,8 @@ class CPN_Arc(CPN_Node):
         orientation = arc.orientation
         isVariableArc = arc.isVariableArc
         annotation = arc.annotation.text_element.text
-        source = new_place if orientation == "PtoT" else new_transition
-        target = new_place if orientation == "TtoP" else new_transition
+        source = new_place if orientation is ArcDirection.P2T else new_transition
+        target = new_place if orientation is ArcDirection.T2P else new_transition
         return cls(arc.cpn, source, target, annotation)
 
     def set_annotation(self, annotation_text: str):

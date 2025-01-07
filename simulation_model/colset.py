@@ -2,7 +2,8 @@ from enum import Enum
 from xml.etree.ElementTree import Element
 
 from causal_model.causal_process_structure import AttributeActivities, CPM_Attribute, CPM_Attribute_Domain, \
-    CPM_Categorical_Attribute
+    CPM_Categorical_Attribute, CPM_Activity
+from object_centric.object_type_structure import ObjectType, ObjectTypeStructure, Multiplicity
 from simulation_model.cpn_utils.cpn import CPN
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
 
@@ -81,14 +82,15 @@ class Colset(object):
             self: WithColset
             definition += "with " + " | ".join(self.labels)
         if self.colset_type == Colset_Type.PRODUCT:
-            definition += str(self.colset_type.value) + " "
-            for subcol in self.subcols:
-                definition += subcol.colset_name + "*"
-            definition = definition[:-1]
+            definition += "product "
+            definition += "*".join(subcol.colset_name for subcol in self.subcols)
         if self.colset_type == Colset_Type.LIST:
             definition += "list " + self.subcols[0].colset_name
         if self.colset_type == Colset_Type.STANDARD:
             definition += self.subcols[0].colset_name
+        if self.colset_type == Colset_Type.RECORD:
+            definition += "record "
+            definition += " * ".join(subcol.colset_name.lower() + " : " + subcol.colset_name for subcol in self.subcols)
         if self.timed:
             definition += " timed"
         definition += ";"
@@ -145,7 +147,6 @@ class Colset_Map:
 
 
 class ColsetManager:
-
     colset_map: Colset_Map
     object_colsets: []
     event_colsets: []
@@ -155,7 +156,6 @@ class ColsetManager:
     parsed_colsets: set
 
     COLSET_PREFIX = "C_"
-    CASEID_COLSET_NAME = COLSET_PREFIX + "cid"
     EVENTID_COLSET_NAME = COLSET_PREFIX + "eid"
     TIMEDINT_COLSET_NAME = COLSET_PREFIX + "timedint"
 
@@ -187,12 +187,6 @@ class ColsetManager:
             if not (standard_colset.value in self.colset_map.colsets_by_name.keys()):
                 raise NameError("A declaration for the standard type '" + standard_colset.value + "' was not found.")
 
-    def add_case_id_colset(self):
-        """
-        Add an unambiguous colset to describe a token just with a case identifier
-        """
-        self.__add_alias_colset(Standard_Colsets.STRING.value, self.CASEID_COLSET_NAME, timed=True)
-
     def add_event_id_colset(self):
         """
         Add an unambiguous colset to describe a token just with a case identifier
@@ -204,13 +198,6 @@ class ColsetManager:
         Add a colset for timed integers
         """
         self.__add_alias_colset(Standard_Colsets.INT.value, self.TIMEDINT_COLSET_NAME, timed=True)
-
-    def get_case_id_colset(self) -> Colset:
-        """
-        Get the unique case_id colset to describe a token just with a case identifier
-        :return: the case_id colset
-        """
-        return self.colset_map.colsets_by_name[self.CASEID_COLSET_NAME]
 
     def get_event_id_colset(self) -> Colset:
         """
@@ -227,10 +214,10 @@ class ColsetManager:
         return self.colset_map.colsets_by_name[self.TIMEDINT_COLSET_NAME]
 
     def add_activity_and_attribute_colsets(self,
-                                           activity_ids: list[str],
+                                           activities: list[CPM_Activity],
                                            attributes: list[CPM_Attribute],
-                                           attributes_with_last_observations: list[str],
-                                           attributes_with_system_aggregations: list[str],
+                                           attributes_with_last_observations: list[CPM_Attribute],
+                                           attributes_with_system_aggregations: list[CPM_Attribute],
                                            attribute_activities: AttributeActivities
                                            ):
         """
@@ -243,25 +230,30 @@ class ColsetManager:
         """
         for attr in attributes:
             self.add_attribute_domain_colset(attr)
-        for act_id in activity_ids:
+        for act in activities:
             act_attribute_ids = [
                 attr_id for attr_id in
-                attribute_activities.get_attribute_ids_for_activity_id(act_id)]
-            self.add_activity_colset(act_id, act_attribute_ids)
-        for attr_id in attributes_with_last_observations:
-            self.add_attribute_last_observation_colset(attr_id)
+                attribute_activities.get_attribute_ids_for_activity_id(act.get_id())]
+            self.add_activity_colset(act, act_attribute_ids)
+        for attr in attributes_with_last_observations:
+            attr_id = attr.get_id()
+            act = attribute_activities.get_activity_for_attribute_id(attr_id)
+            leading_type = act.get_leading_type()
+            self.add_attribute_last_observation_colset(attr.get_id(), leading_type)
         for attr_id in attributes_with_system_aggregations:
-            act_id = attribute_activities.get_activity_for_attribute(attr_id)
+            act_id = attribute_activities.get_activity_for_attribute_id(attr_id)
             self.add_attribute_system_aggregation_colset(attr_id, act_id)
 
-    def add_activity_colset(self, activity_id: str, attribute_ids: list[str]):
+    def add_activity_colset(self, activity: CPM_Activity, attribute_ids: list[str]):
         """
         Add a colset that describes an event of that activity
         :param activity_id:  the id of the activity
         :param attribute_ids:  all attributes of that activity
         """
+        activity_id = activity.get_id()
+        activity_leading_type = activity.get_leading_type()
         activity_eaval_colset_name = self.get_activity_eaval_colset_name(activity_id)
-        attribute_domain_colsets = [self.get_case_id_colset()]
+        attribute_domain_colsets = [self.get_object_type_ID_colset(activity_leading_type)]
         attribute_domain_colsets += [
             self.colset_map.colsets_by_name[self.get_attribute_domain_colset_name(attr_id)]
             for attr_id in attribute_ids
@@ -348,21 +340,21 @@ class ColsetManager:
         attribute_system_aggregation_colset_name = attribute_colset_prefix + "_SYS"
         return attribute_system_aggregation_colset_name
 
-    def add_attribute_last_observation_colset(self, attribute_id: str):
+    def add_attribute_last_observation_colset(self, attribute_id: str, leading_type: ObjectType):
         """
         Create the colset to describe last observed value of an attribute.
 
         :param attribute_id: the id of the attribute
         :return: the colset
         """
-        caseid_colset = self.get_case_id_colset()
+        object_type_id_colset = self.get_object_type_ID_colset(leading_type)
         attribute_domain_colset = self.colset_map.colsets_by_name[self.get_attribute_domain_colset_name(attribute_id)]
         attribute_list_colset_name = self.get_attribute_list_colset_name(attribute_id)
         attribute_list_colset = self.__add_list_colset(attribute_list_colset_name, attribute_domain_colset)
         attribute_last_observation_colset_name = self.get_attribute_last_observation_colset_name(attribute_id)
         colset = self.__add_product_colset(attribute_last_observation_colset_name, [
-            caseid_colset, attribute_list_colset
-        ])#, timed=True)
+            object_type_id_colset, attribute_list_colset
+        ])  # , timed=True)
         return colset
 
     def add_attribute_system_aggregation_colset(self, attribute_id: str, activity_id: str):
@@ -432,6 +424,19 @@ class ColsetManager:
         self.__add_colset(colset)
         return colset
 
+    def __add_record_colset(self, colset_name: str, subcols: list[Colset], timed=False):
+        """
+        Create a colset for multiple colsets where each sub-colset is accessible by "dot notation" (e.g. t.X)
+
+        :param colset_name: the name of the new record colset
+        :param subcols: one or more colsets for which the record colset is to be created
+        :return: the record colset
+        """
+        colset_id = self.cpn_id_manager.give_ID()
+        colset = Colset(colset_id, colset_name, Colset_Type.RECORD, subcols, timed=timed)
+        self.__add_colset(colset)
+        return colset
+
     def __add_colset(self, colset):
         """
         Add a new colset to this object (ColsetManager) to be managed.
@@ -459,7 +464,6 @@ class ColsetManager:
         colset = WithColset(colset_id, colset_name, labels, timed)
         self.__add_colset(colset)
         return colset
-
 
     def get_ordered_colsets(self):
         """
@@ -531,3 +535,54 @@ class ColsetManager:
 
     def get_timed_int_colset_name(self):
         return self.TIMEDINT_COLSET_NAME
+
+    def get_object_type_ID_colset_name(self, ot: ObjectType):
+        return self.COLSET_PREFIX + ot.get_id() + "ID"
+
+    def add_object_type_ID_colset(self, ot: ObjectType):
+        self.__add_alias_colset(Standard_Colsets.STRING.value, self.get_object_type_ID_colset_name(ot), timed=True)
+
+    def get_object_type_ID_colset(self, ot: ObjectType):
+        return self.colset_map.colsets_by_name[self.get_object_type_ID_colset_name(ot)]
+
+    def get_object_type_ID_list_colset_name(self, ot: ObjectType):
+        return self.COLSET_PREFIX + ot.get_id() + "ID_LIST"
+
+    def add_object_type_ID_list_colset(self, ot: ObjectType):
+        self.__add_list_colset(self.get_object_type_ID_list_colset_name(ot), self.get_object_type_ID_colset(ot))
+
+    def get_object_type_ID_list_colset(self, ot: ObjectType):
+        return self.colset_map.colsets_by_name[self.get_object_type_ID_list_colset_name(ot)]
+
+    def get_object_type_colset_name(self, ot: ObjectType):
+        return self.COLSET_PREFIX + ot.get_id()
+
+    def add_object_type_colset(self, ot, ot_struct: ObjectTypeStructure):
+        sorted_relations = ot_struct.get_sorted_relations(ot)
+        sub_colsets = [self.get_object_type_ID_colset(ot), self.get_timed_int_colset()]
+        for (m, ot2) in sorted_relations:
+            if m is Multiplicity.ONE:
+                sub_colsets.append(self.get_object_type_ID_colset(ot2))
+            else:
+                sub_colsets.append(self.get_object_type_ID_list_colset(ot2))
+        self.__add_product_colset(self.get_object_type_colset_name(ot),
+                                  sub_colsets,
+                                  timed=True)
+
+    def get_object_type_colset(self, ot):
+        return self.colset_map.colsets_by_name[self.get_object_type_colset_name(ot)]
+
+    def get_object_type_list_colset_name(self, ot: ObjectType):
+        return self.COLSET_PREFIX + ot.get_id() + "_LIST"
+
+    def add_object_type_list_colset(self, ot):
+        self.__add_list_colset(self.get_object_type_list_colset_name(ot), self.get_object_type_colset(ot))
+
+    def get_object_type_list_colset(self, ot):
+        return self.colset_map.colsets_by_name[self.get_object_type_list_colset_name(ot)]
+
+    def get_subcol_index_by_names(self, colset_name, subcolset_name):
+        colset = self.colset_map.colsets_by_name[colset_name]
+        subcolset = self.colset_map.colsets_by_name[subcolset_name]
+        index = colset.subcols.index(subcolset)
+        return index

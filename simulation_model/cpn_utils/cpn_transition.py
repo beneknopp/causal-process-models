@@ -1,11 +1,15 @@
+import warnings
 from enum import Enum
 
+from object_centric.object_centric_functions import get_code_for_transition_sml, get_code_output_parameter_string, \
+    get_code_for_transition_name as get_code_for_transition_name_global, get_code_input_parameter_string
 from simulation_model.cpn_utils.semantic_net_node import SemanticNetNode
 from simulation_model.cpn_utils.xml_utils.attributes import Posattr, Lineattr, Textattr, Fillattr
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
 from simulation_model.cpn_utils.xml_utils.cpn_node import CPN_Node
 from simulation_model.cpn_utils.xml_utils.dom_element import DOM_Element
 from simulation_model.cpn_utils.xml_utils.layout import Text, Box
+from object_centric.object_centric_petri_net import ObjectCentricPetriNetTransition as OCPN_Transition
 
 
 class TransitionType(Enum):
@@ -178,6 +182,79 @@ class SubpageInfo(CPN_Node):
         CPN_Node.__init__(self, tag, cpn_id_manager, attributes, child_elements)
 
 
+class CodeManager:
+    '''
+    fun guard_place_order(x: C_orders, ys: C_items_LIST)=
+    let
+    val items_complete = extract_items_by_ids(ys, (#2 x))
+    val products_complete = extract_products_by_ids(ys, (#2 x))
+    in
+    items_complete, products_complete
+    end;
+    '''
+
+    def __init__(self, transition_id: str):
+        """
+        This class makes it possible to dynamically add code to transitions during constructing the CPN.
+        In our case, for example, we want to synchronize object flows by means of object relations and for this,
+        delegate some logic into the code region.
+        """
+        self.transition_id = transition_id
+        self.inputs = []
+        self.input_colset_names = []
+        self.outputs = []
+        self.actions = []
+
+    def add_inputs(self, inputs: list[str], input_colset_names: list[str]):
+        for i in range(len(inputs)):
+            input_var = inputs[i]
+            input_colset_name = input_colset_names[i]
+            if input_var in self.inputs:
+                warnings.warn(
+                    "Trying to add existing input variable '{0}' to code region, I'm ignoring this.".format(input_var))
+            self.inputs.append(input_var)
+            self.input_colset_names.append(input_colset_name)
+
+    def add_output(self, output):
+        """
+        Each output corresponds to exactly one action by index.
+        This means that each action output needs to be bound to at most one variable.
+        Use None if the corresponding action does not return anything (e.g., initializing .csv file actions).
+
+        :param output: The variable identifier to which the corresponding action is bound, or None.
+        """
+        if output is not None and output in self.outputs:
+            raise ValueError("Trying to add existing output variable '{0}' to code region. "
+                             "This is not safe, because the variable is already bound by a different code segment.")
+        self.outputs.append(output)
+
+    def add_action(self, action):
+        self.actions.append(action)
+
+    def get_code_for_transition_name(self):
+        return get_code_for_transition_name_global(self.transition_id)
+
+    def get_code_sml(self):
+        return get_code_for_transition_sml(self.transition_id, self.inputs, self.input_colset_names, self.outputs,
+                                           self.actions)
+
+    def get_code_annotation(self):
+        input_parameter_string = get_code_input_parameter_string(self.inputs)
+        output_parameter_string = get_code_output_parameter_string(self.outputs)
+        action_call = "{0}({1})".format(
+            get_code_for_transition_name_global(self.transition_id),
+            input_parameter_string
+        )
+        return '''
+        input({0});
+        output({1});
+        action({2});
+        '''.format(
+            input_parameter_string,
+            output_parameter_string,
+            action_call)
+
+
 class CPN_Transition(SemanticNetNode):
     __explicit_default = "false"
     name: str
@@ -195,7 +272,8 @@ class CPN_Transition(SemanticNetNode):
 
     def __init__(self, transition_type: TransitionType, name, x, y, cpn_id_manager: CPN_ID_Manager,
                  guard_str: str = None, delay: str = None, code: str = None, priority: str = None,
-                 portsock_info: str = None, subpage=None, coordinate_scaling_factor=1.0):
+                 portsock_info: str = None, subpage=None, coordinate_scaling_factor=1.0,
+                 ocpn_transition: OCPN_Transition = None):
         tag = "trans"
         self.cpn_id_manager = cpn_id_manager
         self.name = name
@@ -209,6 +287,8 @@ class CPN_Transition(SemanticNetNode):
         self.subpage = subpage
         self.portsock_info = portsock_info
         self.ports = []
+        self.code_manager = CodeManager("_".join(name.split(" ")))
+        self.ocpn_transition = ocpn_transition
         fill_colour = "Gray" if transition_type is TransitionType.SILENT else "White"
         line_colour = "Gray" if transition_type is TransitionType.SILENT else "Black"
         text_colour = "White" if transition_type is TransitionType.SILENT else "Black"
@@ -229,7 +309,8 @@ class CPN_Transition(SemanticNetNode):
         child_elements.append(Code(x, y, cpn_id_manager, code))
         child_elements.append(Priority(x, y, cpn_id_manager, priority))
         if portsock_info is not None:
-            child_elements.append(Substitution(x, y, cpn_id_manager, subpage.description, subpage.get_id, portsock_info))
+            child_elements.append(
+                Substitution(x, y, cpn_id_manager, subpage.description, subpage.get_id, portsock_info))
         SemanticNetNode.__init__(self, tag, cpn_id_manager, attributes, child_elements)
         self.is_subpage_transition = False
 
@@ -258,7 +339,8 @@ class CPN_Transition(SemanticNetNode):
             self.ports.append(new_place)
         new_portsock_info = old_portsock_info + portsock_info \
             if not old_portsock_info is None else portsock_info
-        substitution = Substitution(self.x, self.y, self.cpn_id_manager, subpage.name, subpage.get_id(), new_portsock_info)
+        substitution = Substitution(self.x, self.y, self.cpn_id_manager, subpage.name, subpage.get_id(),
+                                    new_portsock_info)
         self.portsock_info = new_portsock_info
         self.child_elements = [child for child in self.child_elements if not isinstance(child, Substitution)]
         self.add_child(substitution)
@@ -266,7 +348,7 @@ class CPN_Transition(SemanticNetNode):
     def has_port(self, port_id):
         return len(list(filter(lambda port: port.get_id() == port_id, self.ports))) > 0
 
-    def add_conjunct(self, conjunct: str):
+    def add_guard_conjunct(self, conjunct: str):
         """
         Add to the conjuncts, the condition to be connected with AND to form the guard
         :param conjunct: a string representation of the conjunct
@@ -293,45 +375,6 @@ class CPN_Transition(SemanticNetNode):
         text_element = delay_element.text_element
         text_element.set_text(delay_text)
 
-    def set_standard_code_and_guard(self):
-        name = self.name
-        is_pack_transition = name[:3] == "pck"
-        is_dly_transition = name[:3] == "dly"
-        is_rel_transition = name[:3] == "RLS"
-        # Cast to set! Mind that multiplicities might be helpful too at synchronization points
-        input_vars = set(map(lambda arc: arc.annotation.text_element.get_text(), self.incoming_arcs))
-        input_single_vars = [var for var in input_vars if "_s" not in var]
-        input_many_vars = [var for var in input_vars if "_s" in var]
-        joined_single_vars = ",".join(input_single_vars)
-        joined_many_vars = "^^".join(input_many_vars)
-        joined_vars = ",".join(input_vars)
-        input = "input(" + joined_vars + ")"
-        action = 'action(execute("' + name + '",'
-        if len(joined_single_vars) > 0:
-            action += '[' + joined_single_vars + "]"
-        if len(joined_single_vars) > 0 and len(joined_many_vars) > 0 and not is_pack_transition:
-            action += "^^"
-        if len(joined_many_vars) > 0 and not is_pack_transition:
-            action += joined_many_vars
-        action += "))"
-        code = input + ";" + action + ";"
-        self.set_code(code)
-        if not is_dly_transition and not \
-                (is_rel_transition and self.subpage is not None and self.subpage.subpage_transition.name[
-                                                                    :4] == "END_"):  # and not is_rel_transition:# self.guard is None:
-            guard = "[binding_legal"
-            if self.transition_type == TransitionType.ACTIVITY:
-                guard += "_act"
-            guard += "(" + '"' + self.name + '"' + ","
-            if len(joined_single_vars) > 0:
-                guard += "[" + joined_single_vars + "]"
-            if len(joined_single_vars) > 0 and len(joined_many_vars) > 0 and not is_pack_transition:
-                guard += "^^"
-            if len(joined_many_vars) > 0 and not is_pack_transition:
-                guard += joined_many_vars
-            guard += ")]"
-            self.set_guard(guard)
-
     def clean_annotations_because_of_subpage_transformation(self):
         self.set_guard("")
         self.set_code("")
@@ -340,8 +383,7 @@ class CPN_Transition(SemanticNetNode):
     def is_subpage_transition(self):
         return self.is_subpage_transition
 
-    def make_code(self, input:str, output:str, action:str):
-        code_text  = "input({0});\n".format(input)
-        code_text += "output({0});\n".format(output)
-        code_text += "action({0});".format(action)
-        self.set_code(code_text)
+    def add_code(self, action: str, inputs: list[str], input_colset_names: list[str], output: str = None):
+        self.code_manager.add_inputs(inputs, input_colset_names)
+        self.code_manager.add_output(output)
+        self.code_manager.add_action(action)

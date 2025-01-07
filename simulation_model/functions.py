@@ -7,6 +7,8 @@ HOUR_CONSTANT_NAME = "hour"
 DAY_CONSTANT_NAME = "day"
 WEEK_CONSTANT_NAME = "week"
 VALSEP_CONSTANT = "SEP"
+LIST_DIFF_ELEMENT_FUNCTION_NAME = "list_diff_element"
+LIST_DIFF_FUNCTION_NAME = "list_diff"
 LIST2STRING_CONVERTER_NAME = "list2string"
 MODEL_TIME_GETTER_NAME = "Mtime"
 START_TIME_GETTER_NAME = "start_time"
@@ -42,6 +44,13 @@ def get_timeunit_constant_name(timeunit: TimeUnit):
 
 def get_valsep_constant():
     return VALSEP_CONSTANT
+
+
+def get_list_diff_element_function_name():
+    return LIST_DIFF_ELEMENT_FUNCTION_NAME
+
+def get_list_diff_function_name():
+    return LIST_DIFF_FUNCTION_NAME
 
 
 def get_list2string_converter_name():
@@ -147,7 +156,21 @@ def get_list2string_converter_sml():
     return '''
     fun {0}([]) = ""|
     list2string(x::l) = x ^ (if l=[] then "" else {1}) ^ list2string(l);    
-    '''.format(LIST2STRING_CONVERTER_NAME, VALSEP_CONSTANT)
+    '''.format(get_list2string_converter_name(), get_valsep_constant())
+
+
+def get_list_diff_element_function_sml():
+    return "fun {0}([], _) = [] | {0}(y::xs, x) = ( if y=x then xs else y::{0}(xs, x))".format(
+        get_list_diff_element_function_name()
+    )
+
+
+def get_list_diff_function_sml():
+    return "fun {0}(l1, []) = l1 | list_diff(l1, h2::l2) = {0}({1}(l1, h2), l2)".format(
+        get_list_diff_function_name(),
+        get_list_diff_element_function_name()
+    )
+
 
 
 def get_time2date_converter_sml():
@@ -452,6 +475,8 @@ def get_all_standard_functions_ordered_sml():
     all_standard_functions_ordered += [
         (get_valsep_constant(), get_valsep_constant_sml()),
         (get_list2string_converter_name(), get_list2string_converter_sml()),
+        (get_list_diff_element_function_name(), get_list_diff_element_function_sml()),
+        (get_list_diff_function_name(), get_list_diff_function_sml()),
         (get_model_time_getter_name(), get_model_time_getter_sml()),
         (get_start_time_getter_name(), get_start_time_getter_sml()),
         (get_now_time_getter_name(), get_now_time_getter_sml()),

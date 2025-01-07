@@ -1,4 +1,4 @@
-from object_centric.object_type_structure import ObjectType
+from object_centric.object_type_structure import ObjectType, get_default_object_type
 from process_model.petri_net import SimplePetriNetTransition, SimplePetriNetArc, SimplePetriNetNode, SimplePetriNet, \
     LabelingFunction, SimplePetriNetPlace
 from utils.validators import validate_condition
@@ -12,9 +12,11 @@ class ObjectCentricPetriNetNode(SimplePetriNetNode):
 
 class ObjectCentricPetriNetPlace(ObjectCentricPetriNetNode, SimplePetriNetPlace):
 
-    def __init__(self, node_id: str, x: float, y: float, object_type: ObjectType, is_initial: bool = False):
+    def __init__(self, node_id: str, x: float, y: float, object_type: ObjectType = None, is_initial: bool = False, is_final: bool = False):
+        if object_type is None:
+            object_type = get_default_object_type()
         ObjectCentricPetriNetNode.__init__(self, node_id, x, y)
-        SimplePetriNetPlace.__init__(self, node_id, x, y, is_initial=is_initial)
+        SimplePetriNetPlace.__init__(self, node_id, x, y, is_initial=is_initial, is_final=is_final)
         self.__object_type = object_type
 
     def get_object_type(self):
@@ -23,12 +25,15 @@ class ObjectCentricPetriNetPlace(ObjectCentricPetriNetNode, SimplePetriNetPlace)
 
 class ObjectCentricPetriNetTransition(ObjectCentricPetriNetNode, SimplePetriNetTransition):
 
-    def __init__(self, node_id: str, x: float, y: float, leading_type: ObjectType):
-        super().__init__(node_id, x, y)
-        self.__object_type = leading_type
+    def __init__(self, node_id: str, x: float, y: float, leading_type: ObjectType = None):
+        if leading_type is None:
+            leading_type = get_default_object_type()
+        ObjectCentricPetriNetNode.__init__(self, node_id, x, y)
+        SimplePetriNetTransition.__init__(self, node_id, x, y)
+        self.__leading_type = leading_type
 
-    def get_object_type(self):
-        return self.__object_type
+    def get_leading_type(self):
+        return self.__leading_type
 
 
 class ObjectCentricPetriNetArc(SimplePetriNetArc):
@@ -48,7 +53,18 @@ class ObjectCentricPetriNet(SimplePetriNet):
         validate_condition(all(isinstance(t, ObjectCentricPetriNetTransition) for t in self.get_transitions()))
         validate_condition(all(isinstance(a, ObjectCentricPetriNetArc) for a in self.get_arcs()))
 
-    def __init__(self, places: list[ObjectCentricPetriNetPlace], transitions: list[ObjectCentricPetriNetTransition],
-                 arcs: list[ObjectCentricPetriNetArc], labels: LabelingFunction):
+    def __init__(self,
+                 places: list[ObjectCentricPetriNetPlace],
+                 transitions: list[ObjectCentricPetriNetTransition],
+                 arcs: list[ObjectCentricPetriNetArc],
+                 labels: LabelingFunction):
         super().__init__(places, transitions, arcs, labels)
         self.__validate()
+
+    def get_arcs(self) -> list[ObjectCentricPetriNetArc]:
+        """
+        Get all arcs in the net.
+
+        :return: The arcs
+        """
+        return self.arcs
