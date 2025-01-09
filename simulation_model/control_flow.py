@@ -1,7 +1,9 @@
+import random
+
 from causal_model.causal_process_model import CausalProcessModel
 from causal_model.causal_process_structure import CPM_Attribute, CPM_Activity
 from object_centric.object_centric_functions import get_sorted_object_insert_function_name, \
-    get_completeness_by_relations_function_name
+    get_completeness_by_relations_function_name, get_extract_object_type_by_ids_function_name
 from object_centric.object_centric_petri_net import ObjectCentricPetriNet as OCPN, ObjectCentricPetriNetArc as Arc, \
     ObjectCentricPetriNetPlace as Place, ObjectCentricPetriNetTransition as Transition
 from object_centric.object_centricity_management import ObjectCentricityManager
@@ -13,7 +15,7 @@ from simulation_model.cpn_utils.cpn_place import CPN_Place
 from simulation_model.cpn_utils.cpn_transition import CPN_Transition, TransitionType
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
 from simulation_model.functions import get_activity_event_writer_name, get_activity_event_table_initializer_name, \
-    get_normalized_delay_from_now_function_name
+    get_normalized_delay_from_now_function_name, get_list_diff_function_name
 from simulation_model.simulation_parameters import SimulationParameters
 from simulation_model.timing import ProcessTimeCategory
 
@@ -34,6 +36,9 @@ class ControlFlowMap:
         self.cpn_arcs_by_id: dict = dict()
         self.cpn_arcs_by_simple_pn_arc_id: dict = dict()
         self.cpn_arcs_by_simple_pn_arc: dict = dict()
+        self.split_transitions_in_to_out: dict[CPN_Transition, CPN_Transition] = dict()
+        self.split_transitions_out_to_in: dict[CPN_Transition, CPN_Transition] = dict()
+        self.split_transition_pairs_variable_types: dict[tuple[CPN_Transition, CPN_Transition], set[ObjectType]] = dict()
 
     def add_place(self, place: CPN_Place, simple_place_id: str = None):
         place_id = place.get_id()
@@ -84,6 +89,18 @@ class ControlFlowMap:
         self.add_place(lobs_place)
         self.cpn_lobs_places.append(lobs_place)
 
+    def get_multi_object_type_transitions(self):
+        arcs_by_transitions = {
+            ct: list(filter(lambda a: a.source == ct or a.target == ct, self.cpn_arcs))
+            for ct in self.cpn_transitions
+        }
+        transition_object_types_counts = {
+            ct: len(set(filter(lambda ot: ot is not None, set([a.get_object_type() for a in ct_arcs]))))
+            for ct, ct_arcs in arcs_by_transitions.items()
+        }
+        multi_object_type_transitions = [t for t, cnt in transition_object_types_counts.items() if cnt > 1]
+        return multi_object_type_transitions
+
     def get_mapped_variable_arcs(self):
         mapped_arcs = list(filter(lambda a: a.ocpn_arc is not None, self.cpn_arcs))
         variable_arcs = list(filter(lambda a: a.ocpn_arc.is_variable(), mapped_arcs))
@@ -98,6 +115,29 @@ class ControlFlowMap:
         variable_arcs = self.get_mapped_variable_arcs()
         t_to_p_arcs = list(filter(lambda a: a.orientation is ArcDirection.T2P, variable_arcs))
         return t_to_p_arcs
+
+    def add_split_transition_pair(self, start_t: CPN_Transition, end_t: CPN_Transition):
+        self.split_transitions_in_to_out[start_t] = end_t
+        self.split_transitions_out_to_in[end_t] = start_t
+        self.split_transition_pairs_variable_types[start_t, end_t] = set()
+
+    def is_split_in_transition(self, transition: CPN_Transition):
+        return transition in self.split_transitions_in_to_out
+
+    def is_split_out_transition(self, transition: CPN_Transition):
+        return transition in self.split_transitions_out_to_in
+
+    def get_split_out_for_split_in(self, split_in_transition: CPN_Transition):
+        return self.split_transitions_in_to_out[split_in_transition]
+
+    def get_split_in_for_split_out(self, split_out_transition: CPN_Transition):
+        return self.split_transitions_out_to_in[split_out_transition]
+
+    def get_split_transition_pairs_variable_types(self):
+        return self.split_transition_pairs_variable_types
+
+    def add_split_transition_pair_variable_type(self, split_in: CPN_Transition, split_out: CPN_Transition, ot: ObjectType):
+        self.split_transition_pairs_variable_types[(split_in, split_out)].add(ot)
 
 
 def get_attribute_place_name(attribute_id: str, suffix):
@@ -189,6 +229,7 @@ class ControlFlowManager:
         self.__controlFlowMap = ControlFlowMap()
         # remember the variable names in the event attribute value maps
         self.__eaval_parameter_tuples = {}
+        self.__synchronized_transitions = {}
 
     def merge_models(self):
         self.parse_object_type_net_info()
@@ -236,6 +277,12 @@ class ControlFlowManager:
         place_type = simple_pn_place.get_object_type()
         colset_name = self.__colsetManager.get_object_type_colset_name(place_type)
         initmark = None
+        ################# TODO Testcode Testcode Testcode ########################
+        if colset_name == "C_orders" and simple_pn_place.is_initial:
+            initmark = '[("o1", 3, ["i1", "i2"]) @ 1]'
+        if colset_name == "C_items" and simple_pn_place.is_initial:
+            initmark = '[("i1", 3, "o1")@1,("i2", 3, "o1")@1, ("i3", 2, "o2")@0]'
+        #########################################################################
         cpn_place = CPN_Place(name=simple_pn_place_id,
                               x=simple_pn_place.x,
                               y=simple_pn_place.y,
@@ -287,7 +334,7 @@ class ControlFlowManager:
             act_transitions = self.__petriNet.get_transitions_with_label(act_name)
             t: Transition
             for t in act_transitions:
-                self.__convert_transition(t, act)
+                self.__convert_activity_transition(t, act)
 
     def __make_causal_places(self):
         non_agg_attributes = self.__causalModel.get_attributes_with_non_aggregated_dependencies()
@@ -312,27 +359,28 @@ class ControlFlowManager:
                                object_type=object_type)
         self.__controlFlowMap.add_lobs_place(lobs_place)
 
-    def __convert_transition(self, t: Transition, activity: CPM_Activity):
+    def __convert_activity_transition(self, t: Transition, activity: CPM_Activity):
         start_t = self.__make_start_transition(t)
+        end_t = self.__controlFlowMap.cpn_transitions_by_simple_pn_transition_id[t.get_id()]
+        self.__controlFlowMap.add_split_transition_pair(start_t, end_t)
         control_p_case, control_p_event = self.__make_control_places(t)
-        cpn_t = self.__controlFlowMap.cpn_transitions_by_simple_pn_transition_id[t.get_id()]
         leading_type = t.get_leading_type()
         leading_type_var = self.__colsetManager.get_one_var(
             self.__colsetManager.get_object_type_colset_name(leading_type))
         int_var = self.__colsetManager.get_one_var("INT")
         control_a1 = CPN_Arc(self.cpn_id_manager, start_t, control_p_case, leading_type_var)
-        control_a2 = CPN_Arc(self.cpn_id_manager, control_p_case, cpn_t, leading_type_var)
+        control_a2 = CPN_Arc(self.cpn_id_manager, control_p_case, end_t, leading_type_var)
         self.__controlFlowMap.add_arc(control_a1)
         self.__controlFlowMap.add_arc(control_a2)
         control_b1 = CPN_Arc(self.cpn_id_manager, start_t, control_p_event, int_var)
-        control_b2 = CPN_Arc(self.cpn_id_manager, control_p_event, cpn_t, int_var)
+        control_b2 = CPN_Arc(self.cpn_id_manager, control_p_event, end_t, int_var)
         self.__controlFlowMap.add_arc(control_b1)
         self.__controlFlowMap.add_arc(control_b2)
-        self.__add_attribute_logic(t, start_t, cpn_t, activity)
+        self.__add_attribute_logic(t, start_t, end_t, activity)
         # Semaphore also carries a running event id
         sem = self.__controlFlowMap.cpn_places_by_name[get_global_semaphore_place_name()]
         sem_in = CPN_Arc(self.cpn_id_manager, sem, start_t, str(int_var))
-        sem_out = CPN_Arc(self.cpn_id_manager, cpn_t, sem, str(int_var) + " + 1")
+        sem_out = CPN_Arc(self.cpn_id_manager, end_t, sem, str(int_var) + " + 1")
         self.__controlFlowMap.add_arc(sem_in)
         self.__controlFlowMap.add_arc(sem_out)
 
@@ -568,7 +616,8 @@ class ControlFlowManager:
             # ... make sure the activity can only be executed if there is a well-defined last observation
             # of the preset attribute.
             start_transition.add_guard_conjunct("length({0})>0".format(preset_list_variable))
-        start_transition.add_guard_conjunct("{0}=((#1) {1})".format(leading_type_id_variable, leading_type_variable))
+        # TODO: is this still required?
+        # start_transition.add_guard_conjunct("{0}=((#1) {1})".format(leading_type_id_variable, leading_type_variable))
 
     def add_iostream(self):
         '''
@@ -584,7 +633,7 @@ class ControlFlowManager:
             act_transitions = self.__petriNet.get_transitions_with_label(act_name)
             t: Transition
             for t in act_transitions:
-                # Example code layout:
+                # Example code:
                 '''
                 input(v_int,v_register_patient_eaval);
                 output();
@@ -597,11 +646,12 @@ class ControlFlowManager:
                 eaval_colset_name = self.__colsetManager.get_activity_eaval_colset_name(act.get_id())
                 int_var = self.__colsetManager.get_one_var(int_colset_name)
                 eaval_var = self.__colsetManager.get_one_var(eaval_colset_name)
+                input_variables = [int_var, eaval_var]
                 input_parameters = [int_var, delay_term, eaval_var]
-                input_colset_names = [int_colset_name, real_colset_name, eaval_colset_name]
+                input_parameters_colset_names = [int_colset_name, real_colset_name, eaval_colset_name]
                 action_output = self.__colsetManager.get_one_var("TIME")
                 action = get_activity_event_writer_name(act_id)
-                cpn_t.add_code(action, input_parameters, input_colset_names, action_output)
+                cpn_t.add_code(action, input_variables, input_parameters, input_parameters_colset_names, action_output)
 
     def add_table_initializing(self):
         """
@@ -731,8 +781,12 @@ class ControlFlowManager:
             self.__controlFlowMap.add_transition(case_terminator)
 
     def make_object_type_synchronization(self):
+        self.__synchronized_transitions = {
+            t: {} for t in self.__controlFlowMap.get_multi_object_type_transitions()
+        }
         self.__synchronize_variable_arcs_place_to_transition()
         self.__synchronize_variable_arcs_transition_to_place()
+        self.__add_objectlist_propagation_for_split_transitions()
 
     def __synchronize_variable_arcs_place_to_transition(self):
         """
@@ -741,22 +795,23 @@ class ControlFlowManager:
         This implies that the preset place of that type ot is list-structured.
         """
         place_to_transition_variable_arcs = self.__controlFlowMap.get_place_to_transition_variable_arcs()
-        cp: CPN_Place
         ca: CPN_Arc
+        cp: CPN_Place
+        ct: CPN_Transition
         handled_source_places = set()
         for ca in place_to_transition_variable_arcs:
             cp = ca.source
+            ct = ca.target
+            ot = cp.ocpn_place.get_object_type()
+            if self.__controlFlowMap.is_split_in_transition(ct):
+                split_out = self.__controlFlowMap.get_split_out_for_split_in(ct)
+                self.__controlFlowMap.add_split_transition_pair_variable_type(ct, split_out, ot)
             if cp in handled_source_places:
                 continue
             self.__convert_variable_arc_source_place_preset(ca)
             # accommodate the postset of the place to the list structure
             self.__convert_place_to_transition_variable_arc(ca)
             handled_source_places.add(cp)
-
-
-    def __synchronize_variable_arcs_transition_to_place(self):
-        ocpn_places = self.__objectCentricityManager.get_variable_arc_target_places()
-        print("implement mich bitteschön")
 
     def __convert_variable_arc_source_place_preset(self, variable_arc: CPN_Arc):
         """
@@ -801,7 +856,8 @@ class ControlFlowManager:
             self.__controlFlowMap.add_arc(ct_cp)
             self.__controlFlowMap.remove_arc(ca)
 
-    def __make_transition_to_place_buffer(self, ct: CPN_Transition, ca: CPN_Arc, cp: CPN_Place, ot: ObjectType) -> CPN_Transition:
+    def __make_transition_to_place_buffer(self, ct: CPN_Transition, ca: CPN_Arc, cp: CPN_Place,
+                                          ot: ObjectType) -> CPN_Transition:
         """
         :param ct: a transition that is incoming to the place, with unknown variables
         :param ca: the arc from the transition to the place
@@ -817,7 +873,8 @@ class ControlFlowManager:
             self.__colsetManager.get_object_type_colset_name(ot))
         p_buffer = CPN_Place(p_buffer_name, ct.x, str(float(ct.y) - 50.0), self.cpn_id_manager,
                              otype_colset_name, object_type=ot)
-        t_buffer = CPN_Transition(TransitionType.SILENT, t_buffer_name, cp.x, str(float(cp.y) - 50.0), self.cpn_id_manager)
+        t_buffer = CPN_Transition(TransitionType.SILENT, t_buffer_name, cp.x, str(float(cp.y) - 50.0),
+                                  self.cpn_id_manager)
         ct_p_buffer = CPN_Arc(self.cpn_id_manager, ct, p_buffer, old_annot)
         p_buffer_ct = CPN_Arc(self.cpn_id_manager, p_buffer, ct, object_type_var)
         self.__controlFlowMap.remove_arc(ca)
@@ -826,9 +883,6 @@ class ControlFlowManager:
         self.__controlFlowMap.add_arc(ct_p_buffer)
         self.__controlFlowMap.add_arc(p_buffer_ct)
         return t_buffer
-
-    def __convert_variable_arc_source_place_postset(self, ot, cp, cp_postset):
-        pass
 
     def __convert_place_to_transition_variable_arc(self, variable_arc: CPN_Arc):
         """
@@ -840,21 +894,112 @@ class ControlFlowManager:
         """
         cp: CPN_Place = variable_arc.source
         ct: CPN_Transition = variable_arc.target
-        ot = cp.ocpn_place.get_object_type()
         lt = ct.ocpn_transition.get_leading_type()
-        lt_var = self.__colsetManager.get_one_var(self.__colsetManager.get_object_type_colset_name(lt))
-        ot_list_var_in, out_list_var_out = self.__colsetManager.get_some_vars(
-            self.__colsetManager.get_object_type_list_colset_name(ot), 2)
+        lt_colset_name = self.__colsetManager.get_object_type_colset_name(lt)
+        lt_var = self.__colsetManager.get_one_var(lt_colset_name)
+        ot = cp.ocpn_place.get_object_type()
+        ot_list_colset_name = self.__colsetManager.get_object_type_list_colset_name(ot)
+        ot_list_id_colset_name = self.__colsetManager.get_object_type_ID_list_colset_name(ot)
+        ot_list_var_in, out_list_var_out = self.__colsetManager.get_some_vars(ot_list_colset_name, 2)
         conjunct = "{0}({1},{2})".format(
             get_completeness_by_relations_function_name(lt, ot),
             lt_var,
             ot_list_var_in
         )
         ct.add_guard_conjunct(conjunct)
-        variable_arc_in  = CPN_Arc(self.cpn_id_manager, cp, ct, ot_list_var_in)
-        variable_arc_out = CPN_Arc(self.cpn_id_manager, ct, cp, out_list_var_out)
+        list_diff_term = "{0}({1},{2})".format(get_list_diff_function_name(), ot_list_var_in, out_list_var_out)
+        variable_arc_in = CPN_Arc(self.cpn_id_manager, cp, ct, ot_list_var_in)
+        variable_arc_out = CPN_Arc(self.cpn_id_manager, ct, cp, list_diff_term)
         self.__controlFlowMap.add_arc(variable_arc_in)
         self.__controlFlowMap.add_arc(variable_arc_out)
         self.__controlFlowMap.remove_arc(variable_arc)
+        ot_at_lt_index = self.__colsetManager.get_subcol_index_by_names(lt_colset_name, ot_list_id_colset_name)
+        lt_var_ot_list_access = "(#{0} {1})".format(str(ot_at_lt_index + 1), lt_var)
+        action_name = get_extract_object_type_by_ids_function_name(ot)
+        input_variables = [ot_list_var_in, lt_var]
+        input_parameters = [ot_list_var_in, lt_var_ot_list_access]
+        input_colset_names = [ot_list_colset_name, ot_list_id_colset_name]
+        output = out_list_var_out
+        ct.add_code(action_name, input_variables, input_parameters, input_colset_names, output)
+
+    def __synchronize_variable_arcs_transition_to_place(self):
+        """
+        Make sure that the in postset of transitions that consume multiple objects of a specific type ot,
+        places of the corresponding colset for ot receive a list.
+        """
+        transition_to_place_variable_arcs = self.__controlFlowMap.get_transition_to_place_variable_arcs()
+        ca: CPN_Arc
+        cp: CPN_Place
+        ct: CPN_Transition
+        for ca in transition_to_place_variable_arcs:
+            # we will now declare that the arc propagates a corresponding list.
+            ct = ca.source
+            cp = ca.target
+            ot = cp.ocpn_place.get_object_type()
+            if self.__controlFlowMap.is_split_out_transition(ct):
+                # if this transition was split (into a subpage segment with attribute logic etc.)
+                # then the preset place of the transition of the object type ot contains exactly one list
+                # (since the segment is a protected critical region that handles exactly one case at a time).
+                # in consequence, we can just bind that one list to some variable
+                # and do not need any additional guards etc.
+                ot_list_colset_name = self.__colsetManager.get_object_type_list_colset_name(ot)
+                ot_list_colset_var = self.__colsetManager.get_one_var(ot_list_colset_name)
+                ca.set_annotation(ot_list_colset_var)
+            else:
+                # otherwise, the objects bound at the OCPN transition
+                # are stored in a list that have been bound to a variable with a different name
+                # (see the code segment at __convert_place_to_transition_variable_arc).
+                ot_list_colset_name = self.__colsetManager.get_object_type_list_colset_name(ot)
+                _, ot_list_colset_var2 = self.__colsetManager.get_some_vars(ot_list_colset_name, 2)
+                ca.set_annotation(ot_list_colset_var2)
+
+    def __add_objectlist_propagation_for_split_transitions(self):
+        """
+        We have the lists of objects readily bound to variables at the in-part and the out-part of the split transitions
+        (See __synchronize_variable_arcs_place_to_transition and __synchronize_variable_arcs_transition_to_place).
+        Now we just add a place in between split-in and split-out for propagation.
+        All attribute computations etc. do not depend on the variable objects,
+        but are controlled via the leading type object.
+        """
+        split_transition_pairs = self.__controlFlowMap.get_split_transition_pairs_variable_types()
+        ca: CPN_Arc
+        cp: CPN_Place
+        split_in: CPN_Transition
+        split_out: CPN_Transition
+        for (split_in, split_out), var_types in split_transition_pairs.items():
+            for ot in var_types:
+                propagation_place_name = split_in.get_id() + "_propagate_" + ot.get_id()
+                # add a bit of random coordinate variation so that in case multiple nodes are stacked
+                # on top of each other can be identified visually
+                rx = random.randint(-15, 15)
+                ry = random.randint(-15, 15)
+                px = str(round((float(split_in.x)+float(split_out.x))/2 + rx))
+                py = str(round((float(split_in.y)+float(split_out.y))/2 + ry))
+                ot_colset_list_name = self.__colsetManager.get_object_type_list_colset_name(ot)
+                propagation_place = CPN_Place(propagation_place_name, px, py, self.cpn_id_manager, ot_colset_list_name, object_type=ot)
+                self.__controlFlowMap.add_place(propagation_place)
+                _, in_var = self.__colsetManager.get_some_vars(ot_colset_list_name, 2)
+                out_var = self.__colsetManager.get_one_var(ot_colset_list_name)
+                split_in_to_pp = CPN_Arc(self.cpn_id_manager, split_in, propagation_place, in_var)
+                pp_to_split_in = CPN_Arc(self.cpn_id_manager, propagation_place, split_out, out_var)
+                self.__controlFlowMap.add_arc(split_in_to_pp)
+                self.__controlFlowMap.add_arc(pp_to_split_in)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -88,6 +88,17 @@ class CPN_Arc(CPN_Node):
         transend: Transend = list(filter(lambda c: isinstance(c, Transend), self.child_elements))[0]
         transend.set_id(transition.get_id())
 
+    def get_place(self) -> CPN_Place:
+        return self.placeend
+
+    def get_transition(self) -> CPN_Transition:
+        return self.transend
+
+    def get_object_type(self):
+        if self.placeend.ocpn_place is None:
+            return None
+        return self.placeend.ocpn_place.get_object_type()
+
     @classmethod
     def fromArc(cls, arc, new_place, new_transition):
         orientation = arc.orientation

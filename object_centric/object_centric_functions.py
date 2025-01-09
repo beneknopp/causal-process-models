@@ -93,7 +93,7 @@ def get_match_one_relation_function_sml(ot1: ObjectType, ot2: ObjectType, colset
         get_match_one_relation_function_name(ot1, ot2),
         ot1_colset_name,
         ot2_colset_name,
-        ot2_at_ot1_index
+        ot2_at_ot1_index + 1  # CPNs count from 1, Python counts from 0.
     )
 
 
@@ -112,41 +112,36 @@ def get_completeness_by_relations_function_sml(ot1: ObjectType, ot2: ObjectType,
     )
 
 
-def get_code_input_parameter_string(inputs, input_colset_names=None):
-    if input_colset_names is None:
-        return ",".join(inputs)
-    return ",".join(["{0}: {1}".format(inputs[i], input_colset_names[i]) for i in range(len(inputs))])
-
-
 def get_code_output_parameter_string(outputs):
     output_vars = list(filter(lambda o: o is not None, outputs))
-    output_string = "({0})".format(",".join(output_vars))
+    output_string = ",".join(output_vars)
     return output_string
 
 
-def get_code_for_transition_sml(transition_id: str, inputs, input_colset_names, outputs, actions):
-    parameter_string = get_code_input_parameter_string(inputs, input_colset_names)
+def get_code_for_transition_sml(transition_id: str, actions: list[str, list[str], list[str]], outputs):
     instructions = []
+    input_params = []
+    j = 1
     for i in range(len(outputs)):
         output = outputs[i]
-        action = actions[i]
+        action, _, colsetnames = actions[i]
+        action_params = []
+        for cn in colsetnames:
+            action_params.append("x{0}".format(str(j), cn))
+            input_params.append("x{0}: {1}".format(str(j), cn))
+            j = j + 1
+        action_parameter_string = ",".join(action_params)
         if output is None:
-            instruction = "val _ = {0}".format(actions)
+            instruction = "val _ = {0}({1})".format(action, action_parameter_string)
         else:
-            instruction = "val {0} = {1}".format(output, action)
+            instruction = "val {0} = {1}({2})".format(output, action, action_parameter_string)
         instructions.append(instruction)
+    input_parameter_string = ",".join(input_params)
     code_string = "\n".join(instructions)
     output_string = get_code_output_parameter_string(outputs)
-    return '''
-    fun {0}({1}) = 
-    let
-    {2}
-    in 
-    {3}
-    end;
-    '''.format(
+    return "fun {0}({1}) = let {2} in {3} end;".format(
         get_code_for_transition_name(transition_id),
-        parameter_string,
+        input_parameter_string,
         code_string,
         output_string
     )

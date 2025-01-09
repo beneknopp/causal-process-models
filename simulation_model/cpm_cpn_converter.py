@@ -257,7 +257,6 @@ class CPM_CPN_Converter:
 
         ot_sml_functions = self.objectcentricity_manager.get_object_type_sml_functions()
         all_functions += ot_sml_functions
-
         for activity in self.__activities:
             act_id = activity.get_id()
             act_name = activity.get_name()
@@ -274,6 +273,10 @@ class CPM_CPN_Converter:
             all_functions.append((event_initializer_name, event_initializer_sml))
             all_functions.append((eaval_to_list_converter_name, eaval_to_list_converter_sml))
             all_functions.append((event_writer_name, event_writer_sml))
+        transition: CPN_Transition
+        for transition in self.controlflow_manager.get_cpn_transitions():
+            if transition.has_code():
+                all_functions.append((transition.get_code_name(), transition.get_code_sml()))
         for act in self.__activities:
             act_name = act.get_name()
             timing = self.simulationParameters.activity_timing_manager.\

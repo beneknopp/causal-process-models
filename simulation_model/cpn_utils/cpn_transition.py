@@ -2,7 +2,7 @@ import warnings
 from enum import Enum
 
 from object_centric.object_centric_functions import get_code_for_transition_sml, get_code_output_parameter_string, \
-    get_code_for_transition_name as get_code_for_transition_name_global, get_code_input_parameter_string
+    get_code_for_transition_name as get_code_for_transition_name_global
 from simulation_model.cpn_utils.semantic_net_node import SemanticNetNode
 from simulation_model.cpn_utils.xml_utils.attributes import Posattr, Lineattr, Textattr, Fillattr
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
@@ -200,20 +200,18 @@ class CodeManager:
         delegate some logic into the code region.
         """
         self.transition_id = transition_id
-        self.inputs = []
-        self.input_colset_names = []
+        self.input_variables = []
         self.outputs = []
         self.actions = []
+        self.__has_code = False
 
-    def add_inputs(self, inputs: list[str], input_colset_names: list[str]):
-        for i in range(len(inputs)):
-            input_var = inputs[i]
-            input_colset_name = input_colset_names[i]
-            if input_var in self.inputs:
+    def add_input_variables(self, input_variables: list[str]):
+        for i in range(len(input_variables)):
+            input_var = input_variables[i]
+            if input_var in self.input_variables:
                 warnings.warn(
                     "Trying to add existing input variable '{0}' to code region, I'm ignoring this.".format(input_var))
-            self.inputs.append(input_var)
-            self.input_colset_names.append(input_colset_name)
+            self.input_variables.append(input_var)
 
     def add_output(self, output):
         """
@@ -228,19 +226,24 @@ class CodeManager:
                              "This is not safe, because the variable is already bound by a different code segment.")
         self.outputs.append(output)
 
-    def add_action(self, action):
-        self.actions.append(action)
+    def add_action(self, action: str, input_parameters: list[str], input_variables_colset_names: list[str]):
+        # e.g. foo, [var1, bar(), var2], [Bar, Bar, Foo]
+        self.actions.append((action, input_parameters, input_variables_colset_names))
+        self.__has_code = True
 
-    def get_code_for_transition_name(self):
+    def get_code_name(self):
         return get_code_for_transition_name_global(self.transition_id)
 
     def get_code_sml(self):
-        return get_code_for_transition_sml(self.transition_id, self.inputs, self.input_colset_names, self.outputs,
-                                           self.actions)
+        return get_code_for_transition_sml(self.transition_id, self.actions, self.outputs)
 
     def get_code_annotation(self):
-        input_parameter_string = get_code_input_parameter_string(self.inputs)
-        output_parameter_string = get_code_output_parameter_string(self.outputs)
+        input_variables_string = ",".join(self.input_variables)
+        output_variables_string = get_code_output_parameter_string(self.outputs)
+        all_input_parameters = []
+        for _, params, _ in self.actions:
+            all_input_parameters += params
+        input_parameter_string = ",".join(all_input_parameters)
         action_call = "{0}({1})".format(
             get_code_for_transition_name_global(self.transition_id),
             input_parameter_string
@@ -250,9 +253,14 @@ class CodeManager:
         output({1});
         action({2});
         '''.format(
-            input_parameter_string,
-            output_parameter_string,
+            input_variables_string,
+            output_variables_string,
             action_call)
+
+    def has_code(self):
+        return self.__has_code
+
+
 
 
 class CPN_Transition(SemanticNetNode):
@@ -383,7 +391,23 @@ class CPN_Transition(SemanticNetNode):
     def is_subpage_transition(self):
         return self.is_subpage_transition
 
-    def add_code(self, action: str, inputs: list[str], input_colset_names: list[str], output: str = None):
-        self.code_manager.add_inputs(inputs, input_colset_names)
+    def add_code(self,
+                 action_name: str,
+                 input_variables: list[str], # length k
+                 input_parameters: list[str],  # length n >= k
+                 input_parameters_colset_names: list[str], # length n
+                 output: str = None):
+        self.code_manager.add_input_variables(input_variables)
         self.code_manager.add_output(output)
-        self.code_manager.add_action(action)
+        self.code_manager.add_action(action_name, input_parameters, input_parameters_colset_names)
+        code_annotation = self.code_manager.get_code_annotation()
+        self.set_code(code_annotation)
+
+    def has_code(self):
+        return self.code_manager.has_code()
+
+    def get_code_name(self):
+        return self.code_manager.get_code_name()
+
+    def get_code_sml(self):
+        return self.code_manager.get_code_sml()
