@@ -291,7 +291,7 @@ def run_example_2(output_path, model_name):
     sim.to_CPN(output_path, model_name)
 
 
-def run_example_oc(output_path, model_name):
+def run_example_oc_simple(output_path, model_name):
     ot_orders = ObjectType("orders")
     ot_items = ObjectType("items")
     ot_struct = ObjectTypeStructure([ot_orders, ot_items], [
@@ -382,8 +382,7 @@ def run_example_oc(output_path, model_name):
         activity_timings=[
             ActivityTiming(activity_name="place order",
                            execution_delay=ExponentialTimingFunction(average_value=TimeInterval(minutes=5),
-                                                                     maximal_value=TimeInterval(minutes=20),
-                                                                     function_name="place_order_delay"))
+                                                                     maximal_value=TimeInterval(minutes=20)))
         ]
 
     )
@@ -392,11 +391,156 @@ def run_example_oc(output_path, model_name):
     sim.to_CPN(output_path, model_name)
 
 
+def run_example_oc_complex(output_path, model_name):
+    ot_orders = ObjectType("orders")
+    ot_items = ObjectType("items")
+    ot_struct = ObjectTypeStructure([ot_orders, ot_items], [
+        ObjectTypeRelation(ot_orders, Multiplicity.ONE, Multiplicity.MANY, ot_items)
+    ])
+    yo = 400
+    yi = 200
+    ysync = (yo + yi) / 2
+    po1 = Place("po1", 0, yo, object_type=ot_orders, is_initial=True)
+    pi1 = Place("pi1", 0, yi, object_type=ot_items, is_initial=True)
+    to1 = Transition("to1", 400, yo, leading_type=ot_orders)
+    ti1 = Transition("ti1", 400, yi, leading_type=ot_items)
+    po2 = Place("po2", 800, yo, object_type=ot_orders)
+    pi2 = Place("pi2", 800, yi, object_type=ot_items)
+    tplace = Transition("tplace", 1200, ysync, leading_type=ot_orders)
+    po3 = Place("po3", 1600, yo, object_type=ot_orders)
+    pi3 = Place("pi3", 1600, yi, object_type=ot_items)
+    tpick = Transition("tpick", 2000, ysync, leading_type=ot_items)
+    pi4 = Place("pi4", 2400, yi, object_type=ot_items)
+    tship = Transition("tship", 2400, ysync, leading_type=ot_orders)
+    pofin = Place("pofin", 2800, yo, object_type=ot_orders, is_final=True)
+    pifin = Place("pifin", 2800, yi, object_type=ot_items, is_final=True)
+
+    ocpn = OCPN(
+        places=[
+            po1, pi1, po2, pi2, po3, pi3, pi4, pofin, pifin
+        ],
+        transitions=[
+            to1, ti1, tplace, tpick, tship
+        ],
+        arcs=[
+            Arc(po1, to1),
+            Arc(pi1, ti1),
+            Arc(to1, po2),
+            Arc(ti1, pi2),
+            Arc(po2, tplace),
+            Arc(pi2, tplace, is_variable=True),
+            Arc(tplace, po3),
+            Arc(tplace, pi3, is_variable=True),
+            Arc(pi3, tpick),
+            Arc(po3, tpick),
+            Arc(tpick, po3),
+            Arc(tpick, pi4),
+            Arc(po3, tship),
+            Arc(pi4, tship, is_variable=True),
+            Arc(tship, pofin),
+            Arc(tship, pifin, is_variable=True),
+        ],
+        labels=LabelingFunction({
+            tplace.get_id(): "place order",
+            tpick.get_id(): "pick item",
+            tship.get_id(): "ship order"
+        })
+    )
+    attr_priority = CPM_Categorical_Attribute(
+        "priority",
+        ["Prio_High", "Prio_Low"])
+    attr_warehouse_employee = CPM_Categorical_Attribute(
+        "warehouse_employee",
+        ["Ali", "Benedikt"])
+    attr_logistics_service_provider = CPM_Categorical_Attribute(
+        "logistics_service_provider",
+        ["RapidGmbH", "DHL"])
+    act_place_order = CPM_Activity("place order", leading_type=ot_orders)
+    act_pick_item = CPM_Activity("pick item", leading_type=ot_items)
+    act_ship_order = CPM_Activity("ship order", leading_type=ot_orders)
+    priority_valuation = BayesianValuation(
+        ValuationParameters([]), attr_priority,
+        probability_mappings={
+            (): {"Prio_High": 0.1, "Prio_Low": 0.9},})
+    warehouse_employee_valuation = BayesianValuation(
+        ValuationParameters([]), attr_warehouse_employee,
+        probability_mappings={
+            (): {"Ali": 0.5, "Benedikt": 0.5},})
+    logistics_service_provider_valuation = BayesianValuation(
+        ValuationParameters([]), attr_logistics_service_provider,
+        probability_mappings={
+            (): {"RapidGmbH": 0.2, "DHL": 0.8},})
+
+    causal_structure = CausalProcessStructure(
+        attributes=[
+            attr_priority,
+            attr_warehouse_employee,
+            attr_logistics_service_provider,
+        ],
+        activities=[
+            act_place_order,
+            act_pick_item,
+            act_ship_order
+        ],
+        attributeActivities=AttributeActivities(amap={
+            attr_priority.get_id(): act_place_order,
+            attr_warehouse_employee.get_id(): act_pick_item,
+            attr_logistics_service_provider.get_id(): act_ship_order,
+        }),
+        relations=[]
+    )
+    causal_model = CausalProcessModel(
+        CS=causal_structure,
+        Sagg=AggregationSelections(
+            relationsToSelection={}
+        ),
+        Fagg=AggregationFunctions(
+            relationsToAggregation={}
+        ),
+        V=AttributeValuations(
+            attributeIdToValuation={
+                "priority": priority_valuation,
+                "warehouse_employee": warehouse_employee_valuation,
+                "logistics_service_provider": logistics_service_provider_valuation
+            }
+        )
+    )
+    simulation_parameters = SimulationParameters(
+        # how many instances should be simulated in total
+        number_of_cases=1000,
+        # how much time between cases starting the process
+        case_arrival_rate=ExponentialTimingFunction(average_value=TimeInterval(minutes=15),
+                                                    maximal_value=TimeInterval(minutes=120),
+                                                    function_name="case_arrival"),
+        # at what times do cases arrive
+        case_arrival_density=TimeDensityCalendar.StandardDensity(),
+        # at what times do things happen in the process (i.e., people working)
+        service_time_density=TimeDensityCalendar.StandardDensity(),
+        # how long executions of specific activities take
+        activity_timings=[
+            ActivityTiming(activity_name="place order",
+                           execution_delay=ExponentialTimingFunction(average_value=TimeInterval(minutes=5),
+                                                                     maximal_value=TimeInterval(minutes=20))),
+            ActivityTiming(activity_name="pick item",
+                           execution_delay=ExponentialTimingFunction(average_value=TimeInterval(hours=1),
+                                                                     maximal_value=TimeInterval(hours=3))),
+            ActivityTiming(activity_name="ship order",
+                           execution_delay=ExponentialTimingFunction(average_value=TimeInterval(days=3),
+                                                                     maximal_value=TimeInterval(days=5), )),
+        ]
+    )
+    sim = SimulationModel(ocpn, causal_model, ot_struct, simulation_parameters)
+    print(sim.to_string())
+    sim.to_CPN(output_path, model_name)
+
+
 if __name__ == "__main__":
     output_path = "output"
-    #model_name_1 = "collider_simple"
-    #model_name_2 = "confounder_simple"
-    model_name_oc = "object_centric"
-    #run_example_1(output_path, model_name_1)
+    # model_name_1 = "collider_simple"
+    # model_name_2 = "confounder_simple"
+    model_name_oc_simple = "object_centric_simple"
+    model_name_oc_complex = "object_centric_complex"
+    # run_example_1(output_path, model_name_1)
     # run_example_2(output_path, model_name_2)
-    run_example_oc(output_path, model_name_oc)
+    # run_example_oc_simple(output_path,  model_name_oc_simple)
+    run_example_oc_complex(output_path, model_name_oc_complex)

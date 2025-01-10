@@ -129,6 +129,7 @@ class SimplePetriNet:
         transition_ids = map(lambda t: t.get_id(), self.transitions)
         validate_condition(
             all(t in transition_ids for t in self.labels.get_keys()))
+        validate_condition(len(self.places) == len(set([p.get_id() for p in self.places])))
 
     def __init__(self,
                  places: list[SimplePetriNetPlace],

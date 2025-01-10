@@ -3,6 +3,7 @@ from enum import Enum
 
 from object_centric.object_centric_functions import get_code_for_transition_sml, get_code_output_parameter_string, \
     get_code_for_transition_name as get_code_for_transition_name_global
+from object_centric.object_type_structure import ObjectType
 from simulation_model.cpn_utils.semantic_net_node import SemanticNetNode
 from simulation_model.cpn_utils.xml_utils.attributes import Posattr, Lineattr, Textattr, Fillattr
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
@@ -204,6 +205,7 @@ class CodeManager:
         self.outputs = []
         self.actions = []
         self.__has_code = False
+        self.delay_variables_by_object_type: dict[ObjectType, str] = dict()
 
     def add_input_variables(self, input_variables: list[str]):
         for i in range(len(input_variables)):
@@ -213,18 +215,22 @@ class CodeManager:
                     "Trying to add existing input variable '{0}' to code region, I'm ignoring this.".format(input_var))
             self.input_variables.append(input_var)
 
-    def add_output(self, output):
+    def add_output(self, output: str, output_time_object_types: list[ObjectType]):
         """
         Each output corresponds to exactly one action by index.
         This means that each action output needs to be bound to at most one variable.
         Use None if the corresponding action does not return anything (e.g., initializing .csv file actions).
 
         :param output: The variable identifier to which the corresponding action is bound, or None.
+        :param output_time_object_types: If the output is variable carrying a timestamp (delay), the object type to
+        which this timestamp is to be added after executing the transition.
         """
         if output is not None and output in self.outputs:
             raise ValueError("Trying to add existing output variable '{0}' to code region. "
                              "This is not safe, because the variable is already bound by a different code segment.")
         self.outputs.append(output)
+        for ot in output_time_object_types:
+            self.delay_variables_by_object_type[ot] = output
 
     def add_action(self, action: str, input_parameters: list[str], input_variables_colset_names: list[str]):
         # e.g. foo, [var1, bar(), var2], [Bar, Bar, Foo]
@@ -383,11 +389,6 @@ class CPN_Transition(SemanticNetNode):
         text_element = delay_element.text_element
         text_element.set_text(delay_text)
 
-    def clean_annotations_because_of_subpage_transformation(self):
-        self.set_guard("")
-        self.set_code("")
-        self.set_delay("")
-
     def is_subpage_transition(self):
         return self.is_subpage_transition
 
@@ -396,9 +397,23 @@ class CPN_Transition(SemanticNetNode):
                  input_variables: list[str], # length k
                  input_parameters: list[str],  # length n >= k
                  input_parameters_colset_names: list[str], # length n
-                 output: str = None):
+                 output: str = None,
+                 output_time_object_types=None):
+        """
+        Add a function call to be added to the transition code segment.
+
+        :param action_name: The name of the function to be called
+        :param input_variables: All variables to which any input arguments is bound
+        :param input_parameters: All input arguments
+        :param input_parameters_colset_names: The colset names corresponding to the input arguments, sorted
+        :param output: The variable to which the return of the function call is to be bound.
+        :param output_time_object_type: If the output is variable carrying a timestamp (delay), the object type to
+        which this timestamp is to be added after executing the transition.
+        """
+        if output_time_object_types is None:
+            output_time_object_types = []
         self.code_manager.add_input_variables(input_variables)
-        self.code_manager.add_output(output)
+        self.code_manager.add_output(output, output_time_object_types)
         self.code_manager.add_action(action_name, input_parameters, input_parameters_colset_names)
         code_annotation = self.code_manager.get_code_annotation()
         self.set_code(code_annotation)
@@ -411,3 +426,7 @@ class CPN_Transition(SemanticNetNode):
 
     def get_code_sml(self):
         return self.code_manager.get_code_sml()
+
+    def get_object_type_delay_variable(self, ot: ObjectType):
+        if ot in self.code_manager.delay_variables_by_object_type:
+            return self.code_manager.delay_variables_by_object_type[ot]

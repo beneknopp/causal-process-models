@@ -89,7 +89,7 @@ def get_match_one_relation_function_sml(ot1: ObjectType, ot2: ObjectType, colset
     ot2_colset_name = colset_manager.get_object_type_colset_name(ot2)
     ot2_id_colset_name = colset_manager.get_object_type_ID_colset_name(ot2)
     ot2_at_ot1_index = colset_manager.get_subcol_index_by_names(ot1_colset_name, ot2_id_colset_name)
-    return "fun {0}(o1: {1}, o2: {2}) = ((#{3} o1)=(#1 o2))".format(
+    return "fun {0}(x: {1}, y: {2}) = ((#{3} x)=(#1 y))".format(
         get_match_one_relation_function_name(ot1, ot2),
         ot1_colset_name,
         ot2_colset_name,

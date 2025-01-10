@@ -42,11 +42,13 @@ class CPN_Arc(CPN_Node):
     transend: CPN_Transition
     isVariableArc: bool
     orientation: ArcDirection
+    expression: str
+    delay: str
     annotation: Annotation
     cpn_id_manager: CPN_ID_Manager
 
     def __init__(self, cpn_id_manager: CPN_ID_Manager, source: SemanticNetNode, target: SemanticNetNode,
-                 annotation_text: str = "", ocpn_arc: OCPN_Arc = None):
+                 expression: str = "", delay: str = None, ocpn_arc: OCPN_Arc = None):
         if source.__class__ == CPN_Place and target.__class__ == CPN_Transition:
             orientation = ArcDirection.P2T
             self.placeend = source
@@ -62,7 +64,11 @@ class CPN_Arc(CPN_Node):
         target.add_incoming_arc(self)
         self.source = source
         self.target = target
-        self.annotation_text = annotation_text
+        self.expression = expression
+        self.delay = delay
+        annotation_text = expression
+        if delay is not None:
+            annotation_text += "@++{0}".format(delay)
         self.annotation = Annotation(cpn_id_manager, source, target, annotation_text)
         self.orientation = orientation
         self.cpn_id_manager = cpn_id_manager
@@ -108,15 +114,40 @@ class CPN_Arc(CPN_Node):
         target = new_place if orientation is ArcDirection.T2P else new_transition
         return cls(arc.cpn, source, target, annotation)
 
-    def set_annotation(self, annotation_text: str):
+    def set_expression(self, expression: str):
+        self.expression = expression
+        self.__set_annotation()
+
+    def set_delay(self, delay: str):
+        self.delay = delay
+        self.__set_annotation()
+
+    def set_timed_expression(self, expression: str, delay: str):
+        self.expression = expression
+        self.delay = delay
+        self.__set_annotation()
+
+    def __set_annotation(self):
+        annotation_text = "{0}@++{1}".format(self.expression, self.delay)
         self.annotation_text = annotation_text
         self.annotation.set_text(annotation_text)
 
-    def update_target(self, new_target: SemanticNetNode):
-        arc: CPN_Arc
-        self.target.incoming_arcs = list(filter(lambda arc: arc.get_id() != self.get_id(), self.target.incoming_arcs))
-        new_target.add_incoming_arc(self)
-        self.target = new_target
+    def get_place_object_type(self):
+        ocpn_place = self.placeend.ocpn_place
+        place_type = ocpn_place.get_object_type() if ocpn_place is not None else None
+        return place_type
+
+    def get_transition_object_type(self):
+        ocpn_trans = self.transend.ocpn_transition
+        trans_type = ocpn_trans.get_leading_type() if ocpn_trans is not None else None
+        return trans_type
+
+    def get_place_and_transition_object_types(self):
+        return self.get_place_object_type(), self.get_transition_object_type()
+
+    def get_transition_and_place_object_types(self):
+        return self.get_transition_object_type(), self.get_place_object_type()
+
 
 
 class Transend(DOM_Element):

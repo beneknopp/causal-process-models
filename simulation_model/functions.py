@@ -358,7 +358,7 @@ def get_activity_event_table_initializer_sml(activity_id: str, attribute_names: 
     fun {0}() = 
     let
        val file_id = TextIO.openOut("{1}")
-       val _ = TextIO.output(file_id, {2}(["event_id", "case_id", "activity", "timestamp"]^^{3})) 
+       val _ = TextIO.output(file_id, {2}(["event_id", "case_id", "activity", "start_timestamp", "end_timestamp"]^^{3})) 
        val _ = TextIO.output(file_id, "\\n")
     in
        TextIO.closeOut(file_id)
@@ -445,8 +445,9 @@ def get_event_writer_sml(activity_id: str, activity_name: str, eaval_colset_name
         val starttime = {3}()
         val norm_delay = {4}(delay) 
         val endtime = starttime + norm_delay
+        val starttime_s = t2s(starttime)
         val endtime_s = t2s(endtime)
-        val _ = {7}(event_file_id, [event_id, case_id, "{5}", endtime_s]^^{6}(eaval))
+        val _ = {7}(event_file_id, [event_id, case_id, "{5}", starttime_s, endtime_s]^^{6}(eaval))
     in
        ModelTime.fromInt(round(norm_delay))
     end;        

@@ -116,6 +116,8 @@ class ActivityTiming:
                  execution_delay: TimingFunction):
         self.activity_name = activity_name
         self.execution_delay = execution_delay
+        if execution_delay.function_name is None:
+            execution_delay.function_name = "_".join(activity_name.split(" "))
 
 
 class TimeDensity:

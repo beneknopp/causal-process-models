@@ -66,8 +66,8 @@ class CPM_CPN_Converter:
         self.__make_object_type_synchronization()
         self.__make_case_generator()
         self.__make_case_terminator()
-        self.__add_timing()
         self.__add_actions()
+        self.__add_timing()
         self.__build_dom()
 
     def export(self, model_outpath):

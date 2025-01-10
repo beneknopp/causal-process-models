@@ -109,3 +109,10 @@ class ObjectTypeStructure:
             if r.get_ot2() is ot:
                 sorted_relations.append((r.get_m1(), r.get_ot1()))
         return sorted_relations
+
+    def has_multiplicity(self, ot_tuple: tuple[ObjectType, ObjectType], m: Multiplicity):
+        ot1, ot2 = ot_tuple
+        return any(
+            (ot1 is r.get_ot1() and ot2 is r.get_ot2() and r.get_m2() is m) or
+            (ot2 is r.get_ot1() and ot1 is r.get_ot2() and r.get_m1() is m)
+            for r in self.__object_type_relations)

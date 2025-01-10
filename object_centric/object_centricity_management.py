@@ -96,3 +96,6 @@ class ObjectCentricityManager:
     def get_object_types(self):
         return self.__objectTypeStructure.get_object_types()
 
+    def get_object_type_structure(self):
+        return self.__objectTypeStructure
+

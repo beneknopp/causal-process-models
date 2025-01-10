@@ -398,7 +398,7 @@ class ColsetManager:
             raise NotImplementedError()
         return colset
 
-    def __add_list_colset(self, colset_name, subcol):
+    def __add_list_colset(self, colset_name, subcol, timed: bool = False):
         """
         Create a colset of list type.
 
@@ -407,7 +407,7 @@ class ColsetManager:
         :return: the list colset
         """
         colset_id = self.cpn_id_manager.give_ID()
-        colset = Colset(colset_id, colset_name, colset_type=Colset_Type.LIST, subcols=[subcol])
+        colset = Colset(colset_id, colset_name, colset_type=Colset_Type.LIST, subcols=[subcol], timed=timed)
         self.__add_colset(colset)
         return colset
 
@@ -576,7 +576,7 @@ class ColsetManager:
         return self.COLSET_PREFIX + ot.get_id() + "_LIST"
 
     def add_object_type_list_colset(self, ot):
-        self.__add_list_colset(self.get_object_type_list_colset_name(ot), self.get_object_type_colset(ot))
+        self.__add_list_colset(self.get_object_type_list_colset_name(ot), self.get_object_type_colset(ot), timed=True)
 
     def get_object_type_list_colset(self, ot):
         return self.colset_map.colsets_by_name[self.get_object_type_list_colset_name(ot)]
