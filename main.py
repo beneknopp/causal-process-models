@@ -1,11 +1,13 @@
-from causal_model.aggregation_selections.selection_functions import SelectionBy_toManyRelationsLastObservation
+from causal_model.aggregation_functions.aggregation_functions_implementations import  \
+    MaxMinDiff
+from causal_model.aggregation_selections.aggregation_selections_implementations import SelectionBy_toManyRelationsLastObservation
 from causal_model.causal_process_model import CausalProcessModel, AggregationSelections, AggregationFunctions, \
-    AttributeValuations, AggregationFunction
+    AttributeValuations
 from causal_model.causal_process_structure import CausalProcessStructure, AttributeActivities, \
     CPM_Activity, \
     AttributeRelation, CPM_Categorical_Attribute, CPM_EventStartTime_Attribute, \
-    CPM_EventCompleteTime_Attribute, CPM_Categorical_Domain, REAL_DOMAIN
-from causal_model.valuation import BayesianValuation, ValuationParameters, ValuationParameter
+    CPM_EventCompleteTime_Attribute, CPM_Categorical_Domain
+from causal_model.valuation import BayesianValuation, ValuationParameters, ValuationParameter, CustomSMLValuation
 from object_centric.object_centric_petri_net import ObjectCentricPetriNet as OCPN, ObjectCentricPetriNetArc as Arc, \
     ObjectCentricPetriNetPlace as Place, ObjectCentricPetriNetTransition as Transition
 from object_centric.object_type_structure import ObjectType, ObjectTypeStructure, ObjectTypeRelation, Multiplicity
@@ -572,13 +574,27 @@ def run_example_oc_aggregations(output_path, model_name):
         CPM_Categorical_Domain(["NotLagged", "Lagged"], "lagged_batch_processing"),
         "lagged_batch_processing",
     )
+    r_pick_item_completetime_TO_lagged_batch_processing = AttributeRelation(
+        attr_pick_item_completetime,
+        attr_lagged_batch_processing,
+        is_aggregated=True
+    )
+    r_pick_item_completetime_TO_lagged_batch_processing_AGG = MaxMinDiff(
+        "item_picks_max_min_diff_TO_lagged_batch_processing",
+        r_pick_item_completetime_TO_lagged_batch_processing
+    )
     logistics_service_provider_valuation = BayesianValuation(
         ValuationParameters([]), attr_logistics_service_provider,
         probability_mappings={
-            (): {"RapidGmbH": 0.2, "DHL": 0.8}, })
-    r_pick_item_completetime_TO_lagged_batch_processing = AttributeRelation(attr_pick_item_completetime,
-                                                                         attr_lagged_batch_processing,
-                                                                         is_aggregated=True)
+            (): {"RapidGmbH": 0.2, "DHL": 0.8}, }
+    )
+    lagged_batch_processing_valuation = CustomSMLValuation(
+        ValuationParameters([
+            ValuationParameter(r_pick_item_completetime_TO_lagged_batch_processing_AGG.output_domain)
+        ]), attr_lagged_batch_processing,
+        sml_code="if {0} > 1000.0 then Lagged else NotLagged"
+    )
+
     causal_structure = CausalProcessStructure(
         event_attributes=[
             attr_pick_item_starttime,
@@ -613,14 +629,13 @@ def run_example_oc_aggregations(output_path, model_name):
         ),
         Fagg=AggregationFunctions(
             relationsToAggregation={
-                r_pick_item_completetime_TO_lagged_batch_processing: AggregationFunction(
-                    r_pick_item_completetime_TO_lagged_batch_processing, REAL_DOMAIN)
+                r_pick_item_completetime_TO_lagged_batch_processing: r_pick_item_completetime_TO_lagged_batch_processing_AGG
             }
         ),
         V=AttributeValuations(
             attributeToValuation={
                 attr_logistics_service_provider: logistics_service_provider_valuation,
-                attr_lagged_batch_processing: BayesianValuation(ValuationParameters([]), attr_lagged_batch_processing)
+                attr_lagged_batch_processing: lagged_batch_processing_valuation
             }
         )
     )

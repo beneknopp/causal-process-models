@@ -20,3 +20,17 @@ class SML_Codeable(AbstractBaseClass):
             function_name,
             ",".join(parameters)
         )
+
+
+class AuxiliaryFunction(SML_Codeable):
+
+    def __init__(self, function_name, sml_code):
+        super().__init__()
+        self.function_name = function_name
+        self.sml_code = sml_code
+
+    def get_function_name(self):
+        return self.function_name
+
+    def to_SML(self):
+        return self.sml_code

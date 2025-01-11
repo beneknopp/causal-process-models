@@ -1,7 +1,7 @@
 import random
 
 from causal_model.causal_process_model import CausalProcessModel
-from causal_model.causal_process_structure import CPM_Attribute, CPM_Activity, CPM_Attribute_Domain_Type
+from causal_model.causal_process_structure import CPM_Attribute, CPM_Activity, CPM_Domain_Type
 from object_centric.object_centric_functions import get_sorted_object_insert_function_name, \
     get_completeness_by_relations_function_name, get_extract_object_type_by_ids_function_name, \
     get_match_one_relation_function_name

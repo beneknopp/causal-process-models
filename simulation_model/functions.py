@@ -1,4 +1,4 @@
-from causal_model.causal_process_structure import CPM_Categorical_Attribute, CPM_Attribute, CPM_Attribute_Domain_Type, \
+from causal_model.causal_process_structure import CPM_Categorical_Attribute, CPM_Attribute, CPM_Domain_Type, \
     CPM_Activity
 from simulation_model.colset import ColsetManager
 from simulation_model.timing import TimeInterval, HourDensity, WeekdayDensity, TimeDensity, ProcessTimeCategory, \
@@ -411,7 +411,7 @@ def get_eaval2list_converter_sml(act_id: str,
     :return: the SML function code to convert the list of attribute values into a list of strings
     """
     categorical_attributes_indices = [i for i, attr in enumerate(local_event_attributes)
-                                      if attr.get_domain_type() is CPM_Attribute_Domain_Type.CATEGORICAL]
+                                      if attr.get_domain_type() is CPM_Domain_Type.CATEGORICAL]
     sml = '''
     fun {0}({1}) = 
     '''.format(

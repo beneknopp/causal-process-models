@@ -1,5 +1,6 @@
-from causal_model.causal_process_model import CausalProcessModel, AggregationSelection, AggregationFunction
-from causal_model.causal_process_structure import CPM_Activity, CPM_Attribute, CPM_Attribute_Domain_Type, \
+from causal_model.aggregation_functions.aggregation_functions import AggregationFunction
+from causal_model.causal_process_model import CausalProcessModel, AggregationSelection
+from causal_model.causal_process_structure import CPM_Activity, CPM_Attribute, CPM_Domain_Type, \
     AttributeRelation
 from object_centric.object_centric_petri_net import ObjectCentricPetriNetTransition as Transition, ObjectCentricPetriNet
 from object_centric.object_type_structure import ObjectType
@@ -174,10 +175,10 @@ class CausalModelMerger:
         attributes = self.__causalModel.get_attributes_for_activity_id(activity.get_id())
         standard_attributes = [
             attr for attr in attributes
-            if not attr.get_domain_type() in CPM_Attribute_Domain_Type.get_independent_domain_types()]
+            if not attr.get_domain_type() in CPM_Domain_Type.get_independent_domain_types()]
         timing_attributes = [
             attr for attr in attributes
-            if attr.get_domain_type() in CPM_Attribute_Domain_Type.get_timing_domain_types()]
+            if attr.get_domain_type() in CPM_Domain_Type.get_timing_domain_types()]
         self.__add_system_observation_logic_for_attributes(attributes, activity, t_TRANSACT)
         self.__add_standard_attributes_logic(standard_attributes, ocpn_transition, t_CONTROL, t_TRANSACT,
                                              activity)
@@ -432,9 +433,9 @@ class CausalModelMerger:
         lobs_new_arc = CPN_Arc(self.cpn_id_manager, t_TRANSACT, global_lobs_place, new_last_observation)
         self.__controlFlowMap.add_arc(lobs_old_arc)
         self.__controlFlowMap.add_arc(lobs_new_arc)
-        if attribute.get_domain_type() is CPM_Attribute_Domain_Type.EVENT_START_TIME:
+        if attribute.get_domain_type() is CPM_Domain_Type.EVENT_START_TIME:
             t_TRANSACT.add_start_time_output(attribute_domain_var)
-        if attribute.get_domain_type() is CPM_Attribute_Domain_Type.EVENT_COMPLETE_TIME:
+        if attribute.get_domain_type() is CPM_Domain_Type.EVENT_COMPLETE_TIME:
             t_TRANSACT.add_complete_time_output(attribute_domain_var)
 
     def __make_timing_allobs_logic(self, attribute: CPM_Attribute,
@@ -444,9 +445,9 @@ class CausalModelMerger:
         attribute_domain_var = self.__colsetManager.get_one_var(
             get_attribute_domain_colset_name(attribute.get_id())
         )
-        if attribute.get_domain_type() is CPM_Attribute_Domain_Type.EVENT_START_TIME:
+        if attribute.get_domain_type() is CPM_Domain_Type.EVENT_START_TIME:
             t_TRANSACT.add_start_time_output(attribute_domain_var)
-        if attribute.get_domain_type() is CPM_Attribute_Domain_Type.EVENT_COMPLETE_TIME:
+        if attribute.get_domain_type() is CPM_Domain_Type.EVENT_COMPLETE_TIME:
             t_TRANSACT.add_complete_time_output(attribute_domain_var)
 
     def __add_aggregation_logic_for_attribute(self, activity: CPM_Activity,
@@ -485,10 +486,10 @@ class CausalModelMerger:
                                            ):
         x = float(t_VALUATE.x)
         y = float(t_VALUATE.y)
-        y_p_SELECTED = str(y - 100)
-        y_t_SELECT = str(y - 150)
-        x_p_CONTROL_SELECTION = str(x - 50)
-        y_p_CONTROL_SELECTION = str(y - 150)
+        y_p_SELECTED = str(y - 150)
+        y_t_SELECT = str(y - 200)
+        x_p_CONTROL_SELECTION = str(x - 100)
+        y_p_CONTROL_SELECTION = str(y - 200)
         p_ALLOBS = self.__controlFlowMap.get_allobs_place(attr_AGGREGATED)
         leading_type = activity.get_leading_type()
         leading_type_colset_name = get_object_type_colset_name(leading_type)
@@ -584,7 +585,7 @@ class CausalModelMerger:
         x = float(t_VALUATE.x)
         y = float(t_VALUATE.y)
         y_p_AGGREGATED = str(y - 50)
-        y_t_AGGREGATE = str(y - 50)
+        y_t_AGGREGATE = str(y - 100)
         observations_list_colset_name = get_attribute_observations_list_colset_name(attr_AGGREGATED.get_id())
         observations_list_variable = self.__colsetManager.get_one_var(observations_list_colset_name)
         output_domain = fagg.output_domain
@@ -611,6 +612,13 @@ class CausalModelMerger:
         # TODO: make this safer - this does not work if the same output domain is used for multiple aggregations
         self.__controlFlowMap.add_arc(
             CPN_Arc(self.cpn_id_manager, p_AGGREGATED, t_VALUATE, output_domain_variable)
+        )
+        t_AGGREGATE.add_guard_conjunct(
+            "{0}={1}({2})".format(
+                output_domain_variable,
+                fagg.get_function_name(),
+                observations_list_variable
+            )
         )
 
         return p_AGGREGATED

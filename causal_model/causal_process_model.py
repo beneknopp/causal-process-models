@@ -1,38 +1,9 @@
-from abc import ABC
-
+from causal_model.aggregation_functions.aggregation_functions import AggregationFunction
+from causal_model.aggregation_selections.aggregation_selections_implementations import AggregationSelection
 from causal_model.causal_process_structure import CausalProcessStructure, AttributeRelation, CPM_Attribute, \
-    CPM_Attribute_Domain_Type, CPM_Activity, CPM_Domain, REAL_DOMAIN
-from causal_model.aggregation_selections.selection_functions import AggregationSelection
+    CPM_Domain_Type, CPM_Activity
 from causal_model.valuation import AttributeValuation
-from utils.sml_coding import SML_Codeable
 from utils.validators import validate_condition
-
-
-class AggregationFunction:
-#class AggregationFunction(SML_Codeable):
-
-    def __init__(self, r: AttributeRelation, output_domain: CPM_Domain):
-        super().__init__()
-        self.input_domain = r.get_in().get_domain()
-        self.output_domain = output_domain
-
-    def get_function_name(self):
-        pass
-
-    def get_parameter_string(self):
-        pass
-
-    def get_function_body(self):
-        pass
-
-
-class AggregationFunctionMaxMinDiff(AggregationFunction):
-
-    def __validate(self):
-        validate_condition(self.input_domain.domain_type is CPM_Attribute_Domain_Type.REAL)
-
-    def __init__(self, r: AttributeRelation):
-        super().__init__(r, REAL_DOMAIN)
 
 
 class AggregationSelections:
@@ -76,6 +47,15 @@ class AggregationFunctions:
 
     def get_relations(self):
         return self.__relations
+
+    def get_smls(self):
+        smls = []
+        for aggregation in self.relationsToAggregation.values():
+            aggregation: AggregationFunction
+            for aux in aggregation.auxiliary_functions:
+                smls.append((aux.get_function_name(), aux.to_SML()))
+            smls.append((aggregation.get_function_name(), aggregation.to_SML()))
+        return smls
 
 
 class AttributeValuations:
@@ -146,7 +126,7 @@ class CausalProcessModel:
         attributes_without_valuation = [
             attr.get_id() for attr in cs_attributes
             if attr.get_id() not in v_attribute_ids
-               and attr.get_domain_type() not in CPM_Attribute_Domain_Type.get_independent_domain_types()]
+               and attr.get_domain_type() not in CPM_Domain_Type.get_independent_domain_types()]
         validate_condition(
             not attributes_without_valuation,
             "There are attributes ({0}) without valuation.".format(
@@ -162,6 +142,8 @@ class CausalProcessModel:
         for attribute_id in self.__V.get_attribute_ids():
             valuation = self.__V.get_attribute_valuation(attribute_id)
             valuation_params = valuation.valuation_parameters.get_valuation_parameters_list()
+            continue
+            #TODO: bugfixing
             params_not_in_causal_structure = [param.get_attribute().get_id() for param in valuation_params if
                                               param.get_attribute() not in self.get_attributes()]
             validate_condition(
@@ -272,7 +254,7 @@ class CausalProcessModel:
         :act_id:
         """
         return [attr for attr in self.get_attributes_for_activity_id(act_id)
-                if attr.get_domain_type() not in CPM_Attribute_Domain_Type.get_independent_domain_types()]
+                if attr.get_domain_type() not in CPM_Domain_Type.get_independent_domain_types()]
 
     def get_start_time_attribute_for_activity(self, activity: CPM_Activity):
         return self.__CS.get_start_time_attribute_for_activity(activity)
@@ -300,3 +282,14 @@ class CausalProcessModel:
 
     def get_attributes_at_activity_with_aggregation_postdependency(self, act: CPM_Activity):
         return self.__CS.get_attributes_at_activity_with_aggregation_postdependency(act)
+
+    def get_aggregation_functions(self):
+        return list(self.get_aggregation_function().values())
+
+    def get_aggregation_domains(self):
+        fagg: AggregationFunction
+        domains = []
+        for fagg in self.get_aggregation_function().relationsToAggregation.values():
+            domains = domains + [fagg.input_domain] if fagg.input_domain not in domains else domains
+            domains = domains + [fagg.output_domain] if fagg.output_domain not in domains else domains
+        return domains

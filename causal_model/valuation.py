@@ -1,8 +1,9 @@
 from abc import ABC as AbstractBaseClass
 from itertools import product
 
-from causal_model.causal_process_structure import CPM_Attribute, CPM_Attribute_Domain_Type, CPM_Categorical_Attribute, \
+from causal_model.causal_process_structure import CPM_Attribute, CPM_Domain_Type, CPM_Categorical_Attribute, \
     CPM_Domain
+from simulation_model.colset import get_domain_colset_name
 from utils.math import cumulative_distribution
 from utils.sml_coding import SML_Codeable
 from utils.validators import validate_condition
@@ -41,7 +42,7 @@ class AttributeValuation(SML_Codeable, AbstractBaseClass):
 
     def __validate(self):
         domain_type = self.outcome_attribute.get_domain_type()
-        validate_condition(domain_type not in CPM_Attribute_Domain_Type.get_independent_domain_types(),
+        validate_condition(domain_type not in CPM_Domain_Type.get_independent_domain_types(),
                            "Causal effects on attributes of type/domain {0} "
                            "cannot be modeled directly.".format(domain_type.value))
 
@@ -81,7 +82,7 @@ class BayesianValuation(AttributeValuation):
         # 1
         x: ValuationParameter
         validate_condition(all(
-            x.get_attribute_domain_type() == CPM_Attribute_Domain_Type.CATEGORICAL
+            x.get_attribute_domain_type() == CPM_Domain_Type.CATEGORICAL
             for x in valuation_parameters.get_valuation_parameters_list()
         ))
 
@@ -232,8 +233,6 @@ class CustomSMLValuation(AttributeValuation):
 
     def __init__(self, valuation_parameters: ValuationParameters,
                  outcome_attribute: CPM_Categorical_Attribute,
-                 signature_variables: list[str],
-                 signature_colsets: list[str],
                  sml_code: str):
         """
         Initialize the valuation function based on user-specified SML code.
@@ -246,9 +245,12 @@ class CustomSMLValuation(AttributeValuation):
         :param sml_code: The body of the SML function
         """
         super().__init__(valuation_parameters, outcome_attribute)
-        self.__signature_variables = signature_variables
-        self.__signature_colsets = signature_colsets
-        self.__sml_code = sml_code
+        val_param_list = valuation_parameters.get_valuation_parameters_list()
+        self.__signature_variables = ["x{0}".format(str(i)) for i in range(len(val_param_list))]
+        self.__signature_colsets = [get_domain_colset_name(v.get_domain()) for v in val_param_list]
+        for v in self.__signature_variables:
+            sml_code = sml_code.replace("{0}", v)
+        self.sml_code = sml_code
         self.__validate()
 
     def __get_function_name(self):
@@ -258,5 +260,15 @@ class CustomSMLValuation(AttributeValuation):
         return ",".join(["{0}: {1}".format(var, colset) for var, colset in
                          zip(self.__signature_variables, self.__signature_colsets)])
 
-    def get_function_body(self):
-        return self.__sml_code
+    def to_SML(self):
+        function_name = self.__get_function_name()
+        parameter_string = self.get_parameter_string()
+        function_body = self.sml_code
+        return "fun {0}({1}) = {2}".format(function_name, parameter_string, function_body)
+
+    def get_call(self):
+        function_name = self.__get_function_name()
+        return lambda parameters: "{0}({1})".format(
+            function_name,
+            ",".join(parameters)
+        )

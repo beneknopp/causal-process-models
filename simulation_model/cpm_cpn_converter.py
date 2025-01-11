@@ -132,6 +132,7 @@ class CPM_CPN_Converter:
             attributes=self.__attributes,
             attribute_activities=self.__attributeActivities,
             attributes_with_last_observations=attributes_with_last_observations,
+            aggregation_domains=self.causalModel.get_aggregation_domains(),
             attributes_with_system_aggregations=attributes_with_system_aggregations
         )
         self.colset_manager.add_domain_colsets(
@@ -169,8 +170,11 @@ class CPM_CPN_Converter:
         id_child = ET.SubElement(var_block, "id")
         id_child.text = "Variables"
         colset_vars_map = self.colset_manager.colset_vars_map
+        handled_vars = set()
         for colset_name, varset in colset_vars_map.items():
+            varset = [var for var in varset if var not in handled_vars]
             self.__build_colset_vars(var_block, colset_name, varset)
+            handled_vars = set(list(varset) + list(handled_vars))
 
     def __build_petri_net(self):
         places = self.controlflow_manager.get_cpn_places()
@@ -279,9 +283,9 @@ class CPM_CPN_Converter:
     def __build_aggregation_logic_functions(self):
         fun_block = self.__make_block("Aggregation Logic Functions")
         selection_functions = self.causalModel.get_selection_functions_smls()
-        #aggregation_functions = self.causalModel.get_aggregation_functions_smls()
+        aggregation_functions = self.causalModel.get_aggregation_functions_smls()
         self.__build_functions_in_block(selection_functions, fun_block)
-        #self.__build_functions_in_block(aggregation_functions, fun_block)
+        self.__build_functions_in_block(aggregation_functions, fun_block)
 
     def __build_activity_functions(self):
         fun_block = self.__make_block("Activity Functions")

@@ -6,19 +6,6 @@ from simulation_model.colset import get_object_type_colset_name, get_real_colset
 from utils.sml_coding import SML_Codeable
 
 
-class AuxiliaryFunction(SML_Codeable):
-
-    def __init__(self, function_name, sml_code):
-        super().__init__()
-        self.function_name = function_name
-        self.sml_code = sml_code
-
-    def get_function_name(self):
-        return self.function_name
-
-    def to_SML(self):
-        return self.sml_code
-
 
 class AggregationSelection(SML_Codeable, AbstractBaseClass):
 

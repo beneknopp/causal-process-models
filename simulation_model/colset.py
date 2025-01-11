@@ -1,7 +1,7 @@
 from enum import Enum
 from xml.etree.ElementTree import Element
 
-from causal_model.causal_process_structure import AttributeActivities, CPM_Attribute, CPM_Attribute_Domain_Type, \
+from causal_model.causal_process_structure import AttributeActivities, CPM_Attribute, CPM_Domain_Type, \
     CPM_Activity, CPM_Domain, CPM_Categorical_Domain
 from object_centric.object_type_structure import ObjectType, ObjectTypeStructure, Multiplicity
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
@@ -364,6 +364,7 @@ class ColsetManager:
                                            attributes: list[CPM_Attribute],
                                            attributes_with_last_observations: list[CPM_Attribute],
                                            attributes_with_system_aggregations: list[CPM_Attribute],
+                                           aggregation_domains: list[CPM_Domain],
                                            attribute_activities: AttributeActivities
                                            ):
         """
@@ -392,6 +393,10 @@ class ColsetManager:
             leading_type = act.get_leading_type()
             self.add_attribute_all_observations_colset(attribute_id, leading_type)
             self.add_attribute_observations_list_colset(attribute_id)
+        for domain in aggregation_domains:
+            self.add_domain_colset(domain)
+
+
 
     def add_activity_colset(self, activity: CPM_Activity, attribute_ids: list[str]):
         """
@@ -523,6 +528,8 @@ class ColsetManager:
         :param alias: the new name
         :return: the alias colset
         """
+        if alias in self.colset_map.colsets_by_name:
+            return self.colset_map.colsets_by_name[alias]
         colset_id = self.cpn_id_manager.give_ID()
         colset_old: Colset = self.colset_map.colsets_by_name[colset_old_name]
         colset_new = Colset(colset_id, alias, colset_old.colset_type, [colset_old], timed=timed)
@@ -554,6 +561,7 @@ class ColsetManager:
         for colset_name in colset_names:
             self.__make_variable_for_colset(colset_name)
 
+    # TODO: refactor / rework
     def __make_variable_for_colset(self, colset_name: str):
         """
         Make a variable for one colset that this ColsetManager is maintaining.
@@ -654,11 +662,13 @@ class ColsetManager:
             colset_name = get_domain_colset_name(domain)
         if colset_name in self.colset_map.colsets_by_name:
             return self.colset_map.colsets_by_name[colset_name]
-        if attribute_domain_type is CPM_Attribute_Domain_Type.CATEGORICAL:
+        if attribute_domain_type is CPM_Domain_Type.CATEGORICAL:
             domain: CPM_Categorical_Domain
             labels = domain.get_labels()
             colset = self.__add_with_colset(colset_name, labels)
-        elif attribute_domain_type in CPM_Attribute_Domain_Type.get_timing_domain_types():
+        elif attribute_domain_type in CPM_Domain_Type.get_timing_domain_types():
+            colset = self.__add_alias_colset(get_real_colset_name(), colset_name)
+        elif attribute_domain_type is CPM_Domain_Type.REAL:
             colset = self.__add_alias_colset(get_real_colset_name(), colset_name)
         else:
             raise NotImplementedError()

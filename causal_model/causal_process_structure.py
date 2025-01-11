@@ -30,7 +30,7 @@ class CPM_Activity:
     def get_leading_type(self):
         return self.leading_type
 
-class CPM_Attribute_Domain_Type(Enum):
+class CPM_Domain_Type(Enum):
     """
     An attribute domain is the data type. Currently supported are:
     CATEGORICAL
@@ -66,7 +66,7 @@ class CPM_Attribute_Domain_Type(Enum):
 
 class CPM_Domain:
 
-    def __init__(self, domain_type: CPM_Attribute_Domain_Type, domain_id: str):
+    def __init__(self, domain_type: CPM_Domain_Type, domain_id: str):
         self.domain_type = domain_type
         self.__domain_id = domain_id
 
@@ -77,7 +77,7 @@ class CPM_Domain:
 class CPM_Categorical_Domain(CPM_Domain):
 
     def __init__(self, labels: list[str], domain_id: str):
-        super().__init__(CPM_Attribute_Domain_Type.CATEGORICAL, domain_id)
+        super().__init__(CPM_Domain_Type.CATEGORICAL, domain_id)
         self.__labels = labels
 
     def __validate(self):
@@ -92,20 +92,20 @@ class CPM_EventStartTime_Domain(CPM_Domain):
 
     def __init__(self):
         domain_id = "START_TIME_DOM"
-        super().__init__(CPM_Attribute_Domain_Type.EVENT_START_TIME, domain_id)
+        super().__init__(CPM_Domain_Type.EVENT_START_TIME, domain_id)
 
 
 class CPM_EventCompleteTime_Domain(CPM_Domain):
 
     def __init__(self):
         domain_id = "END_TIME_DOM"
-        super().__init__(CPM_Attribute_Domain_Type.EVENT_COMPLETE_TIME, domain_id)
+        super().__init__(CPM_Domain_Type.EVENT_COMPLETE_TIME, domain_id)
 
 
 class CPM_Real_Domain(CPM_Domain):
 
     def __init__(self):
-        super().__init__(CPM_Attribute_Domain_Type.REAL, "REAL")
+        super().__init__(CPM_Domain_Type.REAL, "REAL")
 
 
 EVENT_START_TIME_DOMAIN = CPM_EventStartTime_Domain()
@@ -155,10 +155,10 @@ class CPM_Attribute:
         return self.activity
 
     @classmethod
-    def init_domain_attribute(cls, activity_id, domain: CPM_Attribute_Domain_Type):
-        if domain is CPM_Attribute_Domain_Type.EVENT_START_TIME:
+    def init_domain_attribute(cls, activity_id, domain: CPM_Domain_Type):
+        if domain is CPM_Domain_Type.EVENT_START_TIME:
             return CPM_EventStartTime_Attribute(activity_id)
-        if domain is CPM_Attribute_Domain_Type.EVENT_COMPLETE_TIME:
+        if domain is CPM_Domain_Type.EVENT_COMPLETE_TIME:
             return CPM_EventCompleteTime_Attribute(activity_id)
         raise ValueError("Invalid domain {0}".format(domain.value))
 
@@ -174,7 +174,7 @@ class CPM_Categorical_Attribute(CPM_Attribute):
 
 class CPM_CaseAttribute(CPM_Attribute):
 
-    def __init__(self, attr_domain: CPM_Attribute_Domain_Type, attr_name):
+    def __init__(self, attr_domain: CPM_Domain_Type, attr_name):
         super().__init__(attr_domain, attr_name)
 
 
@@ -261,7 +261,7 @@ class AttributeActivities:
     def get_complete_time_attribute_for_activity(self, activity):
         all_attrs = self.get_attributes_for_activity(activity)
         complete_time_attribute = list(
-            filter(lambda a: a.get_domain_type() is CPM_Attribute_Domain_Type.EVENT_COMPLETE_TIME,
+            filter(lambda a: a.get_domain_type() is CPM_Domain_Type.EVENT_COMPLETE_TIME,
                    all_attrs))
         if not len(complete_time_attribute) == 1:
             raise ValueError()
@@ -269,7 +269,7 @@ class AttributeActivities:
 
     def get_start_time_attribute_for_activity(self, activity):
         all_attrs = self.get_attributes_for_activity(activity)
-        start_time_attribute = list(filter(lambda a: a.get_domain_type() is CPM_Attribute_Domain_Type.EVENT_START_TIME,
+        start_time_attribute = list(filter(lambda a: a.get_domain_type() is CPM_Domain_Type.EVENT_START_TIME,
                                            all_attrs))
         if not len(start_time_attribute) == 1:
             raise ValueError()
@@ -325,7 +325,7 @@ class CausalProcessStructure:
         all_labels = [
             cat_attr.get_labels()
             for cat_attr in
-            filter(lambda attr: attr.get_domain_type() == CPM_Attribute_Domain_Type.CATEGORICAL,
+            filter(lambda attr: attr.get_domain_type() == CPM_Domain_Type.CATEGORICAL,
                    attributes)
         ]
         all_labels = [element for sublist in all_labels for element in sublist]
@@ -334,7 +334,7 @@ class CausalProcessStructure:
             len(intersecting_labels) == 0,
             "There are duplicate labels ({0}) across different categorical attributes.".format(
                 intersecting_labels))
-        for domain_type in [CPM_Attribute_Domain_Type.EVENT_START_TIME, CPM_Attribute_Domain_Type.EVENT_COMPLETE_TIME]:
+        for domain_type in [CPM_Domain_Type.EVENT_START_TIME, CPM_Domain_Type.EVENT_COMPLETE_TIME]:
             customized_domain_attributes = [attr for attr in attributes if attr.get_domain_type() is domain_type]
             validate_condition(
                 len(customized_domain_attributes) <= 1,
@@ -418,8 +418,8 @@ class CausalProcessStructure:
 
     def __expand_with_standard_attributes(self):
         for activity in self.__activities:
-            for domain_type in [CPM_Attribute_Domain_Type.EVENT_COMPLETE_TIME,
-                                CPM_Attribute_Domain_Type.EVENT_START_TIME]:
+            for domain_type in [CPM_Domain_Type.EVENT_COMPLETE_TIME,
+                                CPM_Domain_Type.EVENT_START_TIME]:
                 activity_attributes = self.__attributeActivities.get_attributes_for_activity(activity)
                 if not any(attr.get_domain_type() is domain_type for attr in activity_attributes):
                     domain_attribute = CPM_Attribute.init_domain_attribute(activity.get_id(), domain_type)

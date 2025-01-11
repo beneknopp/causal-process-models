@@ -1,14 +1,15 @@
-from abc import ABC
+from abc import ABC as AbstractBaseClass
 
-from causal_model.aggregation_selections.aggregation_selections import AggregationSelection, AuxiliaryFunction
+from causal_model.aggregation_selections.aggregation_selections import AggregationSelection
 from causal_model.causal_process_structure import AttributeRelation
 from object_centric.object_centric_functions import get_project_object_to_many_relations_name
 from simulation_model.colset import get_object_type_ID_list_colset_name, \
-    get_attribute_system_aggregation_colset_name_list, get_object_type_ID_colset_name, \
+    get_object_type_ID_colset_name, \
     get_attribute_all_observations_colset_name
+from utils.sml_coding import AuxiliaryFunction
 
 
-class SelectionBy_toManyRelationsLastObservation(AggregationSelection, ABC):
+class SelectionBy_toManyRelationsLastObservation(AggregationSelection, AbstractBaseClass):
 
     def __init__(self, name, r: AttributeRelation):
         super().__init__(name, r)
