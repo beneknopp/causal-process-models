@@ -3,7 +3,8 @@ from object_centric.object_centric_functions import get_project_object_type_to_i
     get_extract_object_type_by_ids_function_sml, get_sorted_object_insert_function_sml, \
     get_sorted_object_insert_function_name, get_completeness_by_relations_function_sml, \
     get_completeness_by_relations_function_name, get_match_one_relation_function_sml, \
-    get_match_one_relation_function_name
+    get_match_one_relation_function_name, get_project_object_to_many_relations_name, \
+    get_project_object_to_many_relations_sml
 from object_centric.object_type_structure import ObjectTypeStructure, Multiplicity
 from object_centric.object_centric_petri_net import ObjectCentricPetriNet as OCPN, \
     ObjectCentricPetriNetPlace as Place, ObjectCentricPetriNetArc as Arc
@@ -38,11 +39,11 @@ class ObjectCentricityManager:
         object_type_sml_functions = []
         for ot in self.__objectTypeStructure.get_object_types():
             object_type_sml_functions.append((get_project_object_type_to_ids_function_name(ot),
-                                              get_project_object_type_to_ids_function_sml(ot, self.__colsetManager)))
+                                              get_project_object_type_to_ids_function_sml(ot)))
             object_type_sml_functions.append((get_extract_object_type_by_ids_function_name(ot),
-                                              get_extract_object_type_by_ids_function_sml(ot, self.__colsetManager)))
+                                              get_extract_object_type_by_ids_function_sml(ot)))
             object_type_sml_functions.append((get_sorted_object_insert_function_name(ot),
-                                              get_sorted_object_insert_function_sml(ot, self.__colsetManager)))
+                                              get_sorted_object_insert_function_sml(ot)))
         for r in self.__objectTypeStructure.get_object_type_relations():
             ot1 = r.get_ot1()
             m1 = r.get_m1()
@@ -51,9 +52,13 @@ class ObjectCentricityManager:
             if m2 is Multiplicity.MANY:
                 object_type_sml_functions.append((get_completeness_by_relations_function_name(ot1, ot2),
                                                   get_completeness_by_relations_function_sml(ot1, ot2, self.__colsetManager)))
+                object_type_sml_functions.append((get_project_object_to_many_relations_name(ot1, ot2),
+                                                  get_project_object_to_many_relations_sml(ot1, ot2, self.__colsetManager)))
             if m1 is Multiplicity.MANY:
                 object_type_sml_functions.append((get_completeness_by_relations_function_name(ot2, ot1),
                                                   get_completeness_by_relations_function_sml(ot2, ot1, self.__colsetManager)))
+                object_type_sml_functions.append((get_project_object_to_many_relations_name(ot2, ot1),
+                                                  get_project_object_to_many_relations_sml(ot2, ot1, self.__colsetManager)))
             if m1 is Multiplicity.ONE:
                 object_type_sml_functions.append((get_match_one_relation_function_name(ot2, ot1),
                                                   get_match_one_relation_function_sml(ot2, ot1, self.__colsetManager)))

@@ -12,10 +12,9 @@ from simulation_model.functions import get_all_standard_functions_ordered_sml, g
     get_label_to_string_converter_sml, get_label_to_string_converter_name, get_activity_event_table_initializer_name, \
     get_activity_event_table_initializer_sml, get_all_timing_functions_ordered_sml, get_all_event_functions_ordered_sml
 from simulation_model.simulation_parameters import SimulationParameters
-from simulation_model.timing import ActivityTimingManager, ProcessTimeCategory
-from simulation_model.cpn_utils.cpn import CPN
-from simulation_model.colset import ColsetManager, Colset_Type, Colset, WithColset
-from simulation_model.control_flow import ControlFlowManager
+from simulation_model.timing import ProcessTimeCategory
+from simulation_model.colset import ColsetManager, Colset_Type, Colset, WithColset, get_attribute_domain_colset_name
+from simulation_model.control_flow.control_flow_manager import ControlFlowManager
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
 from simulation_model.cpn_utils.xml_utils.page import Page
 
@@ -43,7 +42,8 @@ class CPM_CPN_Converter:
             cpn_id_manager, petriNet, objectTypeStructure, self.colset_manager
         )
         self.controlflow_manager = ControlFlowManager(
-            cpn_id_manager, petriNet, causalModel, simulationParameters, self.objectcentricity_manager, self.colset_manager
+            cpn_id_manager, petriNet, causalModel, simulationParameters, self.objectcentricity_manager,
+            self.colset_manager
         )
         self.initial_places = {}
         self.new_colsets = []
@@ -64,7 +64,6 @@ class CPM_CPN_Converter:
         self.__make_colset_variables()
         self.__merge_nets()
         self.__make_object_type_synchronization()
-        self.__make_case_generator()
         self.__make_case_terminator()
         self.__add_actions()
         self.__add_timing()
@@ -135,12 +134,12 @@ class CPM_CPN_Converter:
             attributes_with_last_observations=attributes_with_last_observations,
             attributes_with_system_aggregations=attributes_with_system_aggregations
         )
+        self.colset_manager.add_domain_colsets(
+            self.causalModel.get_all_valuation_parameter_domains()
+        )
 
     def __make_colset_variables(self):
         self.colset_manager.make_variables()
-
-    def __make_case_generator(self):
-        self.controlflow_manager.make_case_generator()
 
     def __make_case_terminator(self):
         self.controlflow_manager.make_case_terminator()
@@ -230,14 +229,25 @@ class CPM_CPN_Converter:
         layout_element = ET.SubElement(var_element, "layout")
         layout_element.text = layout
 
-    def __build_functions(self):
-        # TODO: refactor (make blocks for specific concerns)
+    def __make_block(self, name):
         globbox = self.root.find("cpnet").find("globbox")
-        fun_block = ET.SubElement(globbox, "block")
-        fun_block_id = self.cpn_id_manager.give_ID()
-        fun_block.set("id", fun_block_id)
-        id_child = ET.SubElement(fun_block, "id")
-        id_child.text = "Functions"
+        block = ET.SubElement(globbox, "block")
+        block_id = self.cpn_id_manager.give_ID()
+        block.set("id", block_id)
+        id_child = ET.SubElement(block, "id")
+        id_child.text = name
+        return block
+
+    def __build_functions_in_block(self, functions, block):
+        for fun_name, fun_string in functions:
+            fun_element = ET.SubElement(block, "ml")
+            fun_element.text = fun_string
+            layout_element = ET.SubElement(fun_element, "layout")
+            layout_element.text = fun_string
+            fun_element.set("id", self.cpn_id_manager.give_ID())
+
+    def __build_basic_functions(self):
+        fun_block = self.__make_block("Basic Functions")
         all_functions = \
             get_all_standard_functions_ordered_sml() + \
             get_all_timing_functions_ordered_sml({
@@ -246,40 +256,70 @@ class CPM_CPN_Converter:
             }) + \
             get_all_event_functions_ordered_sml() + \
             self.causalModel.get_valuation_functions_sml()
+        self.__build_functions_in_block(all_functions, fun_block)
+
+    def __build_attribute_functions(self):
+        fun_block = self.__make_block("Attribute Functions")
+        all_functions = []
         for attribute in self.__attributes:
             if not isinstance(attribute, CPM_Categorical_Attribute):
                 continue
             attribute: CPM_Categorical_Attribute
-            domain_colset_name = self.colset_manager.get_attribute_domain_colset_name(attribute.get_id())
+            domain_colset_name = get_attribute_domain_colset_name(attribute.get_id())
             l2s_name = get_label_to_string_converter_name(attribute)
             l2s_sml = get_label_to_string_converter_sml(attribute, domain_colset_name)
             all_functions.append((l2s_name, l2s_sml))
+        self.__build_functions_in_block(all_functions, fun_block)
 
+    def __build_object_functions(self):
+        fun_block = self.__make_block("Object Functions")
         ot_sml_functions = self.objectcentricity_manager.get_object_type_sml_functions()
-        all_functions += ot_sml_functions
+        self.__build_functions_in_block(ot_sml_functions, fun_block)
+
+    def __build_aggregation_logic_functions(self):
+        fun_block = self.__make_block("Aggregation Logic Functions")
+        selection_functions = self.causalModel.get_selection_functions_smls()
+        #aggregation_functions = self.causalModel.get_aggregation_functions_smls()
+        self.__build_functions_in_block(selection_functions, fun_block)
+        #self.__build_functions_in_block(aggregation_functions, fun_block)
+
+    def __build_activity_functions(self):
+        fun_block = self.__make_block("Activity Functions")
+        all_functions = []
         for activity in self.__activities:
             act_id = activity.get_id()
             act_name = activity.get_name()
-            eaval_colset_name = self.colset_manager.get_activity_eaval_colset_name(act_id)
+            local_attributes = self.causalModel.get_local_attributes_for_activity_id(act_id)
+            eaval_colset_names = self.colset_manager.get_all_attribute_domain_colset_names(local_attributes)
             eaval_to_list_converter_name = get_eaval2list_converter_name(act_id)
-            attributes = self.causalModel.get_attributes_for_activity_id(act_id)
-            attribute_names = [attr.get_name() for attr in attributes]
+
+            attribute_names = [attr.get_name() for attr in local_attributes]
             eaval_to_list_converter_sml = get_eaval2list_converter_sml(
-                act_id, eaval_colset_name, attributes)
+                act_id, local_attributes, eaval_colset_names)
             event_writer_name = get_activity_event_writer_name(act_id)
-            event_writer_sml = get_event_writer_sml(act_id, act_name, eaval_colset_name, self.model_name)
+            start_time_attribute = self.causalModel.get_start_time_attribute_for_activity(activity)
+            complete_time_attribute = self.causalModel.get_complete_time_attribute_for_activity(activity)
+            return_start_time = self.causalModel.has_post_dependency(start_time_attribute)
+            return_complete_time = self.causalModel.has_post_dependency(complete_time_attribute)
+            event_writer_sml = get_event_writer_sml(
+                act_id, act_name, eaval_colset_names, self.model_name)
             event_initializer_name = get_activity_event_table_initializer_name(act_id)
-            event_initializer_sml  = get_activity_event_table_initializer_sml(act_id, attribute_names, self.model_name)
+            event_initializer_sml = get_activity_event_table_initializer_sml(act_id, attribute_names, self.model_name)
             all_functions.append((event_initializer_name, event_initializer_sml))
             all_functions.append((eaval_to_list_converter_name, eaval_to_list_converter_sml))
             all_functions.append((event_writer_name, event_writer_sml))
+        self.__build_functions_in_block(all_functions, fun_block)
+
+    def __build_transition_code_functions(self):
+        fun_block = self.__make_block("Code Functions")
         transition: CPN_Transition
+        all_functions = []
         for transition in self.controlflow_manager.get_cpn_transitions():
             if transition.has_code():
                 all_functions.append((transition.get_code_name(), transition.get_code_sml()))
         for act in self.__activities:
             act_name = act.get_name()
-            timing = self.simulationParameters.activity_timing_manager.\
+            timing = self.simulationParameters.activity_timing_manager. \
                 get_activity_timing(act_name)
             execution_delay = timing.execution_delay
             exdelay_name = execution_delay.get_function_name_SML()
@@ -287,12 +327,15 @@ class CPM_CPN_Converter:
             all_functions.append((exdelay_name, exdelay_string))
         ca_rate = self.simulationParameters.case_arrival_rate
         all_functions.append((ca_rate.get_function_name_SML(), ca_rate.get_all_SML()))
-        for fun_name, fun_string in all_functions:
-            fun_element = ET.SubElement(fun_block, "ml")
-            fun_element.text = fun_string
-            layout_element = ET.SubElement(fun_element, "layout")
-            layout_element.text = fun_string
-            fun_element.set("id", self.cpn_id_manager.give_ID())
+        self.__build_functions_in_block(all_functions, fun_block)
+
+    def __build_functions(self):
+        self.__build_basic_functions()
+        self.__build_attribute_functions()
+        self.__build_object_functions()
+        self.__build_aggregation_logic_functions()
+        self.__build_activity_functions()
+        self.__build_transition_code_functions()
 
     def __add_timing(self):
         self.controlflow_manager.add_timing()

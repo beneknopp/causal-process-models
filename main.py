@@ -1,12 +1,14 @@
+from causal_model.aggregation_selections.selection_functions import SelectionBy_toManyRelationsLastObservation
 from causal_model.causal_process_model import CausalProcessModel, AggregationSelections, AggregationFunctions, \
-    AttributeValuations
+    AttributeValuations, AggregationFunction
 from causal_model.causal_process_structure import CausalProcessStructure, AttributeActivities, \
     CPM_Activity, \
-    AttributeRelation, CPM_Categorical_Attribute
+    AttributeRelation, CPM_Categorical_Attribute, CPM_EventStartTime_Attribute, \
+    CPM_EventCompleteTime_Attribute, CPM_Categorical_Domain, REAL_DOMAIN
 from causal_model.valuation import BayesianValuation, ValuationParameters, ValuationParameter
-from object_centric.object_type_structure import ObjectType, ObjectTypeStructure, ObjectTypeRelation, Multiplicity
 from object_centric.object_centric_petri_net import ObjectCentricPetriNet as OCPN, ObjectCentricPetriNetArc as Arc, \
     ObjectCentricPetriNetPlace as Place, ObjectCentricPetriNetTransition as Transition
+from object_centric.object_type_structure import ObjectType, ObjectTypeStructure, ObjectTypeRelation, Multiplicity
 from process_model.petri_net import LabelingFunction
 from simulation_model.simulation_model import SimulationModel
 from simulation_model.simulation_parameters import SimulationParameters
@@ -446,48 +448,35 @@ def run_example_oc_complex(output_path, model_name):
             tship.get_id(): "ship order"
         })
     )
-    attr_priority = CPM_Categorical_Attribute(
-        "priority",
-        ["Prio_High", "Prio_Low"])
-    attr_warehouse_employee = CPM_Categorical_Attribute(
-        "warehouse_employee",
-        ["Ali", "Benedikt"])
-    attr_logistics_service_provider = CPM_Categorical_Attribute(
-        "logistics_service_provider",
-        ["RapidGmbH", "DHL"])
     act_place_order = CPM_Activity("place order", leading_type=ot_orders)
     act_pick_item = CPM_Activity("pick item", leading_type=ot_items)
     act_ship_order = CPM_Activity("ship order", leading_type=ot_orders)
-    priority_valuation = BayesianValuation(
-        ValuationParameters([]), attr_priority,
+    attr_place_order_completetime = CPM_EventCompleteTime_Attribute(act_place_order.get_id())
+    attr_ship_order_performance = CPM_Categorical_Attribute("ship_order_performance", ["Goood", "Baaad"])
+    ship_order_performance_valuation = BayesianValuation(
+        ValuationParameters([
+            ValuationParameter(attr_place_order_completetime)
+        ]), attr_ship_order_performance,
         probability_mappings={
-            (): {"Prio_High": 0.1, "Prio_Low": 0.9},})
-    warehouse_employee_valuation = BayesianValuation(
-        ValuationParameters([]), attr_warehouse_employee,
-        probability_mappings={
-            (): {"Ali": 0.5, "Benedikt": 0.5},})
-    logistics_service_provider_valuation = BayesianValuation(
-        ValuationParameters([]), attr_logistics_service_provider,
-        probability_mappings={
-            (): {"RapidGmbH": 0.2, "DHL": 0.8},})
-
+            (): {"Baaad": 0.2, "Goood": 0.8}, })
     causal_structure = CausalProcessStructure(
-        attributes=[
-            attr_priority,
-            attr_warehouse_employee,
-            attr_logistics_service_provider,
+        event_attributes=[
+            attr_place_order_completetime,
+            attr_ship_order_performance
         ],
+        case_attributes=[],
         activities=[
             act_place_order,
             act_pick_item,
             act_ship_order
         ],
         attributeActivities=AttributeActivities(amap={
-            attr_priority.get_id(): act_place_order,
-            attr_warehouse_employee.get_id(): act_pick_item,
-            attr_logistics_service_provider.get_id(): act_ship_order,
+            attr_place_order_completetime: act_place_order,
+            attr_ship_order_performance: act_ship_order
         }),
-        relations=[]
+        relations=[
+            AttributeRelation(attr_place_order_completetime, attr_ship_order_performance)
+        ]
     )
     causal_model = CausalProcessModel(
         CS=causal_structure,
@@ -498,10 +487,8 @@ def run_example_oc_complex(output_path, model_name):
             relationsToAggregation={}
         ),
         V=AttributeValuations(
-            attributeIdToValuation={
-                "priority": priority_valuation,
-                "warehouse_employee": warehouse_employee_valuation,
-                "logistics_service_provider": logistics_service_provider_valuation
+            attributeToValuation={
+                attr_ship_order_performance: ship_order_performance_valuation
             }
         )
     )
@@ -534,13 +521,144 @@ def run_example_oc_complex(output_path, model_name):
     sim.to_CPN(output_path, model_name)
 
 
+def run_example_oc_aggregations(output_path, model_name):
+    ot_orders = ObjectType("orders")
+    ot_items = ObjectType("items")
+    ot_struct = ObjectTypeStructure([ot_orders, ot_items], [
+        ObjectTypeRelation(ot_orders, Multiplicity.ONE, Multiplicity.MANY, ot_items)
+    ])
+    yo = 800
+    yi = -200
+    ysync = (yo + yi) / 2
+    po3 = Place("po3", 0, yo, object_type=ot_orders, is_initial=True)
+    pi3 = Place("pi3", 0, yi, object_type=ot_items, is_initial=True)
+    tpick = Transition("tpick", 600, ysync, leading_type=ot_items)
+    pi4 = Place("pi4", 1200, yi, object_type=ot_items)
+    tship = Transition("tship", 1200, ysync, leading_type=ot_orders)
+    pofin = Place("pofin", 1600, yo, object_type=ot_orders, is_final=True)
+    pifin = Place("pifin", 1600, yi, object_type=ot_items, is_final=True)
+
+    ocpn = OCPN(
+        places=[
+            po3, pi3, pi4, pofin, pifin
+        ],
+        transitions=[
+            tpick, tship
+        ],
+        arcs=[
+            Arc(pi3, tpick),
+            Arc(po3, tpick),
+            Arc(tpick, po3),
+            Arc(tpick, pi4),
+            Arc(po3, tship),
+            Arc(pi4, tship, is_variable=True),
+            Arc(tship, pofin),
+            Arc(tship, pifin, is_variable=True),
+        ],
+        labels=LabelingFunction({
+            tpick.get_id(): "pick item",
+            tship.get_id(): "ship order"
+        })
+    )
+    act_pick_item   = CPM_Activity("pick item", leading_type=ot_items)
+    act_ship_order  = CPM_Activity("ship order", leading_type=ot_orders)
+    attr_pick_item_starttime    = CPM_EventStartTime_Attribute(act_pick_item.get_id())
+    attr_pick_item_completetime = CPM_EventCompleteTime_Attribute(act_pick_item.get_id())
+    attr_logistics_service_provider = CPM_Categorical_Attribute(
+        CPM_Categorical_Domain(["RapidGmbH", "DHL"], "logistics_service_provider"),
+        "logistics_service_provider",
+        )
+    attr_lagged_batch_processing = CPM_Categorical_Attribute(
+        CPM_Categorical_Domain(["NotLagged", "Lagged"], "lagged_batch_processing"),
+        "lagged_batch_processing",
+    )
+    logistics_service_provider_valuation = BayesianValuation(
+        ValuationParameters([]), attr_logistics_service_provider,
+        probability_mappings={
+            (): {"RapidGmbH": 0.2, "DHL": 0.8}, })
+    r_pick_item_completetime_TO_lagged_batch_processing = AttributeRelation(attr_pick_item_completetime,
+                                                                         attr_lagged_batch_processing,
+                                                                         is_aggregated=True)
+    causal_structure = CausalProcessStructure(
+        event_attributes=[
+            attr_pick_item_starttime,
+            attr_pick_item_completetime,
+            attr_logistics_service_provider,
+            attr_lagged_batch_processing
+        ],
+        case_attributes=[],
+        activities=[
+            act_pick_item,
+            act_ship_order
+        ],
+        attributeActivities=AttributeActivities(amap={
+            attr_pick_item_starttime: act_pick_item,
+            attr_pick_item_completetime: act_pick_item,
+            attr_logistics_service_provider: act_ship_order,
+            attr_lagged_batch_processing: act_ship_order,
+        }),
+        relations=[
+            r_pick_item_completetime_TO_lagged_batch_processing
+        ]
+    )
+    causal_model = CausalProcessModel(
+        CS=causal_structure,
+        Sagg=AggregationSelections(
+            relationsToSelection={
+                r_pick_item_completetime_TO_lagged_batch_processing: SelectionBy_toManyRelationsLastObservation(
+                    "select_pick_times_by_order_item_relation",
+                    r_pick_item_completetime_TO_lagged_batch_processing
+                )
+            }
+        ),
+        Fagg=AggregationFunctions(
+            relationsToAggregation={
+                r_pick_item_completetime_TO_lagged_batch_processing: AggregationFunction(
+                    r_pick_item_completetime_TO_lagged_batch_processing, REAL_DOMAIN)
+            }
+        ),
+        V=AttributeValuations(
+            attributeToValuation={
+                attr_logistics_service_provider: logistics_service_provider_valuation,
+                attr_lagged_batch_processing: BayesianValuation(ValuationParameters([]), attr_lagged_batch_processing)
+            }
+        )
+    )
+    simulation_parameters = SimulationParameters(
+        # how many instances should be simulated in total
+        number_of_cases=1000,
+        # how much time between cases starting the process
+        case_arrival_rate=ExponentialTimingFunction(average_value=TimeInterval(minutes=15),
+                                                    maximal_value=TimeInterval(minutes=120),
+                                                    function_name="case_arrival"),
+        # at what times do cases arrive
+        case_arrival_density=TimeDensityCalendar.StandardDensity(),
+        # at what times do things happen in the process (i.e., people working)
+        service_time_density=TimeDensityCalendar.StandardDensity(),
+        # how long executions of specific activities take
+        activity_timings=[
+            ActivityTiming(activity_name="pick item",
+                           execution_delay=ExponentialTimingFunction(average_value=TimeInterval(hours=1),
+                                                                     maximal_value=TimeInterval(hours=3))),
+            ActivityTiming(activity_name="ship order",
+                           execution_delay=ExponentialTimingFunction(average_value=TimeInterval(days=3),
+                                                                     maximal_value=TimeInterval(days=5), )),
+        ]
+    )
+    sim = SimulationModel(ocpn, causal_model, ot_struct, simulation_parameters)
+    print(sim.to_string())
+    sim.to_CPN(output_path, model_name)
+
+
 if __name__ == "__main__":
     output_path = "output"
-    # model_name_1 = "collider_simple"
-    # model_name_2 = "confounder_simple"
+    model_name_1 = "collider_simple"
+    model_name_2 = "confounder_simple"
     model_name_oc_simple = "object_centric_simple"
     model_name_oc_complex = "object_centric_complex"
+    model_name_oc_aggregations = "object_centric_aggregations"
     # run_example_1(output_path, model_name_1)
     # run_example_2(output_path, model_name_2)
     # run_example_oc_simple(output_path,  model_name_oc_simple)
-    run_example_oc_complex(output_path, model_name_oc_complex)
+    #run_example_oc_complex(output_path, model_name_oc_complex)
+    run_example_oc_aggregations(output_path, model_name_oc_aggregations)

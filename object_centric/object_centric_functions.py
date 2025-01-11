@@ -1,12 +1,13 @@
 from object_centric.object_type_structure import ObjectType
-from simulation_model.colset import ColsetManager
+from simulation_model.colset import ColsetManager, get_object_type_list_colset_name, get_object_type_colset_name, \
+    get_object_type_ID_list_colset_name, get_object_type_ID_colset_name
 
 PROJECT_OBJECT_TYPE_TO_IDS_FUNCTION_NAME = "project_to_ids"
 EXTRACT_OBJECT_TYPE_BY_IDS_FUNCTION_NAME = "extract_by_ids"
 SORTED_OBJECT_INSERT_FUNCTION_NAME = "sorted_insert"
 MATCH_ONE_RELATION_FUNCTION_NAME = "match"
+PROJECT_OBJECT_TO_MANY_RELATIONS_FUNCTION_NAME = "project_to_many_relations"
 COMPLETENESS_BY_RELATIONS_FUNCTION_NAME = "complete"
-CODE_FOR_TRANSITION_FUNCTION_NAME = "code"
 
 
 def get_project_object_type_to_ids_function_name(ot: ObjectType):
@@ -19,6 +20,15 @@ def get_extract_object_type_by_ids_function_name(ot: ObjectType):
 
 def get_sorted_object_insert_function_name(ot: ObjectType):
     return "{0}_{1}".format(SORTED_OBJECT_INSERT_FUNCTION_NAME, ot.get_id())
+
+
+def get_project_object_to_many_relations_name(ot1: ObjectType, ot2: ObjectType):
+    """
+    :param ot1: The object type that has a to-many relation to the other type.
+    :param ot2: The other object type
+    :return: The name of the project_to_many function
+    """
+    return "{0}_{1}_{2}".format(PROJECT_OBJECT_TO_MANY_RELATIONS_FUNCTION_NAME, ot1.get_id(), ot2.get_id())
 
 
 def get_match_one_relation_function_name(ot1: ObjectType, ot2: ObjectType):
@@ -39,20 +49,16 @@ def get_completeness_by_relations_function_name(ot1: ObjectType, ot2: ObjectType
     return "{0}_{1}_{2}".format(COMPLETENESS_BY_RELATIONS_FUNCTION_NAME, ot1.get_id(), ot2.get_id())
 
 
-def get_code_for_transition_name(transition_id: str):
-    return "{0}_{1}".format(CODE_FOR_TRANSITION_FUNCTION_NAME, transition_id)
-
-
-def get_project_object_type_to_ids_function_sml(ot: ObjectType, colset_manager: ColsetManager):
-    ot_list_colset_name: str = colset_manager.get_object_type_list_colset_name(ot)
+def get_project_object_type_to_ids_function_sml(ot: ObjectType):
+    ot_list_colset_name: str = get_object_type_list_colset_name(ot)
     return "fun {0}([]) = [] | {0}(x::xs: {1}) = (#1 x)::{0}(xs)".format(
         get_project_object_type_to_ids_function_name(ot),
         ot_list_colset_name
     )
 
 
-def get_extract_object_type_by_ids_function_sml(ot: ObjectType, colset_manager: ColsetManager):
-    ot_list_colset_name = colset_manager.get_object_type_list_colset_name(ot)
+def get_extract_object_type_by_ids_function_sml(ot: ObjectType):
+    ot_list_colset_name = get_object_type_list_colset_name(ot)
     return '''fun {0}(is: {1}, []) = []  
            | {0}([], x::xs) = []   
            | {0}(i::is, x::xs) = 
@@ -65,9 +71,9 @@ def get_extract_object_type_by_ids_function_sml(ot: ObjectType, colset_manager: 
     )
 
 
-def get_sorted_object_insert_function_sml(ot: ObjectType, colset_manager: ColsetManager):
-    ot_colset_name = colset_manager.get_object_type_colset_name(ot)
-    ot_list_colset_name = colset_manager.get_object_type_list_colset_name(ot)
+def get_sorted_object_insert_function_sml(ot: ObjectType):
+    ot_colset_name = get_object_type_colset_name(ot)
+    ot_list_colset_name = get_object_type_list_colset_name(ot)
     return "fun {0}(x, []) = [x] | {0}(x: {1}, y::ys: {2}) = if (#1 x) < (#1 y) then x::(y::ys) else y::{0}(x, ys);".format(
         get_sorted_object_insert_function_name(ot),
         ot_colset_name,
@@ -85,9 +91,9 @@ def get_match_one_relation_function_sml(ot1: ObjectType, ot2: ObjectType, colset
     :param colset_manager: A ColsetManager that knows how relevant colsets are addressed.
     :return: The code of the match_one_relation_function
     """
-    ot1_colset_name = colset_manager.get_object_type_colset_name(ot1)
-    ot2_colset_name = colset_manager.get_object_type_colset_name(ot2)
-    ot2_id_colset_name = colset_manager.get_object_type_ID_colset_name(ot2)
+    ot1_colset_name = get_object_type_colset_name(ot1)
+    ot2_colset_name = get_object_type_colset_name(ot2)
+    ot2_id_colset_name = get_object_type_ID_colset_name(ot2)
     ot2_at_ot1_index = colset_manager.get_subcol_index_by_names(ot1_colset_name, ot2_id_colset_name)
     return "fun {0}(x: {1}, y: {2}) = ((#{3} x)=(#1 y))".format(
         get_match_one_relation_function_name(ot1, ot2),
@@ -97,10 +103,29 @@ def get_match_one_relation_function_sml(ot1: ObjectType, ot2: ObjectType, colset
     )
 
 
+def get_project_object_to_many_relations_sml(ot1: ObjectType, ot2: ObjectType, colset_manager: ColsetManager):
+    """
+    This function projects an object of type ot1 to the relations to type ot2.
+
+    :param ot1: The object type that has a to-many relation to the other type.
+    :param ot2: The other object type.
+    :param colset_manager: A ColsetManager that knows how relevant colsets are addressed.
+    :return: The code of the project_to_many function
+    """
+    ot1_colset_name = get_object_type_colset_name(ot1)
+    ot2_id_colset_name = get_object_type_ID_list_colset_name(ot2)
+    ot2_at_ot1_index = colset_manager.get_subcol_index_by_names(ot1_colset_name, ot2_id_colset_name)
+    return "fun {0}(x: {1}) = #{2} x".format(
+        get_project_object_to_many_relations_name(ot1, ot2),
+        ot1_colset_name,
+        ot2_at_ot1_index + 1  # CPNs count from 1, Python counts from 0.
+    )
+
+
 def get_completeness_by_relations_function_sml(ot1: ObjectType, ot2: ObjectType, colset_manager: ColsetManager):
-    ot1_colset_name = colset_manager.get_object_type_colset_name(ot1)
-    ot2_id_list_colset_name = colset_manager.get_object_type_ID_list_colset_name(ot2)
-    ot2_list_colset_name = colset_manager.get_object_type_list_colset_name(ot2)
+    ot1_colset_name = get_object_type_colset_name(ot1)
+    ot2_id_list_colset_name = get_object_type_ID_list_colset_name(ot2)
+    ot2_list_colset_name = get_object_type_list_colset_name(ot2)
     ot2_at_ot1_index = colset_manager.get_subcol_index_by_names(ot1_colset_name, ot2_id_list_colset_name)
     return '''fun {0}(x: {1}, ys: {2}) = (#{3} x) = {4}({5}(ys, (#{3} x)))'''.format(
         get_completeness_by_relations_function_name(ot1, ot2),
@@ -109,39 +134,4 @@ def get_completeness_by_relations_function_sml(ot1: ObjectType, ot2: ObjectType,
         ot2_at_ot1_index + 1,  # CPNs count from 1, Python counts from 0.
         get_project_object_type_to_ids_function_name(ot2),
         get_extract_object_type_by_ids_function_name(ot2)
-    )
-
-
-def get_code_output_parameter_string(outputs):
-    output_vars = list(filter(lambda o: o is not None, outputs))
-    output_string = ",".join(output_vars)
-    return output_string
-
-
-def get_code_for_transition_sml(transition_id: str, actions: list[str, list[str], list[str]], outputs):
-    instructions = []
-    input_params = []
-    j = 1
-    for i in range(len(outputs)):
-        output = outputs[i]
-        action, _, colsetnames = actions[i]
-        action_params = []
-        for cn in colsetnames:
-            action_params.append("x{0}".format(str(j), cn))
-            input_params.append("x{0}: {1}".format(str(j), cn))
-            j = j + 1
-        action_parameter_string = ",".join(action_params)
-        if output is None:
-            instruction = "val _ = {0}({1})".format(action, action_parameter_string)
-        else:
-            instruction = "val {0} = {1}({2})".format(output, action, action_parameter_string)
-        instructions.append(instruction)
-    input_parameter_string = ",".join(input_params)
-    code_string = "\n".join(instructions)
-    output_string = get_code_output_parameter_string(outputs)
-    return "fun {0}({1}) = let {2} in {3} end;".format(
-        get_code_for_transition_name(transition_id),
-        input_parameter_string,
-        code_string,
-        output_string
     )

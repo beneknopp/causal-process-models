@@ -1,8 +1,8 @@
 import warnings
 from enum import Enum
 
-from object_centric.object_centric_functions import get_code_for_transition_sml, get_code_output_parameter_string, \
-    get_code_for_transition_name as get_code_for_transition_name_global
+from causal_model.causal_process_structure import CPM_Activity
+from simulation_model.functions import get_code_for_transition_name as get_code_for_transition_name_global
 from object_centric.object_type_structure import ObjectType
 from simulation_model.cpn_utils.semantic_net_node import SemanticNetNode
 from simulation_model.cpn_utils.xml_utils.attributes import Posattr, Lineattr, Textattr, Fillattr
@@ -11,6 +11,7 @@ from simulation_model.cpn_utils.xml_utils.cpn_node import CPN_Node
 from simulation_model.cpn_utils.xml_utils.dom_element import DOM_Element
 from simulation_model.cpn_utils.xml_utils.layout import Text, Box
 from object_centric.object_centric_petri_net import ObjectCentricPetriNetTransition as OCPN_Transition
+from simulation_model.functions import get_code_for_transition_sml, get_code_output_parameter_string
 
 
 class TransitionType(Enum):
@@ -194,17 +195,22 @@ class CodeManager:
     end;
     '''
 
-    def __init__(self, transition_id: str):
+    def __init__(self, transition_id: str, activity: CPM_Activity):
         """
         This class makes it possible to dynamically add code to transitions during constructing the CPN.
         In our case, for example, we want to synchronize object flows by means of object relations and for this,
         delegate some logic into the code region.
         """
         self.transition_id = transition_id
+        self.activity = activity
         self.input_variables = []
-        self.outputs = []
-        self.actions = []
+        self.non_event_writing_actions = []
+        self.non_event_writing_output_variables = []
+        self.event_writing_action: tuple[str, CPM_Activity, list[str], list[str]] | None = None
         self.__has_code = False
+        self.__delay_output = None
+        self.__start_time_output = None
+        self.__complete_time_output = None
         self.delay_variables_by_object_type: dict[ObjectType, str] = dict()
 
     def add_input_variables(self, input_variables: list[str]):
@@ -215,50 +221,65 @@ class CodeManager:
                     "Trying to add existing input variable '{0}' to code region, I'm ignoring this.".format(input_var))
             self.input_variables.append(input_var)
 
-    def add_output(self, output: str, output_time_object_types: list[ObjectType]):
-        """
-        Each output corresponds to exactly one action by index.
-        This means that each action output needs to be bound to at most one variable.
-        Use None if the corresponding action does not return anything (e.g., initializing .csv file actions).
+    def add_output(self, output: str, output_time_object_types: list[ObjectType], is_event_writing: bool = False):
+        if len(output_time_object_types):
+            for ot in output_time_object_types:
+                self.delay_variables_by_object_type[ot] = output
+            return
+        self.non_event_writing_output_variables.append(output)
 
-        :param output: The variable identifier to which the corresponding action is bound, or None.
-        :param output_time_object_types: If the output is variable carrying a timestamp (delay), the object type to
-        which this timestamp is to be added after executing the transition.
-        """
-        if output is not None and output in self.outputs:
-            raise ValueError("Trying to add existing output variable '{0}' to code region. "
-                             "This is not safe, because the variable is already bound by a different code segment.")
-        self.outputs.append(output)
-        for ot in output_time_object_types:
-            self.delay_variables_by_object_type[ot] = output
-
-    def add_action(self, action: str, input_parameters: list[str], input_variables_colset_names: list[str]):
-        # e.g. foo, [var1, bar(), var2], [Bar, Bar, Foo]
-        self.actions.append((action, input_parameters, input_variables_colset_names))
+    def add_action(self, action: str, input_parameters: list[str], input_variables_colset_names: list[str],
+                   is_event_writing=False):
+        if not is_event_writing:
+            self.non_event_writing_actions.append((action, input_parameters, input_variables_colset_names))
+        else:
+            self.event_writing_action = (action, self.activity, input_parameters, input_variables_colset_names)
         self.__has_code = True
 
     def get_code_name(self):
         return get_code_for_transition_name_global(self.transition_id)
 
     def get_code_sml(self):
-        return get_code_for_transition_sml(self.transition_id, self.actions, self.outputs)
+        return get_code_for_transition_sml(self.transition_id,
+                                           self.non_event_writing_actions,
+                                           self.non_event_writing_output_variables,
+                                           self.event_writing_action,
+                                           self.__start_time_output is not None,
+                                           self.__complete_time_output is not None
+                                           )
+
+    def get_non_event_writing_actions(self):
+        return
+
+    def get_output_variables(self):
+        output_variables = []
+        time_variables = []
+        for ot, delay_variable in self.delay_variables_by_object_type.items():
+            if delay_variable not in time_variables:
+                time_variables.append(delay_variable)
+        time_variables += [self.__start_time_output] if self.__start_time_output is not None else []
+        time_variables += [self.__complete_time_output] if self.__complete_time_output is not None else []
+        output_variables = time_variables + self.non_event_writing_output_variables
+        return output_variables
 
     def get_code_annotation(self):
         input_variables_string = ",".join(self.input_variables)
-        output_variables_string = get_code_output_parameter_string(self.outputs)
+        output_variables = self.get_output_variables()
+        output_variables_string = get_code_output_parameter_string(
+            output_variables
+        )
         all_input_parameters = []
-        for _, params, _ in self.actions:
+        if self.event_writing_action is not None:
+            _, _, event_writing_input_parameters, input_variables_colset_names = self.event_writing_action
+            all_input_parameters += event_writing_input_parameters
+        for _, params, _ in self.non_event_writing_actions:
             all_input_parameters += params
         input_parameter_string = ",".join(all_input_parameters)
         action_call = "{0}({1})".format(
             get_code_for_transition_name_global(self.transition_id),
             input_parameter_string
         )
-        return '''
-        input({0});
-        output({1});
-        action({2});
-        '''.format(
+        return "input({0});\noutput({1});\naction({2});".format(
             input_variables_string,
             output_variables_string,
             action_call)
@@ -266,7 +287,31 @@ class CodeManager:
     def has_code(self):
         return self.__has_code
 
+    def add_start_time_output(self, start_time_output):
+        """
+        This function is specifically for adding a variable to the output of the transition
+        that carries the start timestamp.
+        These designated functions assure a variable sorting that is compliant with the way
+        the variables are sorted in other code generation in this project.
 
+        :start_time_output: The variable to which the start timestamp is to be bound
+        """
+        if self.__start_time_output is not None:
+            return
+        self.__start_time_output = start_time_output
+
+    def add_complete_time_output(self, complete_time_output):
+        """
+        This function is specifically for adding a variable to the output of the transition
+        that carries the completion timestamp.
+        These designated functions assure a variable sorting that is compliant with the way
+        the variables are sorted in other code generation in this project.
+
+        :start_time_output: The variable to which the start timestamp is to be bound
+        """
+        if self.__complete_time_output is not None:
+            return
+        self.__complete_time_output = complete_time_output
 
 
 class CPN_Transition(SemanticNetNode):
@@ -287,6 +332,7 @@ class CPN_Transition(SemanticNetNode):
     def __init__(self, transition_type: TransitionType, name, x, y, cpn_id_manager: CPN_ID_Manager,
                  guard_str: str = None, delay: str = None, code: str = None, priority: str = None,
                  portsock_info: str = None, subpage=None, coordinate_scaling_factor=1.0,
+                 activity: CPM_Activity = None,
                  ocpn_transition: OCPN_Transition = None):
         tag = "trans"
         self.cpn_id_manager = cpn_id_manager
@@ -301,7 +347,8 @@ class CPN_Transition(SemanticNetNode):
         self.subpage = subpage
         self.portsock_info = portsock_info
         self.ports = []
-        self.code_manager = CodeManager("_".join(name.split(" ")))
+        self.activity = activity
+        self.code_manager = CodeManager("_".join(name.split(" ")), activity)
         self.ocpn_transition = ocpn_transition
         fill_colour = "Gray" if transition_type is TransitionType.SILENT else "White"
         line_colour = "Gray" if transition_type is TransitionType.SILENT else "Black"
@@ -327,40 +374,6 @@ class CPN_Transition(SemanticNetNode):
                 Substitution(x, y, cpn_id_manager, subpage.description, subpage.get_id, portsock_info))
         SemanticNetNode.__init__(self, tag, cpn_id_manager, attributes, child_elements)
         self.is_subpage_transition = False
-
-    @classmethod
-    def fromTransition(cls, transition):
-        transition_type = transition.transition_type
-        name = transition.name
-        x = transition.x
-        y = transition.y
-        cpn = transition.cpn
-        guard = transition.guard
-        delay = transition.delay
-        code = transition.code
-        priority = transition.priority
-        leading_object_type = transition.leading_object_type
-        new_transition = cls(transition_type, name, x, y, cpn, guard, delay, code, priority, leading_object_type)
-        return new_transition
-
-    def add_substitution_info(self, subpage, portsock_map=None):
-        if portsock_map is None:
-            portsock_map = dict()
-        old_portsock_info = self.portsock_info
-        portsock_info = ""
-        for new_place, old_place in portsock_map.items():
-            portsock_info = portsock_info + "(" + new_place.get_id() + "," + old_place.get_id() + ")"
-            self.ports.append(new_place)
-        new_portsock_info = old_portsock_info + portsock_info \
-            if not old_portsock_info is None else portsock_info
-        substitution = Substitution(self.x, self.y, self.cpn_id_manager, subpage.name, subpage.get_id(),
-                                    new_portsock_info)
-        self.portsock_info = new_portsock_info
-        self.child_elements = [child for child in self.child_elements if not isinstance(child, Substitution)]
-        self.add_child(substitution)
-
-    def has_port(self, port_id):
-        return len(list(filter(lambda port: port.get_id() == port_id, self.ports))) > 0
 
     def add_guard_conjunct(self, conjunct: str):
         """
@@ -394,11 +407,13 @@ class CPN_Transition(SemanticNetNode):
 
     def add_code(self,
                  action_name: str,
-                 input_variables: list[str], # length k
+                 input_variables: list[str],  # length k
                  input_parameters: list[str],  # length n >= k
-                 input_parameters_colset_names: list[str], # length n
+                 input_parameters_colset_names: list[str],  # length n
                  output: str = None,
-                 output_time_object_types=None):
+                 output_time_object_types=None,
+                 is_event_writing: bool = False
+                 ):
         """
         Add a function call to be added to the transition code segment.
 
@@ -413,8 +428,8 @@ class CPN_Transition(SemanticNetNode):
         if output_time_object_types is None:
             output_time_object_types = []
         self.code_manager.add_input_variables(input_variables)
-        self.code_manager.add_output(output, output_time_object_types)
-        self.code_manager.add_action(action_name, input_parameters, input_parameters_colset_names)
+        self.code_manager.add_output(output, output_time_object_types, is_event_writing)
+        self.code_manager.add_action(action_name, input_parameters, input_parameters_colset_names, is_event_writing)
         code_annotation = self.code_manager.get_code_annotation()
         self.set_code(code_annotation)
 
@@ -430,3 +445,13 @@ class CPN_Transition(SemanticNetNode):
     def get_object_type_delay_variable(self, ot: ObjectType):
         if ot in self.code_manager.delay_variables_by_object_type:
             return self.code_manager.delay_variables_by_object_type[ot]
+
+    def add_start_time_output(self, output):
+        self.code_manager.add_start_time_output(output)
+
+    def add_complete_time_output(self, output):
+        self.code_manager.add_complete_time_output(output)
+
+    def set_activity(self, activity):
+        self.activity = activity
+        self.code_manager.activity = activity

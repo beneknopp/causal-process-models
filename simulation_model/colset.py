@@ -1,10 +1,9 @@
 from enum import Enum
 from xml.etree.ElementTree import Element
 
-from causal_model.causal_process_structure import AttributeActivities, CPM_Attribute, CPM_Attribute_Domain, \
-    CPM_Categorical_Attribute, CPM_Activity
+from causal_model.causal_process_structure import AttributeActivities, CPM_Attribute, CPM_Attribute_Domain_Type, \
+    CPM_Activity, CPM_Domain, CPM_Categorical_Domain
 from object_centric.object_type_structure import ObjectType, ObjectTypeStructure, Multiplicity
-from simulation_model.cpn_utils.cpn import CPN
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
 
 
@@ -146,6 +145,151 @@ class Colset_Map:
         return self.ordered_colsets
 
 
+COLSET_PREFIX = "C_"
+EVENTID_COLSET_NAME = COLSET_PREFIX + "eid"
+TIMEDINT_COLSET_NAME = COLSET_PREFIX + "timedint"
+
+
+def get_timed_int_colset_name():
+    return TIMEDINT_COLSET_NAME
+
+
+def get_object_type_ID_colset_name(ot: ObjectType):
+    return COLSET_PREFIX + ot.get_id() + "ID"
+
+
+def get_object_type_ID_list_colset_name(ot: ObjectType):
+    return COLSET_PREFIX + ot.get_id() + "ID_LIST"
+
+
+def get_object_type_colset_name(ot: ObjectType):
+    return COLSET_PREFIX + ot.get_id()
+
+
+def get_object_type_list_colset_name(ot: ObjectType):
+    return COLSET_PREFIX + ot.get_id() + "_LIST"
+
+
+def get_domain_colset_name(domain: CPM_Domain):
+    return COLSET_PREFIX + domain.get_id()
+
+
+def get_activity_timestamps_colset_name(act: CPM_Activity):
+    return COLSET_PREFIX + "_" + act.get_id() + "_TIMES"
+
+
+def get_named_entity_colset_prefix(entity_id):
+    """
+    Canonic prefix derivation for colsets to describe activities, attributes
+    prefix can be extended to describe special types of colsets.
+
+    :param entity_id: id of the activity or attribute
+    :return: the prefix
+    """
+    attribute_colset_prefix = COLSET_PREFIX + "_".join(entity_id.split(" "))
+    return attribute_colset_prefix
+
+
+def get_real_colset_name():
+    """
+    Get the unique name for the real colset
+    """
+    return Standard_Colsets.REAL.value
+
+
+def get_attribute_all_observations_colset_name(attribute_id) -> str:
+    attribute_colset_prefix = get_named_entity_colset_prefix(attribute_id)
+    attribute_all_observations_colset_name = attribute_colset_prefix + "_ALL"
+    return attribute_all_observations_colset_name
+
+
+def get_attribute_observations_list_colset_name(attribute_id: str) -> str:
+    attribute_colset_prefix = get_named_entity_colset_prefix(attribute_id)
+    attribute_all_observations_colset_name = attribute_colset_prefix + "_OBS_LIST"
+    return attribute_all_observations_colset_name
+
+
+def get_attribute_context_observation_colset_name(attribute_id) -> str:
+    attribute_colset_prefix = get_named_entity_colset_prefix(attribute_id)
+    attribute_last_observation_colset_name = attribute_colset_prefix + "_CONTEXT"
+    return attribute_last_observation_colset_name
+
+
+def get_attribute_system_aggregation_colset_name_single(attribute_id):
+    """
+    Canonic naming scheme for colsets that describes ONE observed values
+    of an attribute in the system (i.e., across cases).
+
+    :param attribute_id: the id of the attribute
+    :return: the canonic name
+    """
+    attribute_colset_prefix = get_named_entity_colset_prefix(attribute_id)
+    attribute_system_aggregation_colset_name = attribute_colset_prefix + "_SINGLE"
+    return attribute_system_aggregation_colset_name
+
+
+def get_attribute_system_aggregation_colset_name_list(attribute_id):
+    """
+    Canonic naming scheme for colsets that describes ALL observed values
+    of an attribute in the system (i.e., across cases).
+
+    :param attribute_id: the id of the attribute
+    :return: the canonic name
+    """
+    attribute_colset_prefix = get_named_entity_colset_prefix(attribute_id)
+    attribute_system_aggregation_colset_name = attribute_colset_prefix + "_SYS"
+    return attribute_system_aggregation_colset_name
+
+
+def get_attribute_domain_colset_name(attribute_id):
+    """
+    Canonic naming scheme for colsets that describe the domain (admissible values) of an attribute.
+
+    :param attribute_id: the id of the attribute
+    :return: the canonic name
+    """
+    attribute_colset_prefix = get_named_entity_colset_prefix(attribute_id)
+    attribute_domain_colset_name = attribute_colset_prefix + "_DOM"
+    return attribute_domain_colset_name
+
+
+def get_attribute_list_colset_name(attribute_id):
+    """
+    Canonic naming scheme for colsets that describe a list of admissible values of an attribute.
+
+    :param attribute_id: the id of the attribute
+    :return: the canonic name
+    """
+    attribute_colset_prefix = get_named_entity_colset_prefix(attribute_id)
+    attribute_list_colset_name = attribute_colset_prefix + "_LIST"
+    return attribute_list_colset_name
+
+
+def get_attribute_last_observation_colset_name(attribute_id) -> str:
+    """
+    Canonic naming scheme for colsets that describes the last values
+    of an attribute observed in the process.
+
+    :param attribute_id: the id of the attribute
+    :return: the canonic name
+    """
+    attribute_colset_prefix = get_named_entity_colset_prefix(attribute_id)
+    attribute_last_observation_colset_name = attribute_colset_prefix + "_LAST"
+    return attribute_last_observation_colset_name
+
+
+def get_activity_eaval_colset_name(act_id):
+    """
+    Canonic naming scheme for event colsets.
+
+    :param act_id: the id of the activity
+    :return: the canonic name
+    """
+    activity_colset_prefix = get_named_entity_colset_prefix(act_id)
+    activity_eaval_colset_name = activity_colset_prefix + "_EAVAL"
+    return activity_eaval_colset_name
+
+
 class ColsetManager:
     colset_map: Colset_Map
     object_colsets: []
@@ -154,10 +298,6 @@ class ColsetManager:
     additional_standard_colsets: []
     timed_id_colset: Colset
     parsed_colsets: set
-
-    COLSET_PREFIX = "C_"
-    EVENTID_COLSET_NAME = COLSET_PREFIX + "eid"
-    TIMEDINT_COLSET_NAME = COLSET_PREFIX + "timedint"
 
     def __init__(self, cpn_id_manager: CPN_ID_Manager):
         """
@@ -191,27 +331,33 @@ class ColsetManager:
         """
         Add an unambiguous colset to describe a token just with a case identifier
         """
-        self.__add_alias_colset(Standard_Colsets.STRING.value, self.EVENTID_COLSET_NAME, timed=False)
+        self.__add_alias_colset(Standard_Colsets.STRING.value, EVENTID_COLSET_NAME, timed=False)
 
     def add_timedint_colset(self):
         """
         Add a colset for timed integers
         """
-        self.__add_alias_colset(Standard_Colsets.INT.value, self.TIMEDINT_COLSET_NAME, timed=True)
+        self.__add_alias_colset(Standard_Colsets.INT.value, TIMEDINT_COLSET_NAME, timed=True)
+
+    def get_real_colset(self):
+        """
+        Get the unique real colset
+        """
+        return self.colset_map.colsets_by_name[get_real_colset_name()]
 
     def get_event_id_colset(self) -> Colset:
         """
         Get the unique case_id colset to describe a token just with a case identifier
         :return: the case_id colset
         """
-        return self.colset_map.colsets_by_name[self.EVENTID_COLSET_NAME]
+        return self.colset_map.colsets_by_name[EVENTID_COLSET_NAME]
 
     def get_timed_int_colset(self) -> Colset:
         """
         Get the unique case_id colset to describe a token just with a case identifier
         :return: the case_id colset
         """
-        return self.colset_map.colsets_by_name[self.TIMEDINT_COLSET_NAME]
+        return self.colset_map.colsets_by_name[TIMEDINT_COLSET_NAME]
 
     def add_activity_and_attribute_colsets(self,
                                            activities: list[CPM_Activity],
@@ -232,17 +378,20 @@ class ColsetManager:
             self.add_attribute_domain_colset(attr)
         for act in activities:
             act_attribute_ids = [
-                attr_id for attr_id in
+                attribute_id for attribute_id in
                 attribute_activities.get_attribute_ids_for_activity_id(act.get_id())]
             self.add_activity_colset(act, act_attribute_ids)
         for attr in attributes_with_last_observations:
-            attr_id = attr.get_id()
-            act = attribute_activities.get_activity_for_attribute_id(attr_id)
+            attribute_id = attr.get_id()
+            act = attribute_activities.get_activity_for_attribute_id(attribute_id)
             leading_type = act.get_leading_type()
             self.add_attribute_last_observation_colset(attr.get_id(), leading_type)
-        for attr_id in attributes_with_system_aggregations:
-            act_id = attribute_activities.get_activity_for_attribute_id(attr_id)
-            self.add_attribute_system_aggregation_colset(attr_id, act_id)
+        for attr in attributes_with_system_aggregations:
+            attribute_id = attr.get_id()
+            act = attribute_activities.get_activity_for_attribute_id(attribute_id)
+            leading_type = act.get_leading_type()
+            self.add_attribute_all_observations_colset(attribute_id, leading_type)
+            self.add_attribute_observations_list_colset(attribute_id)
 
     def add_activity_colset(self, activity: CPM_Activity, attribute_ids: list[str]):
         """
@@ -251,134 +400,59 @@ class ColsetManager:
         :param attribute_ids:  all attributes of that activity
         """
         activity_id = activity.get_id()
-        activity_leading_type = activity.get_leading_type()
-        activity_eaval_colset_name = self.get_activity_eaval_colset_name(activity_id)
-        attribute_domain_colsets = [self.get_object_type_ID_colset(activity_leading_type)]
-        attribute_domain_colsets += [
-            self.colset_map.colsets_by_name[self.get_attribute_domain_colset_name(attr_id)]
-            for attr_id in attribute_ids
+        activity_eaval_colset_name = get_activity_eaval_colset_name(activity_id)
+        attribute_domain_colsets = [
+            self.colset_map.colsets_by_name[get_attribute_domain_colset_name(attribute_id)]
+            for attribute_id in attribute_ids
         ]
         self.__add_product_colset(activity_eaval_colset_name, attribute_domain_colsets)
 
-    def get_named_entity_colset_prefix(self, entity_id):
-        """
-        Canonic prefix derivation for colsets to describe activities, attributes
-        prefix can be extended to describe special types of colsets.
-
-        :param entity_id: id of the activity or attribute
-        :return: the prefix
-        """
-        attribute_colset_prefix = self.COLSET_PREFIX + "_".join(entity_id.split(" "))
-        return attribute_colset_prefix
-
-    def get_activity_eaval_colset_name(self, act_id):
-        """
-        Canonic naming scheme for event colsets.
-
-        :param act_id: the id of the activity
-        :return: the canonic name
-        """
-        activity_colset_prefix = self.get_named_entity_colset_prefix(act_id)
-        activity_eaval_colset_name = activity_colset_prefix + "_EAVAL"
-        return activity_eaval_colset_name
-
-    def get_attribute_domain_colset_name(self, attr_id):
-        """
-        Canonic naming scheme for colsets that describe the domain (admissible values) of an attribute.
-
-        :param attr_id: the id of the attribute
-        :return: the canonic name
-        """
-        attribute_colset_prefix = self.get_named_entity_colset_prefix(attr_id)
-        attribute_domain_colset_name = attribute_colset_prefix + "_DOM"
-        return attribute_domain_colset_name
-
-    def get_attribute_list_colset_name(self, attr_id):
-        """
-        Canonic naming scheme for colsets that describe a list of admissible values of an attribute.
-
-        :param attr_id: the id of the attribute
-        :return: the canonic name
-        """
-        attribute_colset_prefix = self.get_named_entity_colset_prefix(attr_id)
-        attribute_list_colset_name = attribute_colset_prefix + "_LIST"
-        return attribute_list_colset_name
-
-    def get_attribute_last_observation_colset_name(self, attr_id) -> str:
-        """
-        Canonic naming scheme for colsets that describes the last values
-        of an attribute observed in the process.
-
-        :param attr_id: the id of the attribute
-        :return: the canonic name
-        """
-        attribute_colset_prefix = self.get_named_entity_colset_prefix(attr_id)
-        attribute_last_observation_colset_name = attribute_colset_prefix + "_LAST"
-        return attribute_last_observation_colset_name
-
-    def get_attribute_system_aggregation_colset_name_single(self, attr_id):
-        """
-        Canonic naming scheme for colsets that describes ONE observed values
-        of an attribute in the system (i.e., across cases).
-
-        :param attr_id: the id of the attribute
-        :return: the canonic name
-        """
-        attribute_colset_prefix = self.get_named_entity_colset_prefix(attr_id)
-        attribute_system_aggregation_colset_name = attribute_colset_prefix + "_SINGLE"
-        return attribute_system_aggregation_colset_name
-
-    def get_attribute_system_aggregation_colset_name_list(self, attr_id):
-        """
-        Canonic naming scheme for colsets that describes ALL observed values
-        of an attribute in the system (i.e., across cases).
-
-        :param attr_id: the id of the attribute
-        :return: the canonic name
-        """
-        attribute_colset_prefix = self.get_named_entity_colset_prefix(attr_id)
-        attribute_system_aggregation_colset_name = attribute_colset_prefix + "_SYS"
-        return attribute_system_aggregation_colset_name
-
     def add_attribute_last_observation_colset(self, attribute_id: str, leading_type: ObjectType):
         """
-        Create the colset to describe last observed value of an attribute.
+        Create the colset to describe the last observed value of an attribute at each case.
 
         :param attribute_id: the id of the attribute
         :return: the colset
         """
         object_type_id_colset = self.get_object_type_ID_colset(leading_type)
-        attribute_domain_colset = self.colset_map.colsets_by_name[self.get_attribute_domain_colset_name(attribute_id)]
-        attribute_list_colset_name = self.get_attribute_list_colset_name(attribute_id)
+        attribute_domain_colset = self.colset_map.colsets_by_name[get_attribute_domain_colset_name(attribute_id)]
+        attribute_list_colset_name = get_attribute_list_colset_name(attribute_id)
         attribute_list_colset = self.__add_list_colset(attribute_list_colset_name, attribute_domain_colset)
-        attribute_last_observation_colset_name = self.get_attribute_last_observation_colset_name(attribute_id)
+        attribute_last_observation_colset_name = get_attribute_last_observation_colset_name(attribute_id)
         colset = self.__add_product_colset(attribute_last_observation_colset_name, [
             object_type_id_colset, attribute_list_colset
         ])  # , timed=True)
         return colset
 
-    def add_attribute_system_aggregation_colset(self, attribute_id: str, activity_id: str):
+    def add_attribute_context_observation_colset(self, attribute_id: str, leading_type: ObjectType):
         """
-        Create the colset to describe all observed values of an attribute within the system.
+        Create the colset to describe all observed values of an attribute in the system.
 
         :param attribute_id: the id of the attribute
-        :param activity_id: the activity of that attribute
         :return: the colset
         """
-        caseid_colset = self.get_case_id_colset()
-        activity_eaval_colset = self.colset_map.colsets_by_name[self.get_activity_eaval_colset_name(activity_id)]
-        attribute_domain_colset = self.colset_map.colsets_by_name[self.get_attribute_domain_colset_name(attribute_id)]
-        attribute_system_aggregation_colset_name_single = self.get_attribute_system_aggregation_colset_name_single(
-            attribute_id)
-        attribute_system_aggregation_colset_name_list = self.get_attribute_system_aggregation_colset_name_list(
-            attribute_id)
-        system_aggregation_colset_single = self.__add_product_colset(
-            attribute_system_aggregation_colset_name_single, [
-                caseid_colset, activity_eaval_colset, attribute_domain_colset
-            ])
-        colset = self.__add_list_colset(
-            attribute_system_aggregation_colset_name_list, system_aggregation_colset_single)
+        # TODO: just use the id. factor out case attributes we want to use to some static place.
+        object_type_colset = self.get_object_type_colset(leading_type)
+        attribute_domain_colset = self.colset_map.colsets_by_name[get_attribute_domain_colset_name(attribute_id)]
+        timestamp_colset = self.get_real_colset()
+        attribute_context_observations_colset_name = get_attribute_context_observation_colset_name(attribute_id)
+        colset = self.__add_product_colset(attribute_context_observations_colset_name, [
+            object_type_colset, timestamp_colset, attribute_domain_colset
+        ])  # , timed=True)
         return colset
+
+    def add_attribute_all_observations_colset(self, attribute_id: str, leading_type: ObjectType):
+        context_observation_colset = self.add_attribute_context_observation_colset(attribute_id, leading_type)
+        attribute_all_observations_colset_name = get_attribute_all_observations_colset_name(attribute_id)
+        colset = self.__add_list_colset(attribute_all_observations_colset_name, context_observation_colset)
+        return colset
+
+    def add_attribute_observations_list_colset(self, attribute_id: str):
+        attribute_domain_colset = self.colset_map.colsets_by_name[
+            get_attribute_domain_colset_name(attribute_id)
+        ]
+        attribute_observations_list_colset_name = get_attribute_observations_list_colset_name(attribute_id)
+        colset = self.__add_list_colset(attribute_observations_list_colset_name, attribute_domain_colset)
 
     def add_attribute_domain_colset(self, attribute: CPM_Attribute):
         """
@@ -388,14 +462,10 @@ class ColsetManager:
         :param domain_colset_name: the domain for which this colset is an alias (e.g., string, int)
         :return: the colset
         """
-        attr_id = attribute.get_id()
-        colset_name = self.get_attribute_domain_colset_name(attr_id)
-        if attribute.get_domain() == CPM_Attribute_Domain.CATEGORICAL:
-            attribute: CPM_Categorical_Attribute
-            labels = attribute.get_labels()
-            colset = self.__add_with_colset(colset_name, labels)
-        else:
-            raise NotImplementedError()
+        attribute_id = attribute.get_id()
+        colset_name = get_attribute_domain_colset_name(attribute_id)
+        attribute_domain = attribute.get_domain()
+        colset = self.add_domain_colset(attribute_domain, colset_name)
         return colset
 
     def __add_list_colset(self, colset_name, subcol, timed: bool = False):
@@ -533,29 +603,17 @@ class ColsetManager:
         colset_vars = self.colset_vars_map[colset_name]
         return colset_vars[:number]
 
-    def get_timed_int_colset_name(self):
-        return self.TIMEDINT_COLSET_NAME
-
-    def get_object_type_ID_colset_name(self, ot: ObjectType):
-        return self.COLSET_PREFIX + ot.get_id() + "ID"
-
     def add_object_type_ID_colset(self, ot: ObjectType):
-        self.__add_alias_colset(Standard_Colsets.STRING.value, self.get_object_type_ID_colset_name(ot), timed=True)
+        self.__add_alias_colset(Standard_Colsets.STRING.value, get_object_type_ID_colset_name(ot), timed=True)
 
     def get_object_type_ID_colset(self, ot: ObjectType):
-        return self.colset_map.colsets_by_name[self.get_object_type_ID_colset_name(ot)]
-
-    def get_object_type_ID_list_colset_name(self, ot: ObjectType):
-        return self.COLSET_PREFIX + ot.get_id() + "ID_LIST"
+        return self.colset_map.colsets_by_name[get_object_type_ID_colset_name(ot)]
 
     def add_object_type_ID_list_colset(self, ot: ObjectType):
-        self.__add_list_colset(self.get_object_type_ID_list_colset_name(ot), self.get_object_type_ID_colset(ot))
+        self.__add_list_colset(get_object_type_ID_list_colset_name(ot), self.get_object_type_ID_colset(ot))
 
     def get_object_type_ID_list_colset(self, ot: ObjectType):
-        return self.colset_map.colsets_by_name[self.get_object_type_ID_list_colset_name(ot)]
-
-    def get_object_type_colset_name(self, ot: ObjectType):
-        return self.COLSET_PREFIX + ot.get_id()
+        return self.colset_map.colsets_by_name[get_object_type_ID_list_colset_name(ot)]
 
     def add_object_type_colset(self, ot, ot_struct: ObjectTypeStructure):
         sorted_relations = ot_struct.get_sorted_relations(ot)
@@ -565,24 +623,47 @@ class ColsetManager:
                 sub_colsets.append(self.get_object_type_ID_colset(ot2))
             else:
                 sub_colsets.append(self.get_object_type_ID_list_colset(ot2))
-        self.__add_product_colset(self.get_object_type_colset_name(ot),
+        self.__add_product_colset(get_object_type_colset_name(ot),
                                   sub_colsets,
                                   timed=True)
 
     def get_object_type_colset(self, ot):
-        return self.colset_map.colsets_by_name[self.get_object_type_colset_name(ot)]
-
-    def get_object_type_list_colset_name(self, ot: ObjectType):
-        return self.COLSET_PREFIX + ot.get_id() + "_LIST"
+        return self.colset_map.colsets_by_name[get_object_type_colset_name(ot)]
 
     def add_object_type_list_colset(self, ot):
-        self.__add_list_colset(self.get_object_type_list_colset_name(ot), self.get_object_type_colset(ot), timed=True)
+        self.__add_list_colset(get_object_type_list_colset_name(ot), self.get_object_type_colset(ot), timed=True)
 
     def get_object_type_list_colset(self, ot):
-        return self.colset_map.colsets_by_name[self.get_object_type_list_colset_name(ot)]
+        return self.colset_map.colsets_by_name[get_object_type_list_colset_name(ot)]
 
     def get_subcol_index_by_names(self, colset_name, subcolset_name):
         colset = self.colset_map.colsets_by_name[colset_name]
         subcolset = self.colset_map.colsets_by_name[subcolset_name]
         index = colset.subcols.index(subcolset)
         return index
+
+    def get_all_attribute_domain_colset_vars(self, attrs: list[CPM_Attribute]):
+        return [self.get_one_var(get_attribute_domain_colset_name(attr.get_id())) for attr in attrs]
+
+    def get_all_attribute_domain_colset_names(self, attrs: list[CPM_Attribute]):
+        return [get_attribute_domain_colset_name(attr.get_id()) for attr in attrs]
+
+    def add_domain_colset(self, domain: CPM_Domain, colset_name=None):
+        attribute_domain_type = domain.domain_type
+        if colset_name is None:
+            colset_name = get_domain_colset_name(domain)
+        if colset_name in self.colset_map.colsets_by_name:
+            return self.colset_map.colsets_by_name[colset_name]
+        if attribute_domain_type is CPM_Attribute_Domain_Type.CATEGORICAL:
+            domain: CPM_Categorical_Domain
+            labels = domain.get_labels()
+            colset = self.__add_with_colset(colset_name, labels)
+        elif attribute_domain_type in CPM_Attribute_Domain_Type.get_timing_domain_types():
+            colset = self.__add_alias_colset(get_real_colset_name(), colset_name)
+        else:
+            raise NotImplementedError()
+        return colset
+
+    def add_domain_colsets(self, domains: list[CPM_Domain]):
+        for domain in domains:
+            self.add_domain_colset(domain)

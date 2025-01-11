@@ -1,20 +1,20 @@
+from abc import ABC as AbstractBaseClass
 from itertools import product
 
-from causal_model.causal_process_structure import CPM_Attribute, CPM_Attribute_Domain, CPM_Categorical_Attribute
+from causal_model.causal_process_structure import CPM_Attribute, CPM_Attribute_Domain_Type, CPM_Categorical_Attribute, \
+    CPM_Domain
 from utils.math import cumulative_distribution
+from utils.sml_coding import SML_Codeable
 from utils.validators import validate_condition
 
 
 class ValuationParameter:
 
-    def __init__(self, attribute: CPM_Attribute):
-        self.__attribute = attribute
+    def __init__(self, domain: CPM_Domain):
+        self.__domain = domain
 
-    def get_attribute(self):
-        return self.__attribute
-
-    def get_attribute_domain(self):
-        return self.__attribute.get_domain()
+    def get_domain(self):
+        return self.__domain
 
 
 class ValuationParameters:
@@ -23,7 +23,7 @@ class ValuationParameters:
         validate_condition(all(
             isinstance(p, ValuationParameter) for p in self.__valuation_parameters_list))
         validate_condition(all(
-            isinstance(a, CPM_Attribute) for a in [p.get_attribute() for p in self.__valuation_parameters_list]
+            isinstance(a, CPM_Domain) for a in [p.get_domain() for p in self.__valuation_parameters_list]
         ))
 
     def __init__(self, valuation_parameters_list: list[ValuationParameter]):
@@ -33,14 +33,23 @@ class ValuationParameters:
     def get_valuation_parameters_list(self):
         return self.__valuation_parameters_list
 
+    def get_length(self):
+        return len(self.get_valuation_parameters_list())
 
-class AttributeValuation:
 
-    def __init__(self,
-                 valuation_parameters: ValuationParameters,
-                 outcome_attribute: CPM_Attribute):
+class AttributeValuation(SML_Codeable, AbstractBaseClass):
+
+    def __validate(self):
+        domain_type = self.outcome_attribute.get_domain_type()
+        validate_condition(domain_type not in CPM_Attribute_Domain_Type.get_independent_domain_types(),
+                           "Causal effects on attributes of type/domain {0} "
+                           "cannot be modeled directly.".format(domain_type.value))
+
+    def __init__(self, valuation_parameters: ValuationParameters, outcome_attribute: CPM_Attribute):
+        super().__init__()
         self.valuation_parameters = valuation_parameters
         self.outcome_attribute = outcome_attribute
+        self.__validate()
 
     def parse(self):
         raise NotImplementedError()
@@ -48,29 +57,11 @@ class AttributeValuation:
     def get_function_name(self):
         return "valuate_" + "_".join(self.outcome_attribute.get_id().split(" "))
 
-    def to_SML(self):
+    def get_parameter_string(self):
         raise NotImplementedError()
 
-    def get_call(self):
+    def get_function_body(self):
         raise NotImplementedError()
-
-
-def define_uniform_probability_mapping(valuation_parameters: ValuationParameters,
-                                       outcome: CPM_Categorical_Attribute) \
-        -> dict[tuple, dict[str, float]]:
-    outcome_labels = outcome.get_labels()
-    udist = {
-        l: 1 / len(outcome_labels) for l in outcome_labels
-    }
-    vp: ValuationParameter
-    vp_list = valuation_parameters.get_valuation_parameters_list()
-    label_lists = [vp.get_attribute().get_labels() for vp in vp_list]
-    cartesian_product = list(product(*label_lists))
-    umap = {
-        tuple(c): udist
-        for c in cartesian_product
-    }
-    return umap
 
 
 class BayesianValuation(AttributeValuation):
@@ -90,7 +81,7 @@ class BayesianValuation(AttributeValuation):
         # 1
         x: ValuationParameter
         validate_condition(all(
-            x.get_attribute_domain() == CPM_Attribute_Domain.CATEGORICAL
+            x.get_attribute_domain_type() == CPM_Attribute_Domain_Type.CATEGORICAL
             for x in valuation_parameters.get_valuation_parameters_list()
         ))
 
@@ -106,10 +97,11 @@ class BayesianValuation(AttributeValuation):
         :param probability_mappings: The probabilities for all possible input tuples, that is, a dictionary where keys are tuples representing parameter states, and values are dictionaries mapping outcomes to their probabilities. Tuples are ordered w.r.t. the parameter ordering of valuation_parameters. If this is None, a uniform distribution will be auto-defined for all input configurations.
         :param has_complete_mappings: Whether probability_mappings should define valuations for all (exponentially many) input configurations.
         """
-        self.__validate_valuation_parameters(valuation_parameters)
+        # TODO: temporarily deactivate for dev purposes
+        # self.__validate_valuation_parameters(valuation_parameters)
         super().__init__(valuation_parameters, outcome_attribute)
         if probability_mappings is None:
-            probability_mappings = define_uniform_probability_mapping(
+            probability_mappings = self.define_uniform_probability_mapping(
                 valuation_parameters, outcome_attribute)
         self.__probability_mappings = probability_mappings
         self.__has_complete_mappings = has_complete_mappings
@@ -177,7 +169,8 @@ class BayesianValuation(AttributeValuation):
         function_body += 'else ' + self.outcome_attribute.get_labels()[0]
         return function_body
 
-    def __get_case_sub_body(self, key_tuple: tuple, dist: dict) -> str:
+    @staticmethod
+    def __get_case_sub_body(key_tuple: tuple, dist: dict) -> str:
         """
         Example:
         if  x1=A andalso x2=B then  (let val x=uniform(0.0,1.0) in
@@ -207,3 +200,63 @@ class BayesianValuation(AttributeValuation):
                 cum_dist_body
             )
         return "if {0} then {1} ".format(key_body, dist_body)
+
+    @staticmethod
+    def define_uniform_probability_mapping(valuation_parameters: ValuationParameters,
+                                           outcome: CPM_Categorical_Attribute) \
+            -> dict[tuple, dict[str, float]]:
+        outcome_labels = outcome.get_labels()
+        udist = {
+            l: 1 / len(outcome_labels) for l in outcome_labels
+        }
+        vp: ValuationParameter
+        vp_list = valuation_parameters.get_valuation_parameters_list()
+        label_lists = [vp.get_attribute().get_labels() for vp in vp_list]
+        cartesian_product = list(product(*label_lists))
+        umap = {
+            tuple(c): udist
+            for c in cartesian_product
+        }
+        return umap
+
+
+class CustomSMLValuation(AttributeValuation):
+    outcome_attribute: CPM_Attribute
+
+    def __validate(self):
+        n1 = self.valuation_parameters.get_length()
+        n2 = len(self.__signature_colsets)
+        n3 = len(self.__signature_variables)
+        validate_condition(n1 == n2)
+        validate_condition(n1 == n3)
+
+    def __init__(self, valuation_parameters: ValuationParameters,
+                 outcome_attribute: CPM_Categorical_Attribute,
+                 signature_variables: list[str],
+                 signature_colsets: list[str],
+                 sml_code: str):
+        """
+        Initialize the valuation function based on user-specified SML code.
+
+        :param valuation_parameters: The ValuationParameters.
+        Each parameter corresponds to an attribute in the preset of the valuated attribute in the causal graph. The order must be respected.
+        :param outcome_attribute: The codomain of the valuation function.
+        :signature_variables: The variable identifiers used in the function body, ordered w.r.t. valuation_parameters.
+        :signature_colsets: The colsets of the valuation parameters, ordered w.r.t valuation_parameters.
+        :param sml_code: The body of the SML function
+        """
+        super().__init__(valuation_parameters, outcome_attribute)
+        self.__signature_variables = signature_variables
+        self.__signature_colsets = signature_colsets
+        self.__sml_code = sml_code
+        self.__validate()
+
+    def __get_function_name(self):
+        return super(CustomSMLValuation, self).get_function_name()
+
+    def get_parameter_string(self):
+        return ",".join(["{0}: {1}".format(var, colset) for var, colset in
+                         zip(self.__signature_variables, self.__signature_colsets)])
+
+    def get_function_body(self):
+        return self.__sml_code

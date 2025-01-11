@@ -1,4 +1,6 @@
-from causal_model.causal_process_structure import CPM_Categorical_Attribute
+from causal_model.causal_process_structure import CPM_Categorical_Attribute, CPM_Attribute, CPM_Attribute_Domain_Type, \
+    CPM_Activity
+from simulation_model.colset import ColsetManager
 from simulation_model.timing import TimeInterval, HourDensity, WeekdayDensity, TimeDensity, ProcessTimeCategory, \
     TimeUnit, TimeDensityCalendar
 
@@ -26,8 +28,10 @@ NORMALIZED_DELAY_FUNCTION_NAME = "normalized_delay"
 EAVAL2LIST_CONVERTER_NAME = "eaval2list"
 RECORD_WRITER_NAME = "write_record"
 EVENT_WRITER_NAME = "write_event"
+CODE_FOR_TRANSITION_FUNCTION_NAME = "code"
 # TODO: Make start time parametrizable
 PROCESS_START_TIMESTAMP = str(TimeInterval(days=20055, hours=8).get_seconds()) + ".0"
+
 
 
 def get_timeunit_constant_name(timeunit: TimeUnit):
@@ -48,6 +52,7 @@ def get_valsep_constant():
 
 def get_list_diff_element_function_name():
     return LIST_DIFF_ELEMENT_FUNCTION_NAME
+
 
 def get_list_diff_function_name():
     return LIST_DIFF_FUNCTION_NAME
@@ -128,6 +133,8 @@ def get_event_writer_name():
 def get_process_start_timestamp():
     return PROCESS_START_TIMESTAMP
 
+def get_code_for_transition_name(transition_id: str):
+    return "{0}_{1}".format(CODE_FOR_TRANSITION_FUNCTION_NAME, transition_id)
 
 def get_timeunit_constant_sml(timeunit: TimeUnit):
     if timeunit == TimeUnit.MINUTE:
@@ -170,7 +177,6 @@ def get_list_diff_function_sml():
         get_list_diff_function_name(),
         get_list_diff_element_function_name()
     )
-
 
 
 def get_time2date_converter_sml():
@@ -299,7 +305,7 @@ def get_relative_delay_function_sml(pt_cat: ProcessTimeCategory):
                get_remaining_hour_getter_name(),
                get_time_density_getter_name(pt_cat),
                get_timeunit_constant_name(TimeUnit.HOUR)
-    )
+               )
 
 
 def get_relative_delay_from_now_function_sml(pt_cat: ProcessTimeCategory):
@@ -311,11 +317,11 @@ def get_relative_delay_from_now_function_sml(pt_cat: ProcessTimeCategory):
 
 
 def get_effective_delay_factor_sml(pt_cat: ProcessTimeCategory):
-    #return "val {0} = {1}(52.0*{2})/(52.0*{2});".format(
-        #get_effective_delay_factor_name(pt_cat),
-        #get_relative_delay_from_now_function_name(pt_cat),
-        #get_timeunit_constant_name(TimeUnit.WEEK)
-    #)
+    # return "val {0} = {1}(52.0*{2})/(52.0*{2});".format(
+    # get_effective_delay_factor_name(pt_cat),
+    # get_relative_delay_from_now_function_name(pt_cat),
+    # get_timeunit_constant_name(TimeUnit.WEEK)
+    # )
     return "val {0} = 1.0;".format(get_effective_delay_factor_name(pt_cat))
 
 
@@ -392,67 +398,62 @@ def get_label_to_string_converter_sml(attribute: CPM_Categorical_Attribute, cols
     return fun_body
 
 
-def get_eaval2list_converter_sml(act_id: str, eaval_colset_name: str,
-                                 event_attributes: list[CPM_Categorical_Attribute]):
+def get_eaval2list_converter_sml(act_id: str,
+                                 local_event_attributes: list[CPM_Attribute],
+                                 local_event_attributes_colset_names: list[str]):
     """
     A function to help converting an instance of the eaval-colset into a list of strings
 
     :param act_id: The activity for which the event attributes are to be converted
-    :param eaval_colset_name: The colset name of the event attributes of that activity
-    :param event_attributes: The categorical attributes that form the event attributes
-    :return: The list of strings
+    :param local_event_attributes: The attributes that form the event attributes
+    :param local_event_attributes_colset_names: The colset name of the event attributes of that activity
+
+    :return: the SML function code to convert the list of attribute values into a list of strings
     """
-    number_of_attributes = len(event_attributes)
+    categorical_attributes_indices = [i for i, attr in enumerate(local_event_attributes)
+                                      if attr.get_domain_type() is CPM_Attribute_Domain_Type.CATEGORICAL]
     sml = '''
-    fun {0}(v_eaval: {1}) =
-    let 
+    fun {0}({1}) = 
     '''.format(
         get_eaval2list_converter_name(act_id),
-        eaval_colset_name
+        ",".join(["x{0}: {1}".format(str(i), local_event_attributes_colset_names[i])
+                  for i in range(len(local_event_attributes))])
     )
-    sml += "\n".join([
-        "val x{0} = #{0} v_eaval".format(
-            i + 2
-        ) for i in range(number_of_attributes)
-    ])
-    sml += '''
-    in
-        [{0}]
-    end;
-    '''.format(
-        ",".join([
-            "{0}({1})".format(
-                get_label_to_string_converter_name(event_attributes[i]),
-                "x{0}".format(str(i + 2))
-            ) for i in range(number_of_attributes)
-        ])
-    )
+    eaval_categorical_as_string_expressions = [
+        "{0}({1})".format(get_label_to_string_converter_name(local_event_attributes[i]), "x{0}".format(str(i))
+                          ) for i in categorical_attributes_indices]
+    all_eaval_as_string_expressions = \
+        eaval_categorical_as_string_expressions
+    sml += "[" + ",".join(all_eaval_as_string_expressions) + "]"
     return sml
 
 
-def get_event_writer_sml(activity_id: str, activity_name: str, eaval_colset_name: str, model_name: str):
+def get_event_writer_sml(activity_id: str,
+                         activity_name: str,
+                         local_event_attributes_colset_names: list[str],
+                         model_name: str):
     """
     A function for writing an event, taking an event id, the activity name, and ordered event attribute values.
 
     :return: The SML code
     """
+    local_event_attributes_string = ",".join(
+        ["x{0}: {1}".format(str(i), colset_name) for i, colset_name in enumerate(local_event_attributes_colset_names)])
     return '''
-    fun {0}(event_counter: INT, delay: real, eaval: {1}) = 
+    fun {0}(event_counter: INT, case_id: STRING, delay: real{1}{2}) = 
     let
         val event_id = "EVENT" ^ Int.toString event_counter
-        val event_file_id = "{2}"
-        val case_id = #1 eaval
-        val starttime = {3}()
-        val norm_delay = {4}(delay) 
-        val endtime = starttime + norm_delay
-        val starttime_s = t2s(starttime)
-        val endtime_s = t2s(endtime)
-        val _ = {7}(event_file_id, [event_id, case_id, "{5}", starttime_s, endtime_s]^^{6}(eaval))
+        val event_file_id = "{3}"
+        val start_time = {4}()
+        val norm_delay = {5}(delay) 
+        val end_time = start_time + delay
+        val _ = {8}(event_file_id, [event_id, case_id, "{6}"]^^{7}({2}))
     in
-       ModelTime.fromInt(round(norm_delay))
+       (ModelTime.fromInt(round(norm_delay)), start_time, end_time)
     end;        
     '''.format(get_activity_event_writer_name(activity_id),
-               eaval_colset_name,
+               "," if len(local_event_attributes_string) else "",
+               local_event_attributes_string,
                get_event_table_file_path(activity_id, model_name),
                get_now_time_getter_name(),
                get_normalized_delay_from_now_function_name(ProcessTimeCategory.SERVICE),
@@ -460,6 +461,66 @@ def get_event_writer_sml(activity_id: str, activity_name: str, eaval_colset_name
                get_eaval2list_converter_name(activity_id),
                get_record_writer_name()
                )
+
+def get_code_output_parameter_string(outputs):
+    output_vars = list(filter(lambda o: o is not None, outputs))
+    output_string = ",".join(output_vars)
+    return output_string
+
+
+def get_code_for_transition_sml(transition_id: str,
+                                other_actions: list[tuple[str, list[str], list[str]]],
+                                other_output_variables: list[str],
+                                event_writing_action: tuple[str, CPM_Activity, list[str], list[str]] = None,
+                                return_start_time: bool = None, return_complete_time: bool = None
+                                ):
+    instructions = []
+    input_params = []
+    event_time_outputs = []
+    other_outputs = []
+    j = 1
+    if event_writing_action is not None:
+        event_writing_output_variable = "x"
+        action, activity, _, colsetnames = event_writing_action
+        event_writer_name = get_activity_event_writer_name(activity.get_id())
+        event_time_outputs.append("#1 {0}".format(event_writing_output_variable))
+        if return_start_time:
+            event_time_outputs.append("#2 {0}".format(event_writing_output_variable))
+        if return_complete_time:
+            event_time_outputs.append("#3 {0}".format(event_writing_output_variable))
+        action_params = []
+        for cn in colsetnames:
+            action_params.append("x{0}".format(str(j), cn))
+            input_params.append("x{0}: {1}".format(str(j), cn))
+            j = j + 1
+        action_parameter_string = ",".join(action_params)
+        event_writing_instruction = "val {0} = {1}({2})".format(event_writing_output_variable, action, action_parameter_string)
+        instructions.append(event_writing_instruction)
+    for i in range(len(other_actions)):
+        output = other_output_variables[i]
+        other_outputs.append(output)
+        action, _, colsetnames = other_actions[i]
+        action_params = []
+        for cn in colsetnames:
+            action_params.append("x{0}".format(str(j), cn))
+            input_params.append("x{0}: {1}".format(str(j), cn))
+            j = j + 1
+        action_parameter_string = ",".join(action_params)
+        if output is None:
+            instruction = "val _ = {0}({1})".format(action, action_parameter_string)
+        else:
+            instruction = "val {0} = {1}({2})".format(output, action, action_parameter_string)
+        instructions.append(instruction)
+    input_parameter_string = ",".join(input_params)
+    code_string = "\n".join(instructions)
+    output_string = get_code_output_parameter_string(event_time_outputs + other_outputs)
+    sml = "fun {0}({1}) = let {2} in ({3}) end;".format(
+        get_code_for_transition_name(transition_id),
+        input_parameter_string,
+        code_string,
+        output_string
+    )
+    return sml
 
 
 def get_all_standard_functions_ordered_sml():
@@ -481,7 +542,7 @@ def get_all_standard_functions_ordered_sml():
         (get_model_time_getter_name(), get_model_time_getter_sml()),
         (get_start_time_getter_name(), get_start_time_getter_sml()),
         (get_now_time_getter_name(), get_now_time_getter_sml()),
-        #(get_time2string_converter_name(), get_time2string_converter_sml()),
+        # (get_time2string_converter_name(), get_time2string_converter_sml()),
         (get_time2date_converter_name(), get_time2date_converter_sml()),
     ]
     all_standard_functions_ordered += [
@@ -489,7 +550,8 @@ def get_all_standard_functions_ordered_sml():
         for timeunit in TimeUnit if timeunit is not TimeUnit.WEEK
     ]
     all_standard_functions_ordered += [
-        (get_time2projected_timeunit_string_converter_name(timeunit), get_time2projected_timeunit_string_converter_sml(timeunit))
+        (get_time2projected_timeunit_string_converter_name(timeunit),
+         get_time2projected_timeunit_string_converter_sml(timeunit))
         for timeunit in [TimeUnit.WEEKDAY, TimeUnit.HOUR]
     ]
     all_standard_functions_ordered += [
