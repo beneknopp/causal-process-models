@@ -447,20 +447,22 @@ def get_event_writer_sml(activity_id: str,
         val start_time = {4}()
         val norm_delay = {5}(delay) 
         val end_time = start_time + delay
-        val _ = {8}(event_file_id, [event_id, case_id, "{6}"]^^{7}({2}))
+        val _ = {8}(event_file_id, [event_id, case_id, "{6}", {9}(start_time), {9}(end_time)]^^{7}({2}))
     in
        (ModelTime.fromInt(round(norm_delay)), start_time, end_time)
     end;        
-    '''.format(get_activity_event_writer_name(activity_id),
-               "," if len(local_event_attributes_string) else "",
-               local_event_attributes_string,
-               get_event_table_file_path(activity_id, model_name),
-               get_now_time_getter_name(),
-               get_normalized_delay_from_now_function_name(ProcessTimeCategory.SERVICE),
-               activity_name,
-               get_eaval2list_converter_name(activity_id),
-               get_record_writer_name()
-               )
+    '''.format(
+        get_activity_event_writer_name(activity_id),
+        "," if len(local_event_attributes_string) else "",
+        local_event_attributes_string,
+        get_event_table_file_path(activity_id, model_name),
+        get_now_time_getter_name(),
+        get_normalized_delay_from_now_function_name(ProcessTimeCategory.SERVICE),
+        activity_name,
+        get_eaval2list_converter_name(activity_id),
+        get_record_writer_name(),
+        get_time2string_converter_name()
+    )
 
 def get_code_output_parameter_string(outputs):
     output_vars = list(filter(lambda o: o is not None, outputs))

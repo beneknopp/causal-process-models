@@ -1,7 +1,9 @@
 import os
 
+from pandas import DataFrame
+
 from causal_model.causal_process_model import CausalProcessModel
-from object_centric.object_type_structure import ObjectTypeStructure
+from object_centric.object_type_structure import ObjectTypeStructure, ObjectType
 from object_centric.object_centric_petri_net import ObjectCentricPetriNet as OCPN
 from simulation_model.cpm_cpn_converter import CPM_CPN_Converter
 from simulation_model.simulation_parameters import SimulationParameters
@@ -13,9 +15,9 @@ class SimulationModel:
     def __validate(self):
         petri_net_activities = self.__petriNet.get_activities()
         causal_model_activities = self.__causalModel.get_activity_names()
-        validate_condition(all(
-            act in petri_net_activities
-            for act in causal_model_activities))
+        act_not_in_petri_net = [act for act in causal_model_activities if act not in petri_net_activities]
+        validate_condition(not len(act_not_in_petri_net),
+                           "Activities '{0}' found in causal model, but not in Petri net".format(act_not_in_petri_net))
         activities_with_simulation_parameters = self.__simulationParameters.get_activity_names()
         activities_without_simulation_parameters = [
             activity_name for activity_name in petri_net_activities
@@ -36,6 +38,7 @@ class SimulationModel:
         self.__causalModel = causalModel
         self.__objectTypeStructure = objectTypeStructure
         self.__simulationParameters = simulation_parameters
+        self.__initial_marking = None
         self.__validate()
 
     def to_string(self):
@@ -65,6 +68,10 @@ class SimulationModel:
                                       causalModel=self.__causalModel,
                                       simulationParameters=self.__simulationParameters,
                                       objectTypeStructure = self.__objectTypeStructure,
+                                      initialMarking = self.__initial_marking,
                                       model_name=model_name)
         converter.convert()
         converter.export(model_out_path)
+
+    def set_initial_marking(self, initial_marking:  dict[ObjectType, DataFrame]):
+        self.__initial_marking = initial_marking

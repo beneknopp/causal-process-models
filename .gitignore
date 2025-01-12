@@ -6,4 +6,4 @@ __pycache__/
 .output/
 *.csv
 *.nmoutfile
-.output/*.csv
+resources/*.sqlite

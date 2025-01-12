@@ -1,3 +1,6 @@
+#import pm4py
+from pandas import DataFrame
+
 from causal_model.aggregation_functions.aggregation_functions_implementations import  \
     MaxMinDiff
 from causal_model.aggregation_selections.aggregation_selections_implementations import SelectionBy_toManyRelationsLastObservation
@@ -8,6 +11,7 @@ from causal_model.causal_process_structure import CausalProcessStructure, Attrib
     AttributeRelation, CPM_Categorical_Attribute, CPM_EventStartTime_Attribute, \
     CPM_EventCompleteTime_Attribute, CPM_Categorical_Domain
 from causal_model.valuation import BayesianValuation, ValuationParameters, ValuationParameter, CustomSMLValuation
+from examples.order_management_complete import run_example_order_management_complete
 from object_centric.object_centric_petri_net import ObjectCentricPetriNet as OCPN, ObjectCentricPetriNetArc as Arc, \
     ObjectCentricPetriNetPlace as Place, ObjectCentricPetriNetTransition as Transition
 from object_centric.object_type_structure import ObjectType, ObjectTypeStructure, ObjectTypeRelation, Multiplicity
@@ -529,6 +533,7 @@ def run_example_oc_aggregations(output_path, model_name):
     ot_struct = ObjectTypeStructure([ot_orders, ot_items], [
         ObjectTypeRelation(ot_orders, Multiplicity.ONE, Multiplicity.MANY, ot_items)
     ])
+
     yo = 800
     yi = -200
     ysync = (yo + yi) / 2
@@ -661,7 +666,11 @@ def run_example_oc_aggregations(output_path, model_name):
         ]
     )
     sim = SimulationModel(ocpn, causal_model, ot_struct, simulation_parameters)
+    if initial_marking is not None:
+        sim.set_initial_marking(initial_marking)
+
     print(sim.to_string())
+
     sim.to_CPN(output_path, model_name)
 
 
@@ -671,9 +680,11 @@ if __name__ == "__main__":
     model_name_2 = "confounder_simple"
     model_name_oc_simple = "object_centric_simple"
     model_name_oc_complex = "object_centric_complex"
-    model_name_oc_aggregations = "object_centric_aggregations"
+    #model_name_oc_aggregations = "object_centric_aggregations"
+    model_name_om = "order_management"
     # run_example_1(output_path, model_name_1)
     # run_example_2(output_path, model_name_2)
     # run_example_oc_simple(output_path,  model_name_oc_simple)
     #run_example_oc_complex(output_path, model_name_oc_complex)
-    run_example_oc_aggregations(output_path, model_name_oc_aggregations)
+    #run_example_oc_aggregations(output_path, model_name_oc_aggregations)
+    run_example_order_management_complete(output_path, model_name_om)

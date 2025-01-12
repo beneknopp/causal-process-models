@@ -48,7 +48,7 @@ class CPN_Arc(CPN_Node):
     cpn_id_manager: CPN_ID_Manager
 
     def __init__(self, cpn_id_manager: CPN_ID_Manager, source: SemanticNetNode, target: SemanticNetNode,
-                 expression: str = "", delay: str = None, ocpn_arc: OCPN_Arc = None):
+                 expression: str = "", delay: str = None, is_variable_arc=False):
         if source.__class__ == CPN_Place and target.__class__ == CPN_Transition:
             orientation = ArcDirection.P2T
             self.placeend = source
@@ -72,7 +72,7 @@ class CPN_Arc(CPN_Node):
         self.annotation = Annotation(cpn_id_manager, source, target, annotation_text)
         self.orientation = orientation
         self.cpn_id_manager = cpn_id_manager
-        self.ocpn_arc = ocpn_arc
+        self.is_variable_arc = is_variable_arc
         tag = "arc"
         attributes = dict()
         child_elements = []
@@ -101,9 +101,7 @@ class CPN_Arc(CPN_Node):
         return self.transend
 
     def get_object_type(self):
-        if self.placeend.ocpn_place is None:
-            return None
-        return self.placeend.ocpn_place.get_object_type()
+        return self.placeend.get_object_type()
 
     @classmethod
     def fromArc(cls, arc, new_place, new_transition):
@@ -132,21 +130,16 @@ class CPN_Arc(CPN_Node):
         self.annotation_text = annotation_text
         self.annotation.set_text(annotation_text)
 
-    def get_place_object_type(self):
-        ocpn_place = self.placeend.ocpn_place
-        place_type = ocpn_place.get_object_type() if ocpn_place is not None else None
-        return place_type
-
     def get_transition_object_type(self):
         ocpn_trans = self.transend.ocpn_transition
         trans_type = ocpn_trans.get_leading_type() if ocpn_trans is not None else None
         return trans_type
 
     def get_place_and_transition_object_types(self):
-        return self.get_place_object_type(), self.get_transition_object_type()
+        return self.get_object_type(), self.get_transition_object_type()
 
     def get_transition_and_place_object_types(self):
-        return self.get_transition_object_type(), self.get_place_object_type()
+        return self.get_transition_object_type(), self.get_object_type()
 
 
 

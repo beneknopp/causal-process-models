@@ -1,11 +1,13 @@
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
 
+from pandas import DataFrame
+
 from causal_model.causal_process_model import CausalProcessModel
 from causal_model.causal_process_structure import CPM_Categorical_Attribute
 from object_centric.object_centric_petri_net import ObjectCentricPetriNet as OCPN
 from object_centric.object_centricity_management import ObjectCentricityManager
-from object_centric.object_type_structure import ObjectTypeStructure
+from object_centric.object_type_structure import ObjectTypeStructure, ObjectType
 from simulation_model.cpn_utils.cpn_transition import CPN_Transition
 from simulation_model.functions import get_all_standard_functions_ordered_sml, get_event_writer_sml, \
     get_activity_event_writer_name, get_eaval2list_converter_sml, get_eaval2list_converter_name, \
@@ -13,7 +15,8 @@ from simulation_model.functions import get_all_standard_functions_ordered_sml, g
     get_activity_event_table_initializer_sml, get_all_timing_functions_ordered_sml, get_all_event_functions_ordered_sml
 from simulation_model.simulation_parameters import SimulationParameters
 from simulation_model.timing import ProcessTimeCategory
-from simulation_model.colset import ColsetManager, Colset_Type, Colset, WithColset, get_attribute_domain_colset_name
+from simulation_model.colset import ColsetManager, Colset_Type, Colset, WithColset, get_attribute_domain_colset_name, \
+    get_object_type_colset_name, get_object_type_ID_colset_name, get_object_type_ID_list_colset_name
 from simulation_model.control_flow.control_flow_manager import ControlFlowManager
 from simulation_model.cpn_utils.xml_utils.cpn_id_managment import CPN_ID_Manager
 from simulation_model.cpn_utils.xml_utils.page import Page
@@ -27,6 +30,7 @@ class CPM_CPN_Converter:
                  causalModel: CausalProcessModel,
                  objectTypeStructure: ObjectTypeStructure,
                  simulationParameters: SimulationParameters,
+                 initialMarking: dict[ObjectType, DataFrame],
                  model_name: str
                  ):
         self.model_name = model_name
@@ -43,19 +47,12 @@ class CPM_CPN_Converter:
         )
         self.controlflow_manager = ControlFlowManager(
             cpn_id_manager, petriNet, causalModel, simulationParameters, self.objectcentricity_manager,
-            self.colset_manager
+            self.colset_manager, initialMarking
         )
-        self.initial_places = {}
-        self.new_colsets = []
-        self.event_places_by_activity_name = dict()
-        self.schema_generation_functions = dict()
-        self.transition_substitutions = dict()
-        self.port_sock_map = dict()
-        self.other_functions = []
-        self.uses = []
         self.petriNet = petriNet
         self.causalModel = causalModel
         self.objectTypeStructure = objectTypeStructure
+        self.initialMarking = initialMarking
         self.simulationParameters = simulationParameters
 
     def convert(self):
@@ -150,6 +147,7 @@ class CPM_CPN_Converter:
 
     def __build_dom(self):
         self.__build_colsets()
+        self.__build_constants()
         self.__build_variables()
         self.__build_petri_net()
         self.__build_functions()
@@ -161,6 +159,20 @@ class CPM_CPN_Converter:
                     "Standard declarations"
                 )
                 self.__build_colset(block, colset)
+
+
+    def __build_constants(self):
+        const_block = self.__make_block("Constants")
+        for object_type in self.objectTypeStructure.get_object_types():
+            initmark_name = "initmark_" + object_type.get_id()
+            initmark = self.__get_initial_marking(object_type)
+            const_element = ET.SubElement(const_block, "ml")
+            const_element.text = "val {0} = {1}".format(
+                initmark_name,
+                initmark
+            )
+            const_element.set("id", self.cpn_id_manager.give_ID())
+
 
     def __build_variables(self):
         globbox = self.root.find("cpnet").find("globbox")
@@ -350,3 +362,43 @@ class CPM_CPN_Converter:
 
     def __make_object_type_synchronization(self):
         self.controlflow_manager.make_object_type_synchronization()
+
+    def __get_initial_marking(self, object_type):
+        initmark_df = self.initialMarking[object_type]
+        to_1_relations = self.objectcentricity_manager.get_to_1_relations_for_object_type(object_type)
+        to_N_relations = self.objectcentricity_manager.get_to_N_relations_for_object_type(object_type)
+        object_type_1_colset_name = get_object_type_colset_name(object_type)
+        index_to_object_type = {}
+        for other_object_type in to_1_relations:
+            object_type_2_id_colset_name = get_object_type_ID_colset_name(other_object_type)
+            ot2_at_ot1_index = self.colset_manager.get_subcol_index_by_names(object_type_1_colset_name, object_type_2_id_colset_name)
+            index_to_object_type[ot2_at_ot1_index] = other_object_type.get_name()
+        for other_object_type in to_N_relations:
+            object_type_2_id_list_colset_name = get_object_type_ID_list_colset_name(other_object_type)
+            ot2_at_ot1_index = self.colset_manager.get_subcol_index_by_names(object_type_1_colset_name, object_type_2_id_list_colset_name)
+            index_to_object_type[ot2_at_ot1_index] = other_object_type.get_name()
+
+        list_of_object_token_prefixes = initmark_df.apply(
+            lambda row: '("{0}",0,'.format(row["ocel_id"]), axis=1).tolist()
+        list_of_object_token_suffixes = initmark_df.apply(
+            lambda row: '{0})'.format(self.__initial_token_suffix_transformation(row, index_to_object_type)), axis=1).tolist()
+        list_of_object_token_timestamps = initmark_df.apply(
+            lambda row: str(round(row["ocel_time"])), axis=1).tolist()
+        token_list = ["{0}{1}@{2}".format(
+            list_of_object_token_prefixes[i],
+            list_of_object_token_suffixes[i],
+            list_of_object_token_timestamps[i]
+        ) for i in range(len(initmark_df))]
+        initmark = "[" + ",".join(token_list) + "]"
+        return initmark
+
+    def __initial_token_suffix_transformation(self, row, index_to_object_type):
+        suffixes = []
+        for index in sorted(list(index_to_object_type.keys())):
+            related_objects = dict(row)[index_to_object_type[index]]
+            if type(related_objects) is list:
+                related_objects_str = "[" + ','.join(['"{0}"'.format(related_object) for related_object in related_objects]) + "]"
+            else:
+                related_objects_str = '"{0}"'.format(related_objects)
+            suffixes.append(related_objects_str)
+        return ",".join(suffixes)

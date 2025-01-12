@@ -116,3 +116,21 @@ class ObjectTypeStructure:
             (ot1 is r.get_ot1() and ot2 is r.get_ot2() and r.get_m2() is m) or
             (ot2 is r.get_ot1() and ot1 is r.get_ot2() and r.get_m1() is m)
             for r in self.__object_type_relations)
+
+    def get_to_1_relations_for_object_type(self, object_type):
+        rs = self.get_object_type_relations()
+        r: ObjectTypeRelation
+        rs1 = list(filter(lambda r: r.get_ot1() is object_type and r.get_m2() is Multiplicity.ONE, rs))
+        rs1 = list(map(lambda r: r.get_ot2(), rs1))
+        rs2 = list(filter(lambda r: r.get_ot2() is object_type and r.get_m1() is Multiplicity.ONE, rs))
+        rs2 = list(map(lambda r: r.get_ot1(), rs2))
+        return rs1 + rs2
+
+    def get_to_N_relations_for_object_type(self, object_type):
+        rs = self.get_object_type_relations()
+        r: ObjectTypeRelation
+        rs1 = list(filter(lambda r: r.get_ot1() is object_type and r.get_m2() is Multiplicity.MANY, rs))
+        rs1 = list(map(lambda r: r.get_ot2(), rs1))
+        rs2 = list(filter(lambda r: r.get_ot2() is object_type and r.get_m1() is Multiplicity.MANY, rs))
+        rs2 = list(map(lambda r: r.get_ot1(), rs2))
+        return rs1 + rs2

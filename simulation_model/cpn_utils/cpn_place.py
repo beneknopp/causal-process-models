@@ -118,3 +118,8 @@ class CPN_Place(SemanticNetNode):
 
     def get_name(self):
         return self.name
+
+    def get_object_type(self):
+        if self.ocpn_place is not None:
+            return self.ocpn_place.get_object_type()
+        return self.object_type

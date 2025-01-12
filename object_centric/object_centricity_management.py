@@ -32,9 +32,6 @@ class ObjectCentricityManager:
         self.__colsetManager = colsetManager
         self.__validate()
 
-    def parse_object_type_net_info(self):
-        self.__parse_variable_arc_places()
-
     def get_object_type_sml_functions(self):
         object_type_sml_functions = []
         for ot in self.__objectTypeStructure.get_object_types():
@@ -67,40 +64,16 @@ class ObjectCentricityManager:
                                                   get_match_one_relation_function_sml(ot1, ot2, self.__colsetManager)))
         return object_type_sml_functions
 
-    def __parse_variable_arc_places(self):
-        variable_arc_source_places: set[Place] = set()
-        variable_arc_target_places: set[Place] = set()
-        variable_arcs_place_to_transition: set[Arc] = set()
-        variable_arcs_transition_to_place: set[Arc] = set()
-        arcs = self.__petriNet.get_arcs()
-        for arc in arcs:
-            if arc.is_variable():
-                if arc.get_direction() is ArcDirection.P2T:
-                    variable_arc_source_places.add(arc.get_place())
-                    variable_arcs_place_to_transition.add(arc)
-                else:
-                    variable_arc_target_places.add(arc.get_place())
-                    variable_arcs_transition_to_place.add(arc)
-        self.__variable_arc_source_places = variable_arc_source_places
-        self.__variable_arc_target_places = variable_arc_target_places
-        self.__variable_arcs_place_to_transition = variable_arcs_place_to_transition
-        self.__variable_arcs_transition_to_place = variable_arcs_transition_to_place
-
-    def get_variable_arc_source_places(self):
-        return self.__variable_arc_source_places
-
-    def get_variable_arc_target_places(self):
-        return self.__variable_arc_target_places
-
-    def get_variable_arcs_place_to_transition(self):
-        return self.__variable_arcs_place_to_transition
-
-    def get_variable_arcs_transition_to_place(self):
-        return self.__variable_arcs_transition_to_place
 
     def get_object_types(self):
         return self.__objectTypeStructure.get_object_types()
 
     def get_object_type_structure(self):
         return self.__objectTypeStructure
+
+    def get_to_1_relations_for_object_type(self, object_type):
+        return self.__objectTypeStructure.get_to_1_relations_for_object_type(object_type)
+
+    def get_to_N_relations_for_object_type(self, object_type):
+        return self.__objectTypeStructure.get_to_N_relations_for_object_type(object_type)
 

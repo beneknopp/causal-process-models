@@ -310,10 +310,15 @@ class CausalModelMerger:
         """
         # make valuation transition and its guard
         preset = self.__causalModel.get_preset(attr_VALUATED)
-        preset_attr_ids = [in_relation.get_in().get_id() for in_relation in preset]
-        preset_domain_colset_names = [
-            get_attribute_domain_colset_name(preset_attr_id)
-            for preset_attr_id in preset_attr_ids]
+        preset_domain_colset_names = []
+        for r in preset:
+            in_attribute = r.get_in()
+            if r.is_aggregated():
+                fagg: AggregationFunction = self.__causalModel.get_aggregation_function().relationsToAggregation[r]
+                domain = fagg.output_domain
+            else:
+                domain = in_attribute.get_domain()
+            preset_domain_colset_names.append(get_domain_colset_name(domain))
         preset_domain_variables = [
             self.__colsetManager.get_one_var(preset_colset_name)
             for preset_colset_name in preset_domain_colset_names
@@ -534,6 +539,9 @@ class CausalModelMerger:
         )
         self.__controlFlowMap.add_arc(
             CPN_Arc(self.cpn_id_manager, p_ALLOBS, t_SELECT, allobs_colset_var)
+        )
+        self.__controlFlowMap.add_arc(
+            CPN_Arc(self.cpn_id_manager, t_SELECT, p_ALLOBS, allobs_colset_var)
         )
         self.__controlFlowMap.add_arc(
             CPN_Arc(self.cpn_id_manager, t_SELECT, p_SELECTED, observations_list_var)

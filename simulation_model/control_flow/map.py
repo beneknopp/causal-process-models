@@ -223,8 +223,7 @@ class ControlFlowMap:
         return self.cpn_allobs_places[attribute]
 
     def get_mapped_variable_arcs(self):
-        mapped_arcs = list(filter(lambda a: a.ocpn_arc is not None, self.cpn_arcs))
-        variable_arcs = list(filter(lambda a: a.ocpn_arc.is_variable(), mapped_arcs))
+        variable_arcs = list(filter(lambda a: a.is_variable_arc, self.cpn_arcs))
         return variable_arcs
 
     def get_place_to_transition_variable_arcs(self):
@@ -276,7 +275,7 @@ class ControlFlowMap:
         # 2. retain arcs that are non-variable and that connect to a leading type different from the place type
         arcs = list(filter(lambda a:
                            (a.get_place().ocpn_place is not None) and
-                           (a.get_transition_object_type() != a.get_place_object_type()) and
+                           (a.get_transition_object_type() != a.get_object_type()) and
                            (ot_struct.has_multiplicity(a.get_transition_and_place_object_types(), Multiplicity.ONE))
                            , arcs))
         return arcs

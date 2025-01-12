@@ -1,5 +1,7 @@
 import random
 
+from pandas import DataFrame
+
 from causal_model.causal_process_model import CausalProcessModel
 from causal_model.causal_process_structure import CPM_Attribute, CPM_Activity, CPM_Domain_Type
 from object_centric.object_centric_functions import get_sorted_object_insert_function_name, \
@@ -36,7 +38,8 @@ class ControlFlowManager:
                  causalModel: CausalProcessModel,
                  simulationParameters: SimulationParameters,
                  objectCentricityManager: ObjectCentricityManager,
-                 colsetManager: ColsetManager
+                 colsetManager: ColsetManager,
+                 initialMarking: dict[ObjectType, DataFrame]
                  ):
         self.cpn_id_manager = cpn_id_manager
         self.__petriNet = petriNet
@@ -45,16 +48,13 @@ class ControlFlowManager:
         self.__objectCentricityManager = objectCentricityManager
         self.__colsetManager = colsetManager
         self.__controlFlowMap = ControlFlowMap()
+        self.__initialMarking = initialMarking
 
     def merge_models(self):
-        self.parse_object_type_net_info()
         self.cast_petri_net()
         self.__make_case_initializer()
         self.__split_activity_transitions()
         self.merge_causal_model()
-
-    def parse_object_type_net_info(self):
-        self.__objectCentricityManager.parse_object_type_net_info()
 
     def cast_petri_net(self):
         """
@@ -64,7 +64,9 @@ class ControlFlowManager:
             self.__petriNet,
             self.cpn_id_manager,
             self.__colsetManager,
-            self.__controlFlowMap
+            self.__controlFlowMap,
+            self.__objectCentricityManager,
+            self.__initialMarking
         )
         petri_net_caster.cast()
 
@@ -118,7 +120,7 @@ class ControlFlowManager:
         arc: CPN_Arc
         for arc in cpn_in_arcs:
             self.__controlFlowMap.remove_arc(arc)
-            new_arc = CPN_Arc(self.cpn_id_manager, arc.source, t_CONTROL, arc.expression, arc.delay, arc.ocpn_arc)
+            new_arc = CPN_Arc(self.cpn_id_manager, arc.source, t_CONTROL, arc.expression, arc.delay, arc.is_variable_arc)
             self.__controlFlowMap.add_arc(new_arc)
         return t_CONTROL
 
@@ -209,7 +211,7 @@ class ControlFlowManager:
             if ca.orientation is ArcDirection.P2T:
                 continue
             ct = ca.transend
-            ot = ca.get_place_object_type()
+            ot = ca.get_object_type()
             ot_at_ct_delay = ct.get_object_type_delay_variable(ot)
             if ot_at_ct_delay is not None:
                 ca.set_delay(ot_at_ct_delay)
@@ -266,7 +268,7 @@ class ControlFlowManager:
         for ca in place_to_transition_variable_arcs:
             cp = ca.source
             ct = ca.target
-            ot = cp.ocpn_place.get_object_type()
+            ot = ca.get_object_type()
             if self.__controlFlowMap.is_split_in_transition(ct):
                 split_out = self.__controlFlowMap.get_split_out_for_split_in(ct)
                 self.__controlFlowMap.add_split_transition_pair_variable_type(ct, split_out, ot)
@@ -283,7 +285,7 @@ class ControlFlowManager:
         Make sure all incoming arcs are adapted to feed into the list.
         """
         cp: CPN_Place = variable_arc.source
-        ot = cp.ocpn_place.get_object_type()
+        ot = variable_arc.get_object_type()
         # make the place hold a list structure
         ot_list_colset_name = get_object_type_list_colset_name(ot)
         list_initmark = "[]"
@@ -301,12 +303,7 @@ class ControlFlowManager:
                 get_object_type_colset_name(ot))
             object_type_list_var = self.__colsetManager.get_one_var(
                 get_object_type_list_colset_name(ot))
-            # Heuristic: Usually, object_type_var is bound w.r.t the incoming arcs.
-            if not any(a.expression == object_type_var for a in ct_in):
-                # If not, just add another "buffer" place in between to assure well-defined variable bindings.
-                # TODO: this needs to be tested first!!!
-                # ct = self.__make_transition_to_place_buffer(ct, ca, cp, ot)
-                raise NotImplementedError()
+            #ct = self.__make_transition_to_place_buffer(ct, ca, cp, ot)
             # The place passes a list to the transition
             p_to_t_expr = object_type_list_var
             # The transition passes pack a list with a new element
@@ -319,34 +316,6 @@ class ControlFlowManager:
             self.__controlFlowMap.add_arc(cp_ct)
             self.__controlFlowMap.add_arc(ct_cp)
             self.__controlFlowMap.remove_arc(ca)
-
-    def __make_transition_to_place_buffer(self, ct: CPN_Transition, ca: CPN_Arc, cp: CPN_Place,
-                                          ot: ObjectType) -> CPN_Transition:
-        """
-        :param ct: a transition that is incoming to the place, with unknown variables
-        :param ca: the arc from the transition to the place
-        :param cp: the place
-        :param ot: the object type of the place
-        :return: a new transition that is assured to bind the object type variable we want to use
-        """
-        p_buffer_name = "p_" + ct.get_id() + "_" + cp.get_id() + "_buff"
-        t_buffer_name = "t_" + ct.get_id() + "_" + cp.get_id() + "_buff"
-        old_annot = ca.annotation_text
-        otype_colset_name = get_object_type_colset_name(ot)
-        object_type_var = self.__colsetManager.get_one_var(
-            get_object_type_colset_name(ot))
-        p_buffer = CPN_Place(p_buffer_name, ct.x, str(float(ct.y) - 50.0), self.cpn_id_manager,
-                             otype_colset_name, object_type=ot)
-        t_buffer = CPN_Transition(TransitionType.SILENT, t_buffer_name, cp.x, str(float(cp.y) - 50.0),
-                                  self.cpn_id_manager)
-        ct_p_buffer = CPN_Arc(self.cpn_id_manager, ct, p_buffer, old_annot)
-        p_buffer_ct = CPN_Arc(self.cpn_id_manager, p_buffer, ct, object_type_var)
-        self.__controlFlowMap.remove_arc(ca)
-        self.__controlFlowMap.add_place(p_buffer)
-        self.__controlFlowMap.add_transition(t_buffer)
-        self.__controlFlowMap.add_arc(ct_p_buffer)
-        self.__controlFlowMap.add_arc(p_buffer_ct)
-        return t_buffer
 
     def __convert_place_to_transition_variable_arc(self, variable_arc: CPN_Arc):
         """
@@ -361,7 +330,7 @@ class ControlFlowManager:
         lt = t_CONTROL.ocpn_transition.get_leading_type()
         lt_colset_name = get_object_type_colset_name(lt)
         lt_var = self.__colsetManager.get_one_var(lt_colset_name)
-        ot = cp.ocpn_place.get_object_type()
+        ot = variable_arc.get_object_type()
         ot_list_colset_name     = get_object_type_list_colset_name(ot)
         ot_list_id_colset_name  = get_object_type_ID_list_colset_name(ot)
         ot_list_var_in, out_list_var_out = self.__colsetManager.get_some_vars(ot_list_colset_name, 2)
@@ -399,7 +368,7 @@ class ControlFlowManager:
             # we will now declare that the arc propagates a corresponding list.
             ct = ca.source
             cp = ca.target
-            ot = cp.ocpn_place.get_object_type()
+            ot = cp.get_object_type()
             if self.__controlFlowMap.is_split_out_transition(ct):
                 # if this transition was split (into a subpage segment with attribute logic etc.)
                 # then the preset place of the transition of the object type ot contains exactly one list

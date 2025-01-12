@@ -68,3 +68,15 @@ class ObjectCentricPetriNet(SimplePetriNet):
         :return: The arcs
         """
         return self.arcs
+
+    def add_place(self, p):
+        self.places = self.places + [p]
+
+    def add_transition(self, t):
+        self.transitions = self.transitions + [t]
+
+    def add_arcs(self, arcs):
+        self.arcs = self.arcs + arcs
+
+    def remove_arc(self, arc):
+        self.arcs = list(filter(lambda a: a is not arc, self.arcs))
