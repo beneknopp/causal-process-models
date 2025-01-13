@@ -12,7 +12,8 @@ from process_model.petri_net import LabelingFunction
 from simulation_model.simulation_model import SimulationModel
 from simulation_model.simulation_parameters import SimulationParameters
 from simulation_model.timing import TimeInterval, ActivityTiming, TimeDensityCalendar, \
-    ExponentialTimingFunction
+    ExponentialTimingFunction, FixedTimingFunction
+
 
 def run_example_order_management_complete(output_path, model_name):
     ot_orders   = ObjectType("orders")
@@ -37,6 +38,7 @@ def run_example_order_management_complete(output_path, model_name):
     t_remind = Transition("tremind", 1250, yo + 500, ot_orders)
     t_pay = Transition("tpay", 1500, yo, ot_orders)
 
+    t_check = Transition("tcheck", 800, yi - 100, ot_items)
     t_ioos = Transition("tioos", 1000, yi - 200, ot_items)
     t_reorder = Transition("treorder", 1500, yi - 200, ot_items)
     t_skip = Transition("tskip", 1250, yi + 200, ot_items)
@@ -51,7 +53,7 @@ def run_example_order_management_complete(output_path, model_name):
     po3 = Place("po3", 1250, yo, ot_orders)
     po4 = Place("po4", 1750, yo, ot_orders, is_final=True)
 
-    pi2 = Place("pi2", 750, yi, object_type=ot_items)
+    pi2 = Place("pi2", 750, yi - 150, object_type=ot_items)
     pi3 = Place("pi3", 1000, yi, object_type=ot_items)
     pi4 = Place("pi4", 1250, yi, object_type=ot_items)
     pi5 = Place("pi5", 1500, yi, object_type=ot_items)
@@ -72,13 +74,13 @@ def run_example_order_management_complete(output_path, model_name):
         ],
         transitions=[
             t_place, t_confirm, t_remind, t_pay,
-            t_ioos, t_reorder, t_skip, t_pick,
+            t_check, t_ioos, t_reorder, t_skip, t_pick,
             t_create, t_send, t_fail, t_deliver
         ],
         arcs=[
             Arc(po1, t_place), Arc(t_place, po2), Arc(po2, t_confirm), Arc(t_confirm, po3), Arc(po3, t_remind), Arc(t_remind, po3), Arc(po3, t_pay), Arc(t_pay, po4),
             ################################
-            Arc(pi1, t_place, True), Arc(t_place, pi2, True), Arc(pi2, t_confirm, True), Arc(t_confirm, pi3, True),
+            Arc(pi1, t_place, True), Arc(t_place, pi2, True), Arc(pi2, t_check), Arc(t_check, pi3),
             Arc(pi3, t_ioos), Arc(pi3, t_skip), Arc(t_ioos, pi4), Arc(pi4, t_reorder), Arc(t_reorder, pi5), Arc(t_skip, pi5), Arc(pi5, t_pick),
             Arc(t_pick, pi6), Arc(pi6, t_create, True), Arc(t_create, pi7, True), Arc(pi7, t_send, True), Arc(t_send, pi8, True),
                 Arc(pi8, t_fail, True), Arc(t_fail, pi8, True), Arc(pi8, t_deliver, True), Arc(t_deliver, pi9, True),
@@ -91,6 +93,7 @@ def run_example_order_management_complete(output_path, model_name):
             t_remind.get_id(): "payment reminder",
             t_pay.get_id(): "pay order",
             ################################
+            t_check.get_id(): "check stock",
             t_ioos.get_id(): "item out of stock",
             t_reorder.get_id(): "reorder item",
             t_pick.get_id(): "pick item",
@@ -106,6 +109,7 @@ def run_example_order_management_complete(output_path, model_name):
     act_confirm_order       = CPM_Activity("confirm order", ot_orders)
     act_payment_reminder    = CPM_Activity("payment reminder", ot_orders)
     act_pay_order           = CPM_Activity("pay order", ot_orders)
+    act_check_stock         = CPM_Activity("check stock", ot_items)
     act_item_out_of_stock   = CPM_Activity("item out of stock", ot_items)
     act_reorder_item        = CPM_Activity("reorder item", ot_items)
     act_pick_item           = CPM_Activity("pick item", ot_items)
@@ -114,13 +118,24 @@ def run_example_order_management_complete(output_path, model_name):
     act_failed_delivery     = CPM_Activity("failed delivery", ot_packages)
     act_package_delivered   = CPM_Activity("package delivered", ot_packages)
     activities = {}
-    for act in [act_place_order, act_confirm_order, act_payment_reminder, act_pay_order, act_item_out_of_stock, act_reorder_item, act_pick_item,
-                  act_create_package, act_send_package, act_failed_delivery, act_package_delivered]:
+    for act in [act_place_order, act_confirm_order, act_payment_reminder, act_pay_order, act_check_stock, act_item_out_of_stock, act_reorder_item,
+                act_pick_item, act_create_package, act_send_package, act_failed_delivery, act_package_delivered]:
         activities[act.get_id()] = act
     dummy_attributes = {}
     amap = {}
     attributeToValuation = {}
-    activity_timings = []
+    activity_timings = {
+        act_place_order: ActivityTiming(act_place_order.get_name(), FixedTimingFunction(TimeInterval(seconds=1))),
+        act_check_stock: ActivityTiming(act_check_stock.get_name(), ExponentialTimingFunction(
+                                        average_value=TimeInterval(days=2),
+                                        maximal_value=TimeInterval(days=10))),
+        act_item_out_of_stock: ActivityTiming(act_item_out_of_stock.get_name(), ExponentialTimingFunction(
+            average_value=TimeInterval(days=2),
+            maximal_value=TimeInterval(days=10))),
+        act_reorder_item: ActivityTiming(act_reorder_item.get_name(), ExponentialTimingFunction(
+            average_value=TimeInterval(days=10),
+            maximal_value=TimeInterval(days=40))),
+    }
     for act in activities.values():
         dummy_attribute_id = "{0}_happened".format(act.get_id())
         label1 = "Yes_{0}".format(act.get_id())
@@ -130,12 +145,13 @@ def run_example_order_management_complete(output_path, model_name):
         amap[dummy_attribute] = act
         attributeToValuation[dummy_attribute] = BayesianValuation(
             ValuationParameters([]), dummy_attribute, probability_mappings={(): {label1: 0.8, label2: 0.2}, })
-        activity_timing = ActivityTiming(
-            activity_name=act.get_name(),
-            execution_delay=ExponentialTimingFunction(average_value=TimeInterval(hours=1),
-            maximal_value=TimeInterval(hours=3))
-        )
-        activity_timings.append(activity_timing)
+        if act not in activity_timings:
+            activity_timing = ActivityTiming(
+                activity_name=act.get_name(),
+                execution_delay=ExponentialTimingFunction(average_value=TimeInterval(hours=1),
+                maximal_value=TimeInterval(hours=3))
+            )
+            activity_timings[act] = activity_timing
     causal_structure = CausalProcessStructure(
         event_attributes=list(dummy_attributes.values()),
         case_attributes=[],
@@ -161,7 +177,7 @@ def run_example_order_management_complete(output_path, model_name):
         # at what times do things happen in the process (i.e., people working)
         service_time_density=TimeDensityCalendar.StandardDensity(),
         # how long executions of specific activities take
-        activity_timings=activity_timings
+        activity_timings=list(activity_timings.values())
     )
     sim = SimulationModel(ocpn, causal_model, ot_struct, simulation_parameters)
     if initial_marking is not None:

@@ -588,6 +588,8 @@ class ColsetManager:
         :param colset_name: the name of the colset
         :return: a variable
         """
+        if colset_name not in self.colset_map.colsets_by_name:
+            raise KeyError("Colset '{0}' does not exist.".format(colset_name))
         if colset_name not in self.colset_vars_map:
             self.colset_vars_map[colset_name] = []
             self.__make_variable_for_colset(colset_name)

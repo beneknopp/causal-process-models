@@ -160,7 +160,6 @@ class CPM_CPN_Converter:
                 )
                 self.__build_colset(block, colset)
 
-
     def __build_constants(self):
         const_block = self.__make_block("Constants")
         for object_type in self.objectTypeStructure.get_object_types():
@@ -172,7 +171,6 @@ class CPM_CPN_Converter:
                 initmark
             )
             const_element.set("id", self.cpn_id_manager.give_ID())
-
 
     def __build_variables(self):
         globbox = self.root.find("cpnet").find("globbox")
@@ -371,17 +369,20 @@ class CPM_CPN_Converter:
         index_to_object_type = {}
         for other_object_type in to_1_relations:
             object_type_2_id_colset_name = get_object_type_ID_colset_name(other_object_type)
-            ot2_at_ot1_index = self.colset_manager.get_subcol_index_by_names(object_type_1_colset_name, object_type_2_id_colset_name)
+            ot2_at_ot1_index = self.colset_manager.get_subcol_index_by_names(object_type_1_colset_name,
+                                                                             object_type_2_id_colset_name)
             index_to_object_type[ot2_at_ot1_index] = other_object_type.get_name()
         for other_object_type in to_N_relations:
             object_type_2_id_list_colset_name = get_object_type_ID_list_colset_name(other_object_type)
-            ot2_at_ot1_index = self.colset_manager.get_subcol_index_by_names(object_type_1_colset_name, object_type_2_id_list_colset_name)
+            ot2_at_ot1_index = self.colset_manager.get_subcol_index_by_names(object_type_1_colset_name,
+                                                                             object_type_2_id_list_colset_name)
             index_to_object_type[ot2_at_ot1_index] = other_object_type.get_name()
 
         list_of_object_token_prefixes = initmark_df.apply(
             lambda row: '("{0}",0,'.format(row["ocel_id"]), axis=1).tolist()
         list_of_object_token_suffixes = initmark_df.apply(
-            lambda row: '{0})'.format(self.__initial_token_suffix_transformation(row, index_to_object_type)), axis=1).tolist()
+            lambda row: '{0})'.format(self.__initial_token_suffix_transformation(row, index_to_object_type)),
+            axis=1).tolist()
         list_of_object_token_timestamps = initmark_df.apply(
             lambda row: str(round(row["ocel_time"])), axis=1).tolist()
         token_list = ["{0}{1}@{2}".format(
@@ -397,7 +398,8 @@ class CPM_CPN_Converter:
         for index in sorted(list(index_to_object_type.keys())):
             related_objects = dict(row)[index_to_object_type[index]]
             if type(related_objects) is list:
-                related_objects_str = "[" + ','.join(['"{0}"'.format(related_object) for related_object in related_objects]) + "]"
+                related_objects_str = "[" + ','.join(
+                    ['"{0}"'.format(related_object) for related_object in related_objects]) + "]"
             else:
                 related_objects_str = '"{0}"'.format(related_objects)
             suffixes.append(related_objects_str)

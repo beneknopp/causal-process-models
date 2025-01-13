@@ -47,19 +47,19 @@ def run_example_1(output_path, model_name):
         })
     )
     attr_doctor = CPM_Categorical_Attribute(
-        "doctor",
-        ["Dr_Knopp", "Dr_Yuan"])
+        CPM_Categorical_Domain(["Dr_Knopp", "Dr_Yuan"], "doctor"),
+        "doctor")
     attr_illness = CPM_Categorical_Attribute(
-        "illness",
-        ["Bias_Blindness", "Causal_Confusion_Syndrome", "Null_Pointer_Neurosis"])
+        CPM_Categorical_Domain(["Bias_Blindness", "Causal_Confusion_Syndrome", "Null_Pointer_Neurosis"], "illness"),
+        "illness")
     attr_treatment_delayed = CPM_Categorical_Attribute(
-        "treatment_delayed",
-        ["No_Delay", "Slight_Delay", "High_Delay"])
+        CPM_Categorical_Domain(["No_Delay", "Slight_Delay", "High_Delay"], "treatment_delayed"),
+        "treatment_delayed")
     act_register = CPM_Activity("register patient")
     act_treat = CPM_Activity("treat patient")
     treatment_delayed_valuation = BayesianValuation(
         ValuationParameters([
-            ValuationParameter(attr_doctor),
+            ValuationParameter(attr_doctor.get_domain()),
             # ValuationParameter(attr_illness)
         ]),
         attr_treatment_delayed,
@@ -69,19 +69,20 @@ def run_example_1(output_path, model_name):
         }
     )
     causal_structure = CausalProcessStructure(
-        attributes=[
+        event_attributes=[
             attr_doctor,
             attr_treatment_delayed,
             attr_illness
         ],
+        case_attributes=[],
         activities=[
             act_register,
             act_treat
         ],
         attributeActivities=AttributeActivities(amap={
-            attr_doctor.get_id(): act_register,
-            attr_treatment_delayed.get_id(): act_treat,
-            attr_illness.get_id(): act_register
+            attr_doctor: act_register,
+            attr_treatment_delayed: act_treat,
+            attr_illness: act_register
         }),
         relations=[
             AttributeRelation(attr_doctor, attr_treatment_delayed, is_aggregated=False),
@@ -97,16 +98,16 @@ def run_example_1(output_path, model_name):
             relationsToAggregation={}
         ),
         V=AttributeValuations(
-            attributeIdToValuation={
-                "doctor": BayesianValuation(
+            attributeToValuation={
+                 attr_doctor: BayesianValuation(
                     ValuationParameters([]),
                     attr_doctor
                 ),
-                "illness": BayesianValuation(
+                attr_illness: BayesianValuation(
                     ValuationParameters([]),
                     attr_illness
                 ),
-                "treatment_delayed": treatment_delayed_valuation
+                attr_treatment_delayed: treatment_delayed_valuation
             }
         )
     )
@@ -676,15 +677,15 @@ def run_example_oc_aggregations(output_path, model_name):
 
 if __name__ == "__main__":
     output_path = "output"
-    model_name_1 = "collider_simple"
-    model_name_2 = "confounder_simple"
-    model_name_oc_simple = "object_centric_simple"
-    model_name_oc_complex = "object_centric_complex"
+    #model_name_1 = "collider_simple"
+    #model_name_2 = "confounder_simple"
+    #model_name_oc_simple = "object_centric_simple"
+    #model_name_oc_complex = "object_centric_complex"
     #model_name_oc_aggregations = "object_centric_aggregations"
     model_name_om = "order_management"
-    # run_example_1(output_path, model_name_1)
-    # run_example_2(output_path, model_name_2)
-    # run_example_oc_simple(output_path,  model_name_oc_simple)
+    #run_example_1(output_path, model_name_1)
+    #run_example_2(output_path, model_name_2)
+    #run_example_oc_simple(output_path,  model_name_oc_simple)
     #run_example_oc_complex(output_path, model_name_oc_complex)
     #run_example_oc_aggregations(output_path, model_name_oc_aggregations)
     run_example_order_management_complete(output_path, model_name_om)

@@ -322,7 +322,10 @@ def get_effective_delay_factor_sml(pt_cat: ProcessTimeCategory):
     # get_relative_delay_from_now_function_name(pt_cat),
     # get_timeunit_constant_name(TimeUnit.WEEK)
     # )
-    return "val {0} = 1.0;".format(get_effective_delay_factor_name(pt_cat))
+    eff_d_f_name = get_effective_delay_factor_name(pt_cat)
+    rel_d_from_now = get_relative_delay_from_now_function_name(pt_cat)
+    week = get_timeunit_constant_name(TimeUnit.WEEK)
+    return f"val {eff_d_f_name} = {rel_d_from_now}(52.0*{week})/(52.0*{week});"
 
 
 def get_normalized_delay_from_now_function_sml(pt_cat: ProcessTimeCategory):
@@ -364,7 +367,7 @@ def get_activity_event_table_initializer_sml(activity_id: str, attribute_names: 
     fun {0}() = 
     let
        val file_id = TextIO.openOut("{1}")
-       val _ = TextIO.output(file_id, {2}(["event_id", "case_id", "activity", "start_timestamp", "end_timestamp"]^^{3})) 
+       val _ = TextIO.output(file_id, {2}(["event_id", "case_id", "start_timestamp", "end_timestamp"]^^{3})) 
        val _ = TextIO.output(file_id, "\\n")
     in
        TextIO.closeOut(file_id)
@@ -447,7 +450,7 @@ def get_event_writer_sml(activity_id: str,
         val start_time = {4}()
         val norm_delay = {5}(delay) 
         val end_time = start_time + delay
-        val _ = {8}(event_file_id, [event_id, case_id, "{6}", {9}(start_time), {9}(end_time)]^^{7}({2}))
+        val _ = {6}(event_file_id, [event_id, case_id, {7}(start_time), {7}(end_time)]^^{8}({2}))
     in
        (ModelTime.fromInt(round(norm_delay)), start_time, end_time)
     end;        
@@ -458,10 +461,9 @@ def get_event_writer_sml(activity_id: str,
         get_event_table_file_path(activity_id, model_name),
         get_now_time_getter_name(),
         get_normalized_delay_from_now_function_name(ProcessTimeCategory.SERVICE),
-        activity_name,
-        get_eaval2list_converter_name(activity_id),
         get_record_writer_name(),
-        get_time2string_converter_name()
+        get_time2string_converter_name(),
+        get_eaval2list_converter_name(activity_id),
     )
 
 def get_code_output_parameter_string(outputs):

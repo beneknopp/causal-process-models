@@ -272,9 +272,8 @@ class ControlFlowManager:
             if self.__controlFlowMap.is_split_in_transition(ct):
                 split_out = self.__controlFlowMap.get_split_out_for_split_in(ct)
                 self.__controlFlowMap.add_split_transition_pair_variable_type(ct, split_out, ot)
-            if cp in handled_source_places:
-                continue
-            self.__convert_variable_arc_source_place_preset(ca)
+            if cp not in handled_source_places:
+                self.__convert_variable_arc_source_place_preset(ca)
             # accommodate the postset of the place to the list structure
             self.__convert_place_to_transition_variable_arc(ca)
             handled_source_places.add(cp)

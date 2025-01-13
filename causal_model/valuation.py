@@ -124,7 +124,7 @@ class BayesianValuation(AttributeValuation):
                                    key, uncovered_labels))
             for i in range(len(key)):
                 label = key[i]
-                admissible_labels = parameter_list[i].get_attribute().get_labels()
+                admissible_labels = parameter_list[i].get_domain().get_labels()
                 validate_condition(label in admissible_labels,
                                    'Key {0} has invalid label "{1}"'.format(key, label))
                 validate_condition(abs(1 - sum(probs.values())) < 0.0001,

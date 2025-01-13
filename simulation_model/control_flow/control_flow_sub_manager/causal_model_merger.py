@@ -49,6 +49,8 @@ class CausalModelMerger:
             initmark="1"
         )
         self.__controlFlowMap.add_place(semaphore_place)
+        # we need to also protect silent transitions; otherwise the control-flow stochastics will be skewed
+        self.__add_semaphore_to_silent_transitions(semaphore_place)
         cm_activities = self.__causalModel.get_activities()
         for act in cm_activities:
             act_name = act.get_name()
@@ -630,3 +632,11 @@ class CausalModelMerger:
         )
 
         return p_AGGREGATED
+
+    def __add_semaphore_to_silent_transitions(self, semaphore_place):
+        original_transitions = self.__petriNet.get_original_transitions(labeled=False)
+        var_int = self.__colsetManager.get_one_var("INT")
+        for t in original_transitions:
+            cpn_t = self.__controlFlowMap.cpn_transitions_by_simple_pn_transition_id[t.get_id()]
+            self.__controlFlowMap.add_arc(CPN_Arc(self.cpn_id_manager, semaphore_place, cpn_t, var_int))
+            self.__controlFlowMap.add_arc(CPN_Arc(self.cpn_id_manager, cpn_t, semaphore_place, var_int))

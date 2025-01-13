@@ -59,6 +59,7 @@ class ObjectCentricPetriNet(SimplePetriNet):
                  arcs: list[ObjectCentricPetriNetArc],
                  labels: LabelingFunction):
         super().__init__(places, transitions, arcs, labels)
+        self.__original_transitions = transitions[:]
         self.__validate()
 
     def get_arcs(self) -> list[ObjectCentricPetriNetArc]:
@@ -80,3 +81,11 @@ class ObjectCentricPetriNet(SimplePetriNet):
 
     def remove_arc(self, arc):
         self.arcs = list(filter(lambda a: a is not arc, self.arcs))
+
+    def get_original_transitions(self, labeled=None):
+        ts = self.__original_transitions
+        if labeled is None:
+            return ts
+        if labeled:
+            return [t for t in ts if self.get_labels().has_label(t.get_id())]
+        return [t for t in ts if not self.get_labels().has_label(t.get_id())]

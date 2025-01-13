@@ -72,7 +72,7 @@ class PetriNetCaster():
         place_type = simple_pn_place.get_object_type()
         colset_name = get_object_type_colset_name(place_type)
         object_type = simple_pn_place.get_object_type()
-        initmark = "initmark_" + object_type.get_id()
+        initmark = "initmark_" + object_type.get_id() if simple_pn_place.is_initial else None
         #########################################################################
         cpn_place = CPN_Place(name=simple_pn_place_id,
                               x=simple_pn_place.x,
